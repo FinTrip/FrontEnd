@@ -1,0 +1,168 @@
+.plan-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.plan-header {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ff4b4b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.plan-info {
+  margin-left: 20px;
+}
+
+.plan-info h1 {
+  font-size: 24px;
+  margin: 0;
+  color: white;
+}
+
+.plan-info p {
+  margin: 5px 0;
+  color: #ffffff;
+}
+
+.edit-button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 5px 0;
+}
+
+.scroll-container {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  position: relative;
+  overflow-x: auto;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-container.dragging {
+  scroll-behavior: auto;
+}
+
+.days-container {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 20px 0;
+  scroll-behavior: smooth;
+}
+
+.day-card {
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  min-width: 320px; /* Fixed width for consistent scrolling */
+  flex-shrink: 0; /* Prevent cards from shrinking */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.day-header {
+  margin-bottom: 20px;
+}
+
+.day-header h3 {
+  color: #333;
+  margin: 0;
+}
+
+.activity-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  display: flex;
+  gap: 15px;
+  border: 1px solid #eee;
+}
+
+.activity-icon {
+  font-size: 24px;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-content h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.activity-content p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.activity-content img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.more-options {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: #666;
+}
+
+.add-activity {
+  width: 100%;
+  padding: 10px;
+  background: none;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.add-activity:hover {
+  background: #f5f5f5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .days-container {
+    flex-direction: column;
+  }
+
+  .day-card {
+    min-width: auto;
+  }
+}
