@@ -24,14 +24,144 @@ interface DayPlan {
 }
 
 const Plan = () => {
+  // Di chuyển khai báo planData lên đầu component
+  const planData: DayPlan[] = [
+    {
+      "day": 1,
+      "date": "14 Feb",
+      "activities": [
+        {
+          "type": "transport",
+          "title": "Di Chuyển",
+          "description": "Khởi hành từ sân bay, bắt đầu chuyến hành trình đầy thú vị.",
+          "icon": "✈️"
+        },
+        {
+          "type": "place",
+          "title": "Đặc Sản Trần",
+          "description": "Thưởng thức các món ăn đặc sản Đà Nẵng tại nhà hàng nổi tiếng.",
+          "image": "/images/DacSanTran.webp"
+        },
+        {
+          "type": "service",
+          "title": "Bana Hill",
+          "description": "Khám phá một trong những dịa điểm được săn....",
+          "image": "/images/cauvang.jpg"
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "date": "15 Feb",
+      "activities": [
+        {
+          "type": "food",
+          "title": "Bữa sáng với Mì Quảng",
+          "description": "Thưởng thức món Mì Quảng đặc trưng tại quán ăn địa phương.",
+          "image": "/images/miquang.jpg"
+        },
+        {
+          "type": "place",
+          "title": "Chùa Linh Ứng",
+          "description": "Tham quan ngôi chùa nổi tiếng với tượng Phật Quan Thế Âm cao nhất Việt Nam.",
+          "image": "/images/chualinhung.jpg"
+        },
+        {
+          "type": "activity",
+          "title": "Dạo phố Bạch Đằng",
+          "description": "Dạo bộ, khám phá không gian ven sông Hàn sôi động về đêm.",
+          "image": "/images/phodibo.webp"
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "16 Feb",
+      "activities": [
+        {
+          "type": "food",
+          "title": "Bánh ép Huế",
+          "description": "Thưởng thức món ăn vặt nổi tiếng của Huế, giòn thơm hấp dẫn.",
+          "image": "/images/banh-ep-hue.jpeg"
+        },
+        {
+          "type": "place",
+          "title": "Quần thể di tích cố đô Huế",
+          "description": "Khám phá cung điện, thành quách cổ kính của triều Nguyễn.",
+          "image": "/images/Quần thể di tích cố đô Huế.jpg"
+        },
+        {
+          "type": "activity",
+          "title": "Dạo quanh thành phố",
+          "description": "Tự do khám phá nét đẹp cổ kính của Huế bằng xe đạp hoặc đi bộ."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "17 Feb",
+      "activities": [
+        {
+          "type": "food",
+          "title": "Bún Bò Huế O Cương",
+          "description": "Thưởng thức tô bún bò Huế chuẩn vị với nước dùng đậm đà.",
+          "image": "/images/bunbohue.jpg"
+        },
+        {
+          "type": "place",
+          "title": "Đại Nội Huế",
+          "description": "Chiêm ngưỡng kiến trúc cung đình, khám phá lịch sử triều Nguyễn.",
+          "image": "/images/Đại Nội Huế.jpg"
+        },
+        {
+          "type": "activity",
+          "title": "Chùa Thiên Mụ",
+          "description": "Tham quan ngôi chùa cổ linh thiêng bên dòng sông Hương thơ mộng.",
+          "image": "/images/Chùa Thiên Mụ.jpg"
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "18 Feb",
+      "activities": [
+        {
+          "type": "food",
+          "title": "Bánh Bèo - Nậm - Lọc",
+          "description": "Thưởng thức bộ ba món bánh Huế nổi tiếng với hương vị đặc trưng.",
+          "image": "/images/Bèo Nậm Lọc.jpg"
+        },
+        {
+          "type": "place",
+          "title": "Lăng Khải Định",
+          "description": "Chiêm ngưỡng công trình lăng tẩm kết hợp tinh hoa kiến trúc Đông - Tây.",
+          "image": "/images/Lăng Khải Định.jpg"
+        },
+        {
+          "type": "activity",
+          "title": "Du thuyền trên sông Hương",
+          "description": "Thưởng ngoạn phong cảnh yên bình và lắng nghe ca Huế trên thuyền rồng.",
+          "image": "/images/Đi thuyền trên sông Hương.jpg"
+        }
+      ]
+    }
+    
+    // Thêm các ngày khác tương tự
+  ];
+
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [draggedActivity, setDraggedActivity] = useState<any>(null);
+  const [draggedDay, setDraggedDay] = useState<number | null>(null);
+  const [activities, setActivities] = useState(planData);
 
-  const startDragging = (clientX: number) => {
+  const startDragging = (e: React.MouseEvent | TouchEvent) => {
     if (!scrollContainerRef.current) return;
     setIsDragging(true);
+    const clientX =
+      "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     setStartX(clientX - scrollContainerRef.current.offsetLeft);
     setScrollLeft(scrollContainerRef.current.scrollLeft);
   };
@@ -49,7 +179,7 @@ const Plan = () => {
 
   // Mouse Event Handlers
   const handleMouseDown = (e: MouseEvent) => {
-    startDragging(e.pageX);
+    startDragging(e);
   };
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -64,7 +194,7 @@ const Plan = () => {
 
   // Touch Event Handlers
   const handleTouchStart = (e: TouchEvent) => {
-    startDragging(e.touches[0].clientX);
+    startDragging(e);
   };
 
   const handleTouchMove = (e: TouchEvent) => {
@@ -76,124 +206,49 @@ const Plan = () => {
     stopDragging();
   };
 
-  // Khai báo planData với type cụ thể
-  const planData: DayPlan[] = [
-    {
-      day: 1,
-      date: "14 Feb",
-      activities: [
-        {
-          type: "transport",
-          title: "Di Chuyển",
-          description: "Giờ bay...",
-          icon: "✈️",
-        },
-        {
-          type: "place",
-          title: "Địa điểm Trần",
-          description: "Mô tả chi tiết về địa điểm tham quan...",
-          image: "/images/DacSanTran.webp",
-        },
-        {
-          type: "service",
-          title: "Dịch vụ",
-          description: "Chi tiết dịch vụ...",
-          image: "/images/cauvang.jpg",
-        },
-      ],
-    },
-    {
-      day: 2,
-      date: "15 Feb",
-      activities: [
-        {
-          type: "food",
-          title: "Món ăn",
-          description: "Bữa sáng tại nhà hàng...",
-          image: "/images/miquang.jpg",
-        },
-        {
-          type: "place",
-          title: "Chùa Linh Ứng",
-          description: "Ngôi chùa nổi tiếng với vị trí...",
-          image: "/images/chualinhung.jpg",
-        },
-        {
-          type: "activity",
-          title: "Phố đi bộ Bạch Đằng",
-          description: "Đi dạo tự do khám phá văn hoá...",
-          image: "/images/phodibo.webp",
-        },
-      ],
-    },
-    {
-      day: 3,
-      date: "16 Feb",
-      activities: [
-        {
-          type: "food",
-          title: "Food",
-          description: "Bữa sáng tại nhà hàng...",
-        },
-        {
-          type: "place",
-          title: "Fushimi Inari-taisha",
-          description: "Đền thờ nổi tiếng với các cổng torii đỏ...",
-          image: "/images/fushimi.jpg",
-        },
-        {
-          type: "activity",
-          title: "Caminata Libre",
-          description: "Đi dạo tự do khám phá...",
-        },
-      ],
-    },
-    {
-      day: 4,
-      date: "17 Feb",
-      activities: [
-        {
-          type: "food",
-          title: "Food",
-          description: "Bữa sáng tại nhà hàng...",
-        },
-        {
-          type: "place",
-          title: "Fushimi Inari-taisha",
-          description: "Đền thờ nổi tiếng với các cổng torii đỏ...",
-          image: "/images/fushimi.jpg",
-        },
-        {
-          type: "activity",
-          title: "Caminata Libre",
-          description: "Đi dạo tự do khám phá...",
-        },
-      ],
-    },
-    {
-      day: 5,
-      date: "18 Feb",
-      activities: [
-        {
-          type: "food",
-          title: "Food",
-          description: "Bữa sáng tại nhà hàng...",
-        },
-        {
-          type: "place",
-          title: "Fushimi Inari-taisha",
-          description: "Đền thờ nổi tiếng với các cổng torii đỏ...",
-          image: "/images/fushimi.jpg",
-        },
-        {
-          type: "activity",
-          title: "Caminata Libre",
-          description: "Đi dạo tự do khám phá...",
-        },
-      ],
-    },
-    // Thêm các ngày khác tương tự
-  ];
+  // Handlers cho activity drag
+  const handleDragStart = (
+    e: React.DragEvent,
+    activity: any,
+    dayIndex: number
+  ) => {
+    setDraggedActivity(activity);
+    setDraggedDay(dayIndex);
+    e.currentTarget.classList.add("dragging");
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove("dragging");
+    setDraggedActivity(null);
+    setDraggedDay(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (
+    e: React.DragEvent,
+    targetDayIndex: number,
+    targetIndex: number
+  ) => {
+    e.preventDefault();
+    if (!draggedActivity || draggedDay === null) return;
+
+    const newActivities = [...activities];
+    // Remove from original position
+    const sourceDay = newActivities[draggedDay];
+    const [removedActivity] = sourceDay.activities.splice(
+      sourceDay.activities.indexOf(draggedActivity),
+      1
+    );
+
+    // Add to new position
+    const targetDay = newActivities[targetDayIndex];
+    targetDay.activities.splice(targetIndex, 0, removedActivity);
+
+    setActivities(newActivities);
+  };
 
   const renderIcon = (icon: string | React.ReactNode) => {
     if (typeof icon === "string") {
@@ -211,12 +266,13 @@ const Plan = () => {
           <span>Back</span>
         </Link>
 
-        <div className="mt-4">
-          <h1 className="text-2xl font-bold">MY PLAN</h1>
-          <p className="text-lg">14 Feb - 20 Feb</p>
-          <p className="text-lg">Da Nang - Hue</p>
-          <button className="text-blue-400">Editar viaje</button>
-        </div>
+        <div className="flex flex-col items-center justify-center text-center">
+  <h1 className="text-2xl font-bold">MY PLAN</h1>
+  <p className="text-lg">14 Feb - 20 Feb</p>
+  <p className="text-lg">Da Nang - Hue</p>
+  {/* <button className="text-blue-400">Editar viaje</button> */}
+</div>
+
       </div>
 
       {/* Timeline Cards Container */}
@@ -237,9 +293,9 @@ const Plan = () => {
           userSelect: "none",
         }}
       >
-        {planData.map((day, index) => (
+        {activities.map((day, dayIndex) => (
           <div
-            key={index}
+            key={dayIndex}
             className="flex-shrink-0 bg-white rounded-xl p-4 w-[320px] text-black"
             style={{ touchAction: "pan-y pinch-zoom" }}
           >
@@ -254,7 +310,12 @@ const Plan = () => {
               {day.activities.map((activity, actIndex) => (
                 <div
                   key={actIndex}
-                  className="border rounded-lg overflow-hidden"
+                  className="border rounded-lg overflow-hidden draggable-activity"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, activity, dayIndex)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, dayIndex, actIndex)}
                 >
                   <div className="p-3 flex justify-between items-start">
                     <div className="flex items-center gap-2">
@@ -292,7 +353,7 @@ const Plan = () => {
                 <FaPlus size={12} />
                 <span>Add activities</span>
               </button>
-              <button className="text-blue-500">Ver Mapa</button>
+              {/* <button className="text-blue-500">Ver Mapa</button> */}
             </div>
           </div>
         ))}

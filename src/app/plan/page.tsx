@@ -1,5 +1,11 @@
+"use client";
+import React from "react";
 import Plan from "../page/components/home/plan";
 
 export default function PlanPage() {
-  return <Plan />;
-} 
+  return (
+    <main>
+      <Plan />
+    </main>
+  );
+}

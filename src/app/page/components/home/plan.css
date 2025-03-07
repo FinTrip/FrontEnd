@@ -166,3 +166,56 @@
     min-width: auto;
   }
 }
+
+/* Thêm styles cho drag and drop */
+.activity-container {
+  position: relative;
+}
+
+.draggable-activity {
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.draggable-activity:active {
+  cursor: grabbing;
+}
+
+.draggable-activity.dragging {
+  opacity: 0.8;
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 1000;
+}
+
+.drop-indicator {
+  height: 2px;
+  background-color: #3b82f6;
+  margin: 10px 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.drop-indicator.active {
+  opacity: 1;
+}
+
+.activity-placeholder {
+  border: 2px dashed #ccc;
+  background-color: #f8f8f8;
+  height: 100px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.draggable-activity {
+  background-color: #FFB7C5; /* Màu nền Xanh Navy */
+  border: 1px solid #181307; /* Viền xanh nhạt */
+  border-radius: 12px; /* Bo góc nhẹ */
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  color: #4A4E69;
+  
+  
+}

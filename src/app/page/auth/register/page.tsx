@@ -1,14 +1,19 @@
 "use client";
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import './register.css';
+import React from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import Link from "next/link";
+import Image from "next/image";
+import "./register.css";
 
 export default function RegisterPage() {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="register-container">
       <div className="register-left">
-        <Image 
+        <Image
           src="/images/golden-bridge.jpg"
           alt="Golden Bridge"
           fill
@@ -16,7 +21,7 @@ export default function RegisterPage() {
           priority
         />
         <div className="logo-container">
-          <Image 
+          <Image
             src="/images/logo.png"
             alt="Logo"
             width={70}
@@ -29,32 +34,24 @@ export default function RegisterPage() {
       <div className="register-right">
         <div className="register-form">
           <h1>Register</h1>
-          
+
           <form>
             <div className="form-group">
               <label>Nombre:*</label>
-              <input 
-                type="text" 
-                placeholder="Enter your name"
-                required
-              />
+              <input type="text" placeholder="Enter your name" required />
             </div>
 
             <div className="form-group">
               <label>Email:*</label>
-              <input 
-                type="email" 
-                placeholder="Enter your email"
-                required
-              />
+              <input type="email" placeholder="Enter your email" required />
             </div>
 
             <div className="form-group">
               <label>Contraseña:*</label>
               <div className="password-input">
-                <input 
+                <input
                   type="password"
-                  placeholder="Enter your password" 
+                  placeholder="Enter your password"
                   required
                 />
                 <span className="password-icon">@</span>
@@ -64,7 +61,7 @@ export default function RegisterPage() {
             <div className="form-group">
               <label>Confirmar Contraseña:*</label>
               <div className="password-input">
-                <input 
+                <input
                   type="password"
                   placeholder="Confirm your password"
                   required
@@ -78,7 +75,7 @@ export default function RegisterPage() {
             </button>
 
             <button type="button" className="google-button">
-              <Image 
+              <Image
                 src="/images/google.png"
                 alt="Google"
                 width={20}
@@ -95,4 +92,4 @@ export default function RegisterPage() {
       </div>
     </div>
   );
-} 
+}
