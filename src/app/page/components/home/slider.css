@@ -1,97 +1,93 @@
-
 .main-container {
   position: relative;
   width: 100%;
   height: 100vh;
-  background-image: url('/images/welcome-page.jpg');
+  background-image: url("/images/welcome-page.jpg");
   background-size: cover;
   background-position: center;
   overflow: hidden;
 }
 
 .main-container::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 0.4),
-    rgba(0, 0, 0, 0.2),
-    transparent
-  );
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3));
 }
 
 .navigation {
-  padding-top: 1.5rem;
   position: relative;
   z-index: 10;
+  padding: 1rem 2rem;
+}
+
+.nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .nav-links {
   display: flex;
-  justify-content: center;
-  gap: 4rem;
+  gap: 2rem;
 }
 
 .nav-link {
   color: white;
-  font-size: 1rem;
-  transition: color 0.3s ease;
+  font-size: 0.9rem;
   text-decoration: none;
+  padding-bottom: 0.25rem;
+  transition: all 0.3s ease;
 }
 
-.nav-link:hover {
-  color: #FCD34D;
-}
-
+.nav-link:hover,
 .nav-link.active {
-  color: #FCD34D;
-  border-bottom: 2px solid #FCD34D;
+  color: #ffd700;
+  border-bottom: 2px solid #ffd700;
 }
 
 .content-wrapper {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 2rem;
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 0.8fr 1.2fr;
   gap: 2rem;
-  margin-top: 2rem;
+  height: calc(100vh - 80px);
+  align-items: center;
   position: relative;
-  z-index: 10;
 }
 
 .left-content {
+  padding-top: 0;
+  max-width: 600px;
   position: relative;
-  z-index: 20;
-  padding-top: 8rem;
-  max-width: 500px;
+  z-index: 2;
 }
 
 .main-title {
-  font-size: 4.5rem;
+  font-size: 5rem;
   font-weight: 700;
   color: white;
-  line-height: 1;
-  margin-bottom: 1rem;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1.5rem;
+  line-height: 1.1;
 }
 
 .description {
-  font-size: 1.1rem;
-  color: white;
-  opacity: 0.9;
-  max-width: 400px;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 2rem;
   line-height: 1.6;
 }
 
 .see-more-btn {
-  background-color: #FCD34D;
+  background-color: #ffd700;
   color: black;
-  padding: 0.75rem 2.5rem;
-  border-radius: 9999px;
-  font-size: 1rem;
+  padding: 0.75rem 2rem;
+  border-radius: 5px;
+  font-size: 0.9rem;
   font-weight: 500;
   border: none;
   cursor: pointer;
@@ -99,98 +95,115 @@
 }
 
 .see-more-btn:hover {
-  background-color: #FDE68A;
-  transform: scale(1.05);
+  background-color: #ffed4a;
+  transform: translateY(-2px);
 }
 
 .slider-section {
-  padding-top: 4rem;
+  padding-top: 0;
   width: 100%;
   position: relative;
-  display: flex;
-  justify-content: center;
+  overflow: hidden;
 }
 
 .slider-container {
   position: relative;
-  width: 100%; /* Thay đổi độ rộng của slider để vừa với màn hình */
-  height: 300px; /* Điều chỉnh chiều cao của slider */
-  overflow: hidden;
+  width: 100%;
+  height: 380px;
+  overflow: visible;
 }
 
 .slides-wrapper {
   position: relative;
   width: 100%;
+  height: 100%;
   display: flex;
-  gap: 1.5rem; /* Điều chỉnh khoảng cách giữa các slide */
+  /* gap: 0.75rem; */
+  /* padding: 0 0.5rem; */
 }
 
 .slide-card {
   position: relative;
-  width: 33.33%; /* Thay đổi kích thước các slide */
-  height: 100%;
-  border-radius: 1.5rem;
+  width: 260px;
+  height: 380px;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.6s ease;
+  transition: all 0.5s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  transform-origin: center center;
+}
+
+.slide-card.active {
+  transform: scale(1.03);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .card-image {
-  width: 100%px;
-  height: 300px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 1.5rem;
 }
 
 .location-label {
   position: absolute;
-  bottom: 2rem;
+  bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
   color: white;
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 600;
-  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  width: 85%;
+  /* padding: 0.75rem; */
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  border-radius: 6px;
 }
 
 .nav-button {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 2.5rem;
-  height: 2.5rem;
-  background: white;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.95);
   border: none;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
   z-index: 10;
 }
 
-.nav-button:hover {
-  transform: translateY(-50%) scale(1.1);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-}
-
 .nav-button.prev {
-  left: -1.25rem;
+  left: -12px;
 }
 
 .nav-button.next {
-  right: -1.25rem;
+  right: -12px;
 }
 
 .nav-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: #1F2937;
+  width: 18px;
+  height: 18px;
+  color: #333;
 }
 
-.nav-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.auth-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1280px) {
+  .slide-card {
+    width: 240px;
+    height: 360px;
+  }
+
+  .slides-wrapper {
+    /* gap: 0.5rem; */
+  }
 }
