@@ -30,7 +30,8 @@ export default function LoginPage() {
         <div className="login-form">
           <h1>Login</h1>
 
-          <form>
+          {/* suppressHydrationWarning is used to prevent hydration errors */}
+          <form suppressHydrationWarning>
             <div className="form-group">
               <label>Email:</label>
               <input type="email" placeholder="Enter your email" required />

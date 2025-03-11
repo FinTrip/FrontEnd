@@ -30,7 +30,8 @@ export default function RegisterPage() {
         <div className="register-form">
           <h1>Register</h1>
 
-          <form>
+          {/* suppressHydrationWarning is used to prevent hydration errors */}
+          <form suppressHydrationWarning>
             <div className="form-group">
               <label>Name:</label>
               <input type="text" placeholder="Enter your name" required />
