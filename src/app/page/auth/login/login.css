@@ -38,6 +38,7 @@
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 30px;
+  color: #000000;
 }
 
 .form-group {
@@ -95,6 +96,7 @@
   width: 100%;
   padding: 12px;
   background: white;
+  color: black;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 14px;
@@ -126,4 +128,4 @@
 
 .register-link a:hover {
   text-decoration: underline;
-} 
+}

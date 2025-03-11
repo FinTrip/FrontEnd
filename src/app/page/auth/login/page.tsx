@@ -1,14 +1,14 @@
 "use client";
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import './login.css';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import "./login.css";
 
 export default function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-left">
-        <Image 
+        <Image
           src="/images/golden-bridge.jpg"
           alt="Golden Bridge"
           fill
@@ -16,7 +16,7 @@ export default function LoginPage() {
           priority
         />
         <div className="logo-container">
-          <Image 
+          <Image
             src="/images/logo.png"
             alt="Logo"
             width={70}
@@ -29,49 +29,46 @@ export default function LoginPage() {
       <div className="login-right">
         <div className="login-form">
           <h1>Login</h1>
-          
+
           <form>
             <div className="form-group">
-              <label>Email:*</label>
-              <input 
-                type="email" 
-                placeholder="Enter your email"
-                required
-              />
+              <label>Email:</label>
+              <input type="email" placeholder="Enter your email" required />
             </div>
 
             <div className="form-group">
-              <label>Contraseña:*</label>
+              <label>Password:</label>
               <div className="password-input">
-                <input 
+                <input
                   type="password"
-                  placeholder="Enter your password" 
+                  placeholder="Enter your password"
                   required
                 />
-                <span className="password-icon">@</span>
+                <span className="password-icon"></span>
               </div>
             </div>
 
             <button type="submit" className="login-button">
-              Continúa
+              Continue
             </button>
 
             <button type="button" className="google-button">
-              <Image 
+              <Image
                 src="/images/google.png"
                 alt="Google"
                 width={20}
                 height={20}
               />
-              Continúa con Google
+              Continue with Google
             </button>
 
             <div className="register-link">
-              ¿No tienes una cuenta? <Link href="/page/auth/register">Register</Link>
+              Dont have an account?{" "}
+              <Link href="/page/auth/register">Register</Link>
             </div>
           </form>
         </div>
       </div>
     </div>
   );
-} 
+}
