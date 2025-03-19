@@ -8,7 +8,7 @@ const destinations = [
   {
     id: 1,
     image: "/images/hagiang-home.jpg",
-    title: "Hà Giang" ,
+    title: "Hà Giang",
     location: "Vietnam",
   },
   {
@@ -19,12 +19,11 @@ const destinations = [
   },
   {
     id: 3,
-    image: "/images/Quần thể di tích cố đô Huế.jpg", 
+    image: "/images/Quần thể di tích cố đô Huế.jpg",
     title: "Huế",
     location: "Vietnam",
   },
   {
-
     id: 4,
     image: "/images/Thánh địa Mỹ Sơn.jpg",
     title: "Mỹ Sơn",
@@ -32,7 +31,7 @@ const destinations = [
   },
   {
     id: 5,
-    image: "/images/Phố cổ Hội An.jpg", 
+    image: "/images/Phố cổ Hội An.jpg",
     title: "Hội An",
     location: "Vietnam",
   },
@@ -91,51 +90,53 @@ const HomeSlider = () => {
     <div className="main-container">
       <nav className="cc">
         <div className="nav-content">
-          <div className="nav-links">
-            <Link href="/" className="nav-link active">
-              Home
-            </Link>
-            {/* <Link href="/destinations" className="nav-link">
-              Plan
-            </Link> */}
-            {/* <Link href="/honeymoon" className="nav-link">
-              Honeymoon Deals
-            </Link>
-            <Link href="/foreigner" className="nav-link">
-              Foreigner Tours
-            </Link>
-            <Link href="/car-rentals" className="nav-link">
-              Car Rentals
-            </Link> */}
-            <Link href="/page/auth/register" className="nav-link">
-              Register
-            </Link>
-            <Link href="/page/auth/login" className="nav-link">
-              Login
+          <div className="nav-brand">
+            <Link href="/">
+              <img
+                src="/images/LOGO.png"
+                alt="FinTrip Logo"
+                className="nav-logo"
+              />
             </Link>
           </div>
-          {/* <div className="auth-links">
-            <Link href="/page/auth/register" className="nav-link">
-              Register
+          <div className="nav-links">
+            <Link href="/" className="nav-link">
+              Home
             </Link>
-            <Link href="/page/auth/login" className="nav-link">
+            <Link href="/destinations" className="nav-link">
+              Destinations
+            </Link>
+            <Link href="/tours" className="nav-link">
+              Tours
+            </Link>
+            <Link href="/about" className="nav-link">
+              About Us
+            </Link>
+          </div>
+          <div className="auth-links">
+            <Link href="/page/auth/login" className="nav-link login">
               Login
             </Link>
-          </div> */}
+            <Link href="/page/auth/register" className="nav-link register">
+              Register
+            </Link>
+          </div>
         </div>
       </nav>
 
       <div className="content-wrapper">
         <div className="left-content">
-          <h1 className="main-title">World Tours</h1>
+          <h1 className="main-title">FinTrip</h1>
           <p className="description">
-            This text presents my research journey on the topic of Music and
-            Tourism Imaginaries and gives the context which led to the
-            publication of this special issue of Via Tourism Review.
+            Welcome to our smart travel platform! Discover perfect destinations,
+            optimize itineraries, get real-time weather updates, and enjoy
+            personalized recommendations. Whether you seek relaxation, culture,
+            or adventure, we make trip planning seamless and enjoyable. Start
+            your journey today!
           </p>
           <a href="http://localhost:3000/homepage">
-  <button className="see-more-btn">see more</button>
-</a>
+            <button className="see-more-btn">LET'S GO</button>
+          </a>
         </div>
 
         <div className="slider-section">

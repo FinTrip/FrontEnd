@@ -1,79 +1,68 @@
 .login-container {
   display: flex;
   min-height: 100vh;
-}
-
-.login-left {
+  }
+  .login-left {
   flex: 1;
   position: relative;
   overflow: hidden;
-}
-
-.background-image {
+  }
+  .background-image {
   object-fit: cover;
-}
-
-.logo-container {
+  }
+  .logo-container {
   position: absolute;
   top: 40px;
   left: 40px;
   z-index: 10;
-}
-
-.login-right {
+  }
+  .login-right {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px;
   background: white;
-}
-
-.login-form {
+  }
+  .login-form {
   width: 100%;
   max-width: 400px;
-}
-
-.login-form h1 {
+  }
+  .login-form h1 {
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 30px;
-}
-
-.form-group {
+  color: #000000;
+  }
+  .form-group {
   margin-bottom: 20px;
-}
-
-.form-group label {
+  }
+  .form-group label {
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
   color: #333;
-}
-
-.form-group input {
+  }
+  .form-group input {
   width: 100%;
   padding: 12px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 14px;
   background: #f8fafc;
-}
-
-.password-input {
+  }
+  .password-input {
   position: relative;
-}
-
-.password-icon {
+  }
+  .password-icon {
   position: absolute;
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #64748b;
   cursor: pointer;
-}
-
-.login-button {
+  }
+  .login-button {
   width: 100%;
   padding: 12px;
   background: #ff4d6d;
@@ -85,16 +74,15 @@
   margin-top: 20px;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-
-.login-button:hover {
+  }
+  .login-button:hover {
   background: #ff3d5d;
-}
-
-.google-button {
+  }
+  .google-button {
   width: 100%;
   padding: 12px;
   background: white;
+  color: black;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 14px;
@@ -105,25 +93,21 @@
   gap: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-
-.google-button:hover {
-  background: #f8fafc;
-}
-
-.register-link {
-  text-align: center;
-  margin-top: 24px;
-  font-size: 14px;
-  color: #64748b;
-}
-
-.register-link a {
-  color: #ff4d6d;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.register-link a:hover {
-  text-decoration: underline;
-} 
+  }
+  .google-button:hover {
+    background: #f8fafc;
+    }
+    .register-link {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 14px;
+    color: #64748b;
+    }
+    .register-link a {
+    color: #ff4d6d;
+    text-decoration: none;
+    font-weight: 500;
+    }
+    .register-link a:hover {
+    text-decoration: underline;
+    }

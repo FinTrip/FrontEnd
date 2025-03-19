@@ -1,0 +1,185 @@
+.qa-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: url("/images/welcome-page.jpg") no-repeat center center fixed;
+  background-size: cover;
+  position: relative;
+}
+
+.qa-card {
+  background: white;
+  border-radius: 25px;
+  padding: 40px 30px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+}
+
+.qa-card::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 80px;
+  background: url("/images/star-icon.png") no-repeat center center;
+  background-size: contain;
+  z-index: 2;
+}
+
+.qa-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  color: #333;
+  position: relative;
+  padding: 0 20px;
+}
+
+.qa-card h2::before,
+.qa-card h2::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: url("/images/quote-decoration.png") no-repeat;
+  background-size: contain;
+}
+
+.qa-card h2::before {
+  left: 0;
+  top: 0;
+  transform: rotate(-45deg);
+}
+
+.qa-card h2::after {
+  right: 0;
+  bottom: 0;
+  transform: rotate(135deg);
+}
+
+.qa-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 0 10px;
+}
+
+.qa-options button {
+  padding: 15px 20px;
+  border: none;
+  border-radius: 50px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.qa-options button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sparkle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: yellow;
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+  opacity: 0.6;
+}
+
+.sparkle:nth-child(1) {
+  top: -30px;
+  right: -10px;
+}
+
+.sparkle:nth-child(2) {
+  bottom: -20px;
+  left: -15px;
+}
+
+.dropdown-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.city-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.city-options button {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #fcd34d;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.city-options button.selected {
+  background: #fbbf24; /* Highlight selected */
+}
+
+.selected-cities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.city-badge {
+  background: #fcd34d;
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.remove {
+  margin-left: 5px;
+  cursor: pointer;
+  color: red;
+  font-weight: bold;
+}
+
+/* Styles for the complete button */
+.complete-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.complete-button:hover {
+  background: #2563eb;
+}
