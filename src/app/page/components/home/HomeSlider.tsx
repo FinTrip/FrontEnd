@@ -1,46 +1,40 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Link from 'next/link';
-import './slider.css';
+import Link from "next/link";
+import "./slider.css";
 
 const destinations = [
   {
     id: 1,
     image: "/images/hagiang-home.jpg",
-    title: "Ha Giang",
-    location: "Vietnam"
+    title: "Hà Giang",
+    location: "Vietnam",
   },
   {
     id: 2,
     image: "/images/phongnha-home.jpg",
     title: "Phong Nha",
-    location: "Vietnam"
+    location: "Vietnam",
   },
   {
     id: 3,
-    image: "/images/phongnha-home.jpg",
-    title: "Phu Quoc",
-    location: "Vietnam"
+    image: "/images/Quần thể di tích cố đô Huế.jpg",
+    title: "Huế",
+    location: "Vietnam",
   },
   {
     id: 4,
-    image: "/images/phongnha-home.jpg", 
-    title: "Sapa",
-    location: "Vietnam"
+    image: "/images/Thánh địa Mỹ Sơn.jpg",
+    title: "Mỹ Sơn",
+    location: "Vietnam",
   },
   {
     id: 5,
-    image: "/images/halong-home.jpg",
-    title: "Ha Long Bay",
-    location: "Vietnam"
+    image: "/images/Phố cổ Hội An.jpg",
+    title: "Hội An",
+    location: "Vietnam",
   },
-  {
-    id: 6,
-    image: "/images/phongnha-home.jpg",
-    title: "Hoi An",
-    location: "Vietnam"
-  }
 ];
 
 const HomeSlider = () => {
@@ -51,7 +45,7 @@ const HomeSlider = () => {
     const timer = setInterval(() => {
       if (!isAnimating) {
         setIsAnimating(true);
-        setCurrentSlide((prev) => 
+        setCurrentSlide((prev) =>
           prev === destinations.length - 1 ? 0 : prev + 1
         );
         setTimeout(() => setIsAnimating(false), 500);
@@ -64,7 +58,7 @@ const HomeSlider = () => {
   const nextSlide = () => {
     if (isAnimating) return;
     setIsAnimating(true);
-    setCurrentSlide((prev) => 
+    setCurrentSlide((prev) =>
       prev === destinations.length - 1 ? 0 : prev + 1
     );
     setTimeout(() => setIsAnimating(false), 500);
@@ -73,7 +67,7 @@ const HomeSlider = () => {
   const prevSlide = () => {
     if (isAnimating) return;
     setIsAnimating(true);
-    setCurrentSlide((prev) => 
+    setCurrentSlide((prev) =>
       prev === 0 ? destinations.length - 1 : prev - 1
     );
     setTimeout(() => setIsAnimating(false), 500);
@@ -82,49 +76,78 @@ const HomeSlider = () => {
   // Tính toán vị trí cho mỗi slide
   const getSlideStyle = (index: number) => {
     const rotation = index - currentSlide;
-    
+
     return {
       transform: `translateX(${rotation * 100}%)`,
-      opacity: index === currentSlide ? 1 : 0.4,
+      opacity: index === currentSlide ? 1 : 0.7,
       zIndex: index === currentSlide ? 2 : 1,
-      transition: 'all 0.6s ease'
+      transition: "all 0.6s ease",
+      filter: index === currentSlide ? "none" : "brightness(0.7)",
     };
   };
 
   return (
     <div className="main-container">
-      <nav className="navigation">
-        <div className="nav-links">
-          <Link href="/" className="nav-link active">Home</Link>
-          <Link href="/destinations" className="nav-link">Destinations</Link>
-          <Link href="/honeymoon" className="nav-link">Honeymoon Deals</Link>
-          <Link href="/foreigner" className="nav-link">Foreigner Tours</Link>
-          <Link href="/car-rentals" className="nav-link">Car Rentals</Link>
-          <Link href="/page/auth/register" className="nav-link">Register</Link>
-          <Link href="/page/auth/login" className="nav-link">Login</Link>
+      <nav className="cc">
+        <div className="nav-content">
+          <div className="nav-brand">
+            <Link href="/">
+              <img
+                src="/images/LOGO.png"
+                alt="FinTrip Logo"
+                className="nav-logo"
+              />
+            </Link>
+          </div>
+          <div className="nav-links">
+            <Link href="/" className="nav-link">
+              Home
+            </Link>
+            <Link href="/destinations" className="nav-link">
+              Destinations
+            </Link>
+            <Link href="/tours" className="nav-link">
+              Tours
+            </Link>
+            <Link href="/about" className="nav-link">
+              About Us
+            </Link>
+          </div>
+          <div className="auth-links">
+            <Link href="/page/auth/login" className="nav-link login">
+              Login
+            </Link>
+            <Link href="/page/auth/register" className="nav-link register">
+              Register
+            </Link>
+          </div>
         </div>
       </nav>
 
       <div className="content-wrapper">
         <div className="left-content">
-          <h1 className="main-title">World Tours</h1>
+          <h1 className="main-title">FinTrip</h1>
           <p className="description">
-            This text presents my research journey on the topic of Music and Tourism 
-            Imaginaries and gives the context which led to the publication of this special 
-            issue of Via Tourism Review.
+            Welcome to our smart travel platform! Discover perfect destinations,
+            optimize itineraries, get real-time weather updates, and enjoy
+            personalized recommendations. Whether you seek relaxation, culture,
+            or adventure, we make trip planning seamless and enjoyable. Start
+            your journey today!
           </p>
-          <button className="see-more-btn">
-            see more
-          </button>
+          <a href="http://localhost:3000/homepage">
+            <button className="see-more-btn">LET'S GO</button>
+          </a>
         </div>
 
         <div className="slider-section">
           <div className="slider-container">
             <div className="slides-wrapper">
               {destinations.map((dest, index) => (
-                <div 
+                <div
                   key={dest.id}
-                  className={`slide-card ${index === currentSlide ? 'active' : ''}`}
+                  className={`slide-card ${
+                    index === currentSlide ? "active" : ""
+                  }`}
                   style={getSlideStyle(index)}
                 >
                   <img
@@ -132,23 +155,27 @@ const HomeSlider = () => {
                     alt={dest.title}
                     className="card-image"
                   />
-                  <div className="location-label">{dest.location}</div>
+                  <div className="location-label">
+                    {dest.title}
+                    <br />
+                    {dest.location}
+                  </div>
                 </div>
               ))}
             </div>
 
-            <button 
+            <button
               onClick={prevSlide}
               className="nav-button prev"
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
               disabled={isAnimating || currentSlide === 0}
             >
               <ChevronLeft className="nav-icon" />
             </button>
-            <button 
+            <button
               onClick={nextSlide}
               className="nav-button next"
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
               disabled={isAnimating || currentSlide === destinations.length - 1}
             >
               <ChevronRight className="nav-icon" />
@@ -160,4 +187,4 @@ const HomeSlider = () => {
   );
 };
 
-export default HomeSlider; 
+export default HomeSlider;
