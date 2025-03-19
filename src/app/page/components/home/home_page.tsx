@@ -159,6 +159,10 @@ const HomePage = ({
   const [selectedCategory, setSelectedCategory] = useState("Tất cả địa điểm");
   const [filteredDestinations, setFilteredDestinations] =
     useState(destinations);
+  const [departureInput, setDepartureInput] = useState("");
+  const [destinationInput, setDestinationInput] = useState("");
+  const [showDepartureDropdown, setShowDepartureDropdown] = useState(false);
+  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
 
   const categories = [
     "Tất cả địa điểm",
@@ -166,6 +170,72 @@ const HomePage = ({
     "Huế",
     "Nha Trang",
     "Hà Nội",
+  ];
+
+  const vietnamProvinces = [
+    "An Giang",
+    "Bà Rịa - Vũng Tàu",
+    "Bắc Giang",
+    "Bắc Kạn",
+    "Bạc Liêu",
+    "Bắc Ninh",
+    "Bến Tre",
+    "Bình Định",
+    "Bình Dương",
+    "Bình Phước",
+    "Bình Thuận",
+    "Cà Mau",
+    "Cần Thơ",
+    "Cao Bằng",
+    "Đà Nẵng",
+    "Đắk Lắk",
+    "Đắk Nông",
+    "Điện Biên",
+    "Đồng Nai",
+    "Đồng Tháp",
+    "Gia Lai",
+    "Hà Giang",
+    "Hà Nam",
+    "Hà Nội",
+    "Hà Tĩnh",
+    "Hải Dương",
+    "Hải Phòng",
+    "Hậu Giang",
+    "Hòa Bình",
+    "Hưng Yên",
+    "Khánh Hòa",
+    "Kiên Giang",
+    "Kon Tum",
+    "Lai Châu",
+    "Lâm Đồng",
+    "Lạng Sơn",
+    "Lào Cai",
+    "Long An",
+    "Nam Định",
+    "Nghệ An",
+    "Ninh Bình",
+    "Ninh Thuận",
+    "Phú Thọ",
+    "Phú Yên",
+    "Quảng Bình",
+    "Quảng Nam",
+    "Quảng Ngãi",
+    "Quảng Ninh",
+    "Quảng Trị",
+    "Sóc Trăng",
+    "Sơn La",
+    "Tây Ninh",
+    "Thái Bình",
+    "Thái Nguyên",
+    "Thanh Hóa",
+    "Thừa Thiên Huế",
+    "Tiền Giang",
+    "TP Hồ Chí Minh",
+    "Trà Vinh",
+    "Tuyên Quang",
+    "Vĩnh Long",
+    "Vĩnh Phúc",
+    "Yên Bái",
   ];
 
   const toggleCategoryDropdown = () => {
@@ -239,15 +309,120 @@ const HomePage = ({
     setSelectedHotel(null);
   };
 
+  const handleDepartureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDepartureInput(e.target.value);
+    setShowDepartureDropdown(true);
+  };
+
+  const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDestinationInput(e.target.value);
+    setShowDestinationDropdown(true);
+  };
+
+  const handleProvinceSelect = (
+    province: string,
+    type: "departure" | "destination"
+  ) => {
+    if (type === "departure") {
+      setDepartureInput(province);
+      setShowDepartureDropdown(false);
+    } else {
+      setDestinationInput(province);
+      setShowDestinationDropdown(false);
+    }
+  };
+
   return (
     <div className="home-container">
       <header className="hero-section">
         <h1>Smart planning – Easy success...</h1>
-        <div className="search-bar">
-          <input type="text" placeholder="Search destinations..." />
-          <button>Search</button>
-        </div>
+        <div className="search-section"></div>
       </header>
+      <div className="flight-search-container">
+        <div className="flight-search-input">
+          <div className="input-group">
+            <span className="input-icon">✈️</span>
+            <div className="input-wrapper">
+              <label>Điểm khởi hành</label>
+              <input
+                type="text"
+                value={departureInput}
+                onChange={handleDepartureChange}
+                placeholder="Điểm khởi hành"
+                onFocus={() => setShowDepartureDropdown(true)}
+              />
+              {showDepartureDropdown && (
+                <div className="province-dropdown">
+                  {vietnamProvinces
+                    .filter((province) =>
+                      province
+                        .toLowerCase()
+                        .includes(departureInput.toLowerCase())
+                    )
+                    .map((province, index) => (
+                      <div
+                        key={index}
+                        className="province-item"
+                        onClick={() =>
+                          handleProvinceSelect(province, "departure")
+                        }
+                      >
+                        {province}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="direction-icon">↔️</div>
+
+          <div className="input-group">
+            <span className="input-icon">🏁</span>
+            <div className="input-wrapper">
+              <label>Điểm đến</label>
+              <input
+                type="text"
+                value={destinationInput}
+                onChange={handleDestinationChange}
+                placeholder="Điểm đến"
+                onFocus={() => setShowDestinationDropdown(true)}
+              />
+              {showDestinationDropdown && (
+                <div className="province-dropdown">
+                  {vietnamProvinces
+                    .filter((province) =>
+                      province
+                        .toLowerCase()
+                        .includes(destinationInput.toLowerCase())
+                    )
+                    .map((province, index) => (
+                      <div
+                        key={index}
+                        className="province-item"
+                        onClick={() =>
+                          handleProvinceSelect(province, "destination")
+                        }
+                      >
+                        {province}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="input-group">
+            <span className="input-icon">📅</span>
+            <div className="input-wrapper">
+              <label>Ngày về</label>
+              <input type="date" />
+            </div>
+          </div>
+        </div>
+
+        <button className="search-flight-btn">Tìm chuyến bay</button>
+      </div>
 
       <section className="top-categories">
         <h2>Top Categories</h2>
@@ -278,7 +453,7 @@ const HomePage = ({
       </section>
 
       <section className="destinations-section">
-        <h2>Popular Destinations</h2>
+        <h2>Điểm Đến Được Yêu Thích Nhất</h2>
         <div className="destinations-grid">
           {filteredDestinations.map((dest) => (
             <div
@@ -358,7 +533,7 @@ const HomePage = ({
       )}
 
       <section className="recently-viewed">
-        <h2>Recently Viewed</h2>
+        <h2>Top Địa Điểm Du Lịch Hấp Dẫn</h2>
         <div className="destinations-grid">
           {filteredDestinations.slice(0, 3).map((dest) => (
             <div key={dest.id} className="destination-card">
@@ -396,7 +571,7 @@ const HomePage = ({
       </section>
 
       <section className="packages-section">
-        <h2>All Inclusive Packages!</h2>
+        <h2>Những Thành Phố Không Thể Bỏ Lỡ!</h2>
         <div className="destinations-grid">
           {filteredDestinations.map((dest) => (
             <div key={dest.id} className="destination-card">
@@ -433,7 +608,7 @@ const HomePage = ({
         </div>
       </section>
 
-      <section className="honeymoon-section">
+      {/* <section className="honeymoon-section">
         <h2>Honeymoon Packages Special!</h2>
         <div className="destinations-grid">
           {filteredDestinations.map((dest) => (
@@ -469,7 +644,7 @@ const HomePage = ({
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       <section className="hotels-section">
         <h2>Recommended Hotels</h2>
@@ -637,11 +812,11 @@ const HomePage = ({
 
       {/* {isHomePage && (
       )} */}
-        <Link href="/Q&A">
-          <div className="fixed-logo">
-            <img src="/images/LOGO.png" alt="Website Logo" />
-          </div>
-        </Link>
+      <Link href="/Q&A">
+        <div className="fixed-logo">
+          <img src="/images/LOGO.png" alt="Website Logo" />
+        </div>
+      </Link>
     </div>
   );
 };
