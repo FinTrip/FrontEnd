@@ -1,8 +1,29 @@
 .plan-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  min-height: 100vh;
   padding: 20px;
-  background-color: #f5f5f5;
+  position: relative;
+  background-image: url('/images/welcome-page1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.plan-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background: rgba(0, 0, 0, 0.4); */
+  backdrop-filter: blur(8px);
+  z-index: 1;
+}
+
+.plan-wrapper {
+  position: relative;
+  z-index: 2;
 }
 
 .plan-header {
@@ -48,14 +69,16 @@
 }
 
 .scroll-container {
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  scroll-behavior: smooth;
-  position: relative;
+  display: flex;
+  gap: 24px;
+  padding: 20px;
   overflow-x: auto;
-  white-space: nowrap;
-  will-change: transform;
+  align-items: flex-start;
+  min-height: calc(100vh - 200px);
+  scroll-behavior: smooth;
+  padding-bottom: 40px;
+  position: relative;
+  z-index: 2;
 }
 
 .scroll-container::-webkit-scrollbar {
@@ -75,21 +98,97 @@
 }
 
 .day-card {
-  background: white;
-  border-radius: 15px;
+  flex: 0 0 380px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
   padding: 20px;
-  min-width: 320px; /* Fixed width for consistent scrolling */
-  flex-shrink: 0; /* Prevent cards from shrinking */
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 700px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
 }
 
 .day-header {
   margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
 }
 
-.day-header h3 {
-  color: #333;
+.day-header h2 {
+  font-size: 1.25rem;
+  color: #2d3748;
   margin: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-header h2::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 24px;
+  background: #3b82f6;
+  border-radius: 2px;
+}
+
+.timeline {
+  position: absolute;
+  left: 32px;
+  top: 100px;
+  bottom: 80px;
+  width: 2px;
+  background: linear-gradient(to bottom, #e2e8f0 50%, transparent 50%);
+  background-size: 2px 20px;
+  z-index: 1;
+}
+
+.timeline-icon {
+  position: absolute;
+  left: -14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.activities-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-left: 48px;
+  padding-right: 10px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.activities-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.activities-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.activities-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.activities-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .activity-card {
@@ -107,26 +206,33 @@
 }
 
 .activity-content {
-  flex: 1;
+  padding: 16px;
 }
 
-.activity-content h4 {
-  margin: 0 0 5px 0;
-  color: #333;
+.activity-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
 }
 
-.activity-content p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
+.activity-description {
+  font-size: 0.95rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 12px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.activity-content img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-top: 10px;
+.activity-location {
+  font-size: 0.9rem;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .more-options {
@@ -172,21 +278,68 @@
   position: relative;
 }
 
+.activity-card-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.activity-card-inner {
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
 .draggable-activity {
-  cursor: grab;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transform-style: preserve-3d;
 }
 
-.draggable-activity:active {
-  cursor: grabbing;
+.draggable-activity:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-.draggable-activity.dragging {
-  opacity: 0.6;
-  transform: scale(0.95);
-  cursor: grabbing;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+.delete-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.draggable-activity:hover .delete-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.delete-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: translateY(0) scale(1.1);
+}
+
+.delete-btn svg {
+  width: 16px;
+  height: 16px;
+  transition: all 0.3s ease;
 }
 
 .drop-indicator {
@@ -209,24 +362,13 @@
   margin: 10px 0;
 }
 
-.draggable-activity {
-  background-color: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
 .draggable-activity:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .draggable-activity .relative {
-  position: relative;
-  height: 200px;
-  width: 100%;
+  height: 180px;
 }
 
 .draggable-activity .relative img {
@@ -426,7 +568,7 @@
 
 /* Điều chỉnh styles cho HomePage trong slide panel */
 .slide-panel .home-container {
-  padding-top: 60px; /* Để tránh bị che bởi nút close */
+  padding-top: 60px;
   max-width: 100%;
 }
 
@@ -550,6 +692,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 1100;
   animation: slideIn 0.3s ease, slideOut 0.3s ease 1.7s forwards;
+  font-weight: 500;
 }
 
 @keyframes slideIn {
@@ -576,22 +719,69 @@
 
 /* Styles cho modal */
 .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
   animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  max-width: 400px;
+  width: 90%;
   animation: slideUp 0.3s ease;
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+.modal-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.modal-content p {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.modal-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.cancel-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.confirm-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background-color: #dc2626;
 }
 
 /* Styles cho text truncation */
@@ -691,22 +881,66 @@
 
 /* Styles cho confirmation modal */
 .confirmation-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
   animation: fadeIn 0.2s ease;
 }
 
 .confirmation-modal .modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  max-width: 400px;
+  width: 90%;
   animation: scaleIn 0.2s ease;
 }
 
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+.confirmation-modal .modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.confirmation-modal .modal-message {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.confirmation-modal .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.confirmation-modal button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.confirmation-modal .cancel-btn {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.confirmation-modal .cancel-btn:hover {
+  background: #e5e7eb;
+}
+
+.confirmation-modal .confirm-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.confirmation-modal .confirm-btn:hover {
+  background: #dc2626;
 }
 
 /* Hover effect cho delete button container */
@@ -760,11 +994,11 @@
   transition: all 0.3s ease;
   z-index: 10;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  opacity: 1; /* Changed from 0 to 1 to always show */
+  opacity: 1;
 }
 
 .destination-card:hover .add-to-plan-btn {
-  transform: scale(1.1); /* Changed from opacity to transform */
+  transform: scale(1.1);
 }
 
 .add-to-plan-btn:hover {
@@ -775,7 +1009,7 @@
 .add-to-plan-btn svg {
   width: 14px;
   height: 14px;
-  color: white; /* Changed to white for better visibility */
+  color: white;
 }
 
 /* Style cho add button trong slide panel */
@@ -786,39 +1020,343 @@
 
 .test_title {
   text-align: center;
-
-  font-family: "Avant Garde", Avantgarde, "Century Gothic", CenturyGothic,
-    "AppleGothic", sans-serif;
-
+  font-family: "Avant Garde", Avantgarde, "Century Gothic", CenturyGothic, "AppleGothic", sans-serif;
   font-size: 50px;
-
   height: 100px;
-
   padding-top: 40px;
-
-  color: #e0dfdc;
-
-  /* background-color: #333; */
-
+  color: white;
   letter-spacing: 0.1em;
-
-  text-shadow: 0 -1px 0 #fff, 0 1px 0 #2e2e2e, 0 2px 0 #2c2c2c, 0 3px 0 #2a2a2a,
-    0 4px 0 #282828, 0 5px 0 #262626, 0 6px 0 #242424, 0 7px 0 #222,
-    0 8px 0 #202020, 0 9px 0 #1e1e1e, 0 10px 0 #1c1c1c, 0 11px 0 #1a1a1a,
-    0 12px 0 #181818, 0 13px 0 #161616, 0 14px 0 #141414, 0 15px 0 #121212,
-    0 22px 30px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 2;
 }
 
 .test_text {
   text-align: center;
-  font-family: "Avant Garde", Avantgarde, "Century Gothic", CenturyGothic,
-    "AppleGothic", sans-serif;
+  font-family: "Avant Garde", Avantgarde, "Century Gothic", CenturyGothic, "AppleGothic", sans-serif;
   font-size: 20px;
   font-weight: 800;
-  color: #f8e961;
+  color: rgba(255, 255, 255, 0.9);
   letter-spacing: 0.05em;
+  position: relative;
+  z-index: 2;
 }
 
 .test_card {
   border: 0.8mm ridge rgba(14, 14, 14, 0.6);
+}
+
+.day-footer {
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.add-activities-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-activities-btn:hover {
+  background: #2563eb;
+}
+
+.main-add-activities {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  z-index: 100;
+}
+
+.main-add-activities button {
+  padding: 16px 32px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.main-add-activities button:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Thêm/cập nhật styles cho activity icon */
+.activity-icon-container {
+  position: absolute;
+  left: -40px;
+  top: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  border: 2px solid white;
+}
+
+/* Style cho từng loại icon */
+.icon-transport {
+  background: #ebf5ff;
+  color: #2563eb;
+}
+
+.icon-food {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.icon-place {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.icon-service {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.day-card-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.add-activity-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.add-activity-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.add-activity-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Success and Error Notifications */
+.success-notification,
+.error-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1100;
+  font-weight: 500;
+  animation: slideIn 0.3s ease, slideOut 0.3s ease 1.7s forwards;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success-notification {
+  background: #10b981;
+  color: white;
+}
+
+.error-notification {
+  background: #ef4444;
+  color: white;
+}
+
+/* Improved Drag and Drop Styles */
+.draggable-activity {
+  cursor: grab;
+  user-select: none;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.draggable-activity.dragging {
+  opacity: 0.6;
+  transform: scale(0.95);
+  cursor: grabbing !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.draggable-activity.drag-over {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+  border: 2px dashed #3b82f6;
+}
+
+/* Drop Zone Indicator */
+.drop-zone {
+  height: 2px;
+  background: transparent;
+  margin: 8px 0;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.drop-zone.active {
+  height: 60px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px dashed #3b82f6;
+}
+
+/* Activity Detail Modal */
+.activity-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.activity-detail-content {
+  background: white;
+  border-radius: 1rem;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+.activity-detail-header {
+  position: relative;
+  height: 300px;
+}
+
+.activity-detail-header img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.activity-detail-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.activity-detail-close:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+.activity-detail-body {
+  padding: 1.5rem;
+}
+
+.activity-detail-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.activity-detail-location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.activity-detail-description {
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.activity-detail-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Cursor styles during drag */
+.dragging * {
+  cursor: grabbing !important;
+}
+
+body.dragging {
+  cursor: grabbing !important;
+}
+
+/* Prevent text selection during drag */
+.draggable-activity * {
+  user-select: none;
 }
