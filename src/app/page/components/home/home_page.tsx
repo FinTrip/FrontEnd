@@ -1,9 +1,18 @@
 "use client";
-import React, { useState, DragEvent } from "react";
+import React, {
+  useState,
+  DragEvent,
+  useEffect,
+  useTransition,
+  useDeferredValue,
+  ElementType,
+} from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import "./home_page.css";
-import { FaPlus, FaChevronDown } from "react-icons/fa";
+import { FaPlus, FaChevronDown, FaMapMarkerAlt, FaSearch } from "react-icons/fa";
+import { animated, useSpring } from "@react-spring/web";
+import { motion } from "framer-motion";
 
 const destinations = [
   {
@@ -85,60 +94,210 @@ export interface HotelCard {
 }
 
 // Thêm data hotels
-const hotels = [
-  {
-    id: 1,
-    name: "Melia Vinpearl Đà Nẵng",
-    link: "https://example.com/hotel1",
-    description:
-      "Khách sạn 5 sao sang trọng với tầm nhìn ra biển, cung cấp dịch vụ spa cao cấp và nhiều tiện nghi giải trí.",
-    price: "2,500,000 VND",
-    name_nearby_place: "Bãi biển Mỹ Khê",
-    hotel_class: "5 sao",
-    img_origin: "/images/melia-vinpearl.jpg",
-    location_rating: 4.8,
-    amenities: ["Hồ bơi", "Spa", "Nhà hàng", "Phòng gym", "Bar"],
-  },
-  {
-    id: 2,
-    name: "Novotel Huế",
-    link: "/images/NovotelHuế.jpg",
-    description:
-      "Tọa lạc bên sông Hương thơ mộng, khách sạn cung cấp không gian nghỉ dưỡng yên tĩnh và sang trọng.",
-    price: "1,800,000 VND",
-    name_nearby_place: "Cầu Trường Tiền",
-    hotel_class: "4 sao",
-    img_origin: "/images/NovotelHuế.jpg",
-    location_rating: 4.6,
-    amenities: ["Wifi miễn phí", "Nhà hàng", "Phòng họp", "Dịch vụ đưa đón"],
-  },
-  {
-    id: 3,
-    name: "Sheraton Grand Đà Nẵng",
-    link: "https://example.com/hotel3",
-    description:
-      "Resort sang trọng với kiến trúc hiện đại, cung cấp dịch vụ đẳng cấp 5 sao và tầm nhìn tuyệt đẹp ra biển.",
-    price: "3,200,000 VND",
-    name_nearby_place: "Cầu Rồng",
-    hotel_class: "5 sao",
-    img_origin: "/images/sheraton-danang.jpg",
-    location_rating: 4.9,
-    amenities: ["Bãi biển riêng", "Spa", "Nhà hàng", "Bar", "Hồ bơi vô cực"],
-  },
-  {
-    id: 4,
-    name: "La Residence Huế",
-    link: "https://example.com/hotel4",
-    description:
-      "Khách sạn boutique với phong cách Art Deco độc đáo, mang đến trải nghiệm lưu trú đẳng cấp tại cố đô.",
-    price: "2,800,000 VND",
-    name_nearby_place: "Đại Nội Huế",
-    hotel_class: "5 sao",
-    img_origin: "/images/la-residence-hue.jpg",
-    location_rating: 4.7,
-    amenities: ["Nhà hàng Pháp", "Spa", "Hồ bơi", "Bar", "Dịch vụ xe đạp"],
-  },
-];
+// const hotels = [
+//   {
+//     id: 1,
+//     name: "Melia Vinpearl Đà Nẵng",
+//     link: "https://example.com/hotel1",
+//     description:
+//       "Khách sạn 5 sao sang trọng với tầm nhìn ra biển, cung cấp dịch vụ spa cao cấp và nhiều tiện nghi giải trí.",
+//     price: "2,500,000 VND",
+//     name_nearby_place: "Bãi biển Mỹ Khê",
+//     hotel_class: "5 sao",
+//     img_origin: "/images/melia-vinpearl.jpg",
+//     location_rating: 4.8,
+//     amenities: ["Hồ bơi", "Spa", "Nhà hàng", "Phòng gym", "Bar"],
+//   },
+//   {
+//     id: 2,
+//     name: "Novotel Huế",
+//     link: "/images/NovotelHuế.jpg",
+//     description:
+//       "Tọa lạc bên sông Hương thơ mộng, khách sạn cung cấp không gian nghỉ dưỡng yên tĩnh và sang trọng.",
+//     price: "1,800,000 VND",
+//     name_nearby_place: "Cầu Trường Tiền",
+//     hotel_class: "4 sao",
+//     img_origin: "/images/NovotelHuế.jpg",
+//     location_rating: 4.6,
+//     amenities: ["Wifi miễn phí", "Nhà hàng", "Phòng họp", "Dịch vụ đưa đón"],
+//   },
+//   {
+//     id: 3,
+//     name: "Sheraton Grand Đà Nẵng",
+//     link: "https://example.com/hotel3",
+//     description:
+//       "Resort sang trọng với kiến trúc hiện đại, cung cấp dịch vụ đẳng cấp 5 sao và tầm nhìn tuyệt đẹp ra biển.",
+//     price: "3,200,000 VND",
+//     name_nearby_place: "Cầu Rồng",
+//     hotel_class: "5 sao",
+//     img_origin: "/images/sheraton-danang.jpg",
+//     location_rating: 4.9,
+//     amenities: ["Bãi biển riêng", "Spa", "Nhà hàng", "Bar", "Hồ bơi vô cực"],
+//   },
+//   {
+//     id: 4,
+//     name: "La Residence Huế",
+//     link: "https://example.com/hotel4",
+//     description:
+//       "Khách sạn boutique với phong cách Art Deco độc đáo, mang đến trải nghiệm lưu trú đẳng cấp tại cố đô.",
+//     price: "2,800,000 VND",
+//     name_nearby_place: "Đại Nội Huế",
+//     hotel_class: "5 sao",
+//     img_origin: "/images/la-residence-hue.jpg",
+//     location_rating: 4.7,
+//     amenities: ["Nhà hàng Pháp", "Spa", "Hồ bơi", "Bar", "Dịch vụ xe đạp"],
+//   },
+// ];
+
+// Thêm component mới để tạo text animation
+const AnimatedText = ({ text }: { text: string }) => {
+  const springs = useSpring({
+    from: { opacity: 0, y: 20 },
+    to: { opacity: 1, y: 0 },
+    config: { tension: 300, friction: 10 },
+    reset: true,
+    loop: true,
+  });
+
+  const AnimatedDiv = animated.div as ElementType;
+
+  return (
+    <div className="search-btn-text">
+      <AnimatedDiv
+        style={{
+          transform: springs.y.to((y) => `translateY(${y}px)`),
+          opacity: springs.opacity,
+        }}
+      >
+        {text.split("").map((char, index) => (
+          <span key={index} style={{ animationDelay: `${index * 0.1}s` }}>
+            {char}
+          </span>
+        ))}
+      </AnimatedDiv>
+    </div>
+  );
+};
+
+// Add interface for SquishySearchCard props
+interface SquishySearchCardProps {
+  showSearchCard: boolean;
+  onClose: () => void;
+  selectedLocation: string;
+  onLocationChange: (value: string) => void;
+  onConfirm: () => void;
+  vietnamProvinces: string[];
+}
+
+const SquishySearchCard = ({ 
+  showSearchCard, 
+  onClose, 
+  selectedLocation, 
+  onLocationChange, 
+  onConfirm,
+  vietnamProvinces 
+}: SquishySearchCardProps) => {
+  return (
+    <motion.div
+      className={`search-card ${showSearchCard ? "active" : ""}`}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ 
+        opacity: showSearchCard ? 1 : 0,
+        scale: showSearchCard ? 1 : 0.8
+      }}
+      transition={{
+        duration: 0.3,
+        ease: "easeOut"
+      }}
+    >
+      <div className="search-card-content">
+        <motion.span
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="search-card-title"
+        >
+          Tìm nơi bạn dự định sẽ đến
+        </motion.span>
+
+        <motion.div 
+          className="location-dropdown"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <select
+            value={selectedLocation}
+            onChange={(e) => onLocationChange(e.target.value)}
+          >
+            <option value="">Chọn tỉnh thành</option>
+            {vietnamProvinces.map((province: string, index: number) => (
+              <option key={index} value={province}>
+                {province}
+              </option>
+            ))}
+          </select>
+        </motion.div>
+
+        <motion.div 
+          className="search-card-buttons"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <motion.button
+            className="search-card-btn cancel"
+            onClick={onClose}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Hủy
+          </motion.button>
+          <motion.button
+            className="search-card-btn confirm"
+            onClick={onConfirm}
+            disabled={!selectedLocation}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            OK
+          </motion.button>
+        </motion.div>
+      </div>
+      <Background />
+    </motion.div>
+  );
+};
+
+const Background = () => {
+  return (
+    <motion.svg
+      width="320"
+      height="384"
+      viewBox="0 0 320 384"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="absolute inset-0 z-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 0.1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.circle
+        cx="160.5"
+        cy="114.5"
+        r="101.5"
+        fill="#262626"
+      />
+      <motion.ellipse
+        cx="160.5"
+        cy="265.5"
+        rx="101.5"
+        ry="43.5"
+        fill="#262626"
+      />
+    </motion.svg>
+  );
+};
 
 const HomePage = ({
   isInPlan = false,
@@ -163,6 +322,14 @@ const HomePage = ({
   const [destinationInput, setDestinationInput] = useState("");
   const [showDepartureDropdown, setShowDepartureDropdown] = useState(false);
   const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
+  const [showSearchCard, setShowSearchCard] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("");
+
+  // Sử dụng useTransition cho animation
+  const [isPending, startTransition] = useTransition();
+
+  // Tối ưu cho search và filter
+  const deferredLocation = useDeferredValue(selectedLocation);
 
   const categories = [
     "Tất cả địa điểm",
@@ -332,125 +499,92 @@ const HomePage = ({
     }
   };
 
+  const handleSearchButtonClick = () => {
+    setShowSearchCard(true);
+  };
+
+  const handleCloseSearchCard = () => {
+    setShowSearchCard(false);
+    setSelectedLocation("");
+  };
+
+  const handleConfirmLocation = () => {
+    if (selectedLocation) {
+      // Wrap trong startTransition để animation mượt hơn
+      startTransition(() => {
+        handleCategorySelect(selectedLocation);
+        setShowSearchCard(false);
+      });
+    }
+  };
+
+  // Sử dụng deferredLocation để tối ưu hiệu suất
+  useEffect(() => {
+    if (deferredLocation) {
+      const filtered = destinations.filter(
+        (dest) => dest.location === deferredLocation
+      );
+      setFilteredDestinations(filtered);
+    }
+  }, [deferredLocation]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const locationParam = searchParams.get("location");
+
+    if (locationParam) {
+      handleCategorySelect(locationParam);
+    }
+  }, []);
+
+  const buttonSpring = useSpring({
+    from: { scale: 1 },
+    to: [{ scale: 1.1 }, { scale: 1 }],
+    config: { tension: 300, friction: 10 },
+    loop: true,
+  });
+
+  const AnimatedDiv = animated.div as ElementType;
+
   return (
     <div className="home-container">
       <header className="hero-section">
-        <h1>Smart planning – Easy success...</h1>
-        <div className="search-section"></div>
-      </header>
-      <div className="flight-search-container">
-        <div className="flight-search-input">
-          <div className="input-group">
-            <span className="input-icon">✈️</span>
-            <div className="input-wrapper">
-              <label>Điểm khởi hành</label>
-              <input
-                type="text"
-                value={departureInput}
-                onChange={handleDepartureChange}
-                placeholder="Điểm khởi hành"
-                onFocus={() => setShowDepartureDropdown(true)}
-              />
-              {showDepartureDropdown && (
-                <div className="province-dropdown">
-                  {vietnamProvinces
-                    .filter((province) =>
-                      province
-                        .toLowerCase()
-                        .includes(departureInput.toLowerCase())
-                    )
-                    .map((province, index) => (
-                      <div
-                        key={index}
-                        className="province-item"
-                        onClick={() =>
-                          handleProvinceSelect(province, "departure")
-                        }
-                      >
-                        {province}
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="direction-icon">↔️</div>
-
-          <div className="input-group">
-            <span className="input-icon">🏁</span>
-            <div className="input-wrapper">
-              <label>Điểm đến</label>
-              <input
-                type="text"
-                value={destinationInput}
-                onChange={handleDestinationChange}
-                placeholder="Điểm đến"
-                onFocus={() => setShowDestinationDropdown(true)}
-              />
-              {showDestinationDropdown && (
-                <div className="province-dropdown">
-                  {vietnamProvinces
-                    .filter((province) =>
-                      province
-                        .toLowerCase()
-                        .includes(destinationInput.toLowerCase())
-                    )
-                    .map((province, index) => (
-                      <div
-                        key={index}
-                        className="province-item"
-                        onClick={() =>
-                          handleProvinceSelect(province, "destination")
-                        }
-                      >
-                        {province}
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="input-group">
-            <span className="input-icon">📅</span>
-            <div className="input-wrapper">
-              <label>Ngày về</label>
-              <input type="date" />
-            </div>
+        <h1>The whole world awaits.</h1>
+        <div className="search-section">
+          <div className="search-bar">
+            <FaSearch className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search destinations, hotels, activities..." 
+              onChange={(e) => {
+                // Handle search input
+                console.log(e.target.value);
+              }}
+            />
           </div>
         </div>
+      </header>
 
-        <button className="search-flight-btn">Tìm chuyến bay</button>
+      <div className="search-location-btn" onClick={handleSearchButtonClick}>
+        <FaMapMarkerAlt />
+      </div>
+      <div className="search-btn-text">
+        Bạn chưa biết phải đi đâu?
       </div>
 
-      <section className="top-categories">
-        <h2>Top Categories</h2>
-        <div
-          className={`category-dropdown ${
-            isCategoryDropdownOpen ? "active" : ""
-          }`}
-        >
-          <div
-            className="category-dropdown-header"
-            onClick={toggleCategoryDropdown}
-          >
-            <span>{selectedCategory}</span>
-            <FaChevronDown />
-          </div>
-          <div className="category-list">
-            {categories.map((category, index) => (
-              <div
-                key={index}
-                className="category-item"
-                onClick={() => handleCategorySelect(category)}
-              >
-                {category}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <div
+        className={`overlay ${showSearchCard ? "active" : ""}`}
+        onClick={handleCloseSearchCard}
+      />
+
+      <SquishySearchCard
+        showSearchCard={showSearchCard}
+        onClose={handleCloseSearchCard}
+        selectedLocation={selectedLocation}
+        onLocationChange={(value) => setSelectedLocation(value)}
+        onConfirm={handleConfirmLocation}
+        vietnamProvinces={vietnamProvinces}
+      />
 
       <section className="destinations-section">
         <h2>Điểm Đến Được Yêu Thích Nhất</h2>
@@ -609,89 +743,89 @@ const HomePage = ({
       </section>
 
       {/* <section className="honeymoon-section">
-        <h2>Honeymoon Packages Special!</h2>
-        <div className="destinations-grid">
-          {filteredDestinations.map((dest) => (
-            <div key={dest.id} className="destination-card">
-              <div className="relative">
-                <img src={dest.image} alt={dest.title} />
-                <button
-                  className="add-to-plan-btn"
-                  onClick={(e) => handleAddToPlan(dest, e)}
-                  aria-label="Add to plan"
-                >
-                  <FaPlus />
-                </button>
-              </div>
-              <div
-                className="card-content"
-                onClick={() => handleCardClick(dest)}
-              >
-                <h3>{dest.title}</h3>
-                <div className="card-details">
-                  <span className="rating">★ {dest.rating}</span>
-                  <div className="trip-info">
-                    <h1>{dest.location}</h1>
-                    <span>
-                      Mô tả:{" "}
-                      {dest.description.length > 100
-                        ? dest.description.substring(0, 100) + "..."
-                        : dest.description}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section> */}
-
-      <section className="hotels-section">
-        <h2>Recommended Hotels</h2>
-        <div className="destinations-grid">
-          {hotels.map((hotel) => (
-            <div
-              key={hotel.id}
-              className="destination-card hotel-card"
-              onClick={() => handleHotelClick(hotel)}
-            >
-              <div className="relative">
-                <img src={hotel.img_origin} alt={hotel.name} />
-                {isInPlan && (
+          <h2>Honeymoon Packages Special!</h2>
+          <div className="destinations-grid">
+            {filteredDestinations.map((dest) => (
+              <div key={dest.id} className="destination-card">
+                <div className="relative">
+                  <img src={dest.image} alt={dest.title} />
                   <button
                     className="add-to-plan-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Handle adding hotel to plan
-                    }}
+                    onClick={(e) => handleAddToPlan(dest, e)}
                     aria-label="Add to plan"
                   >
                     <FaPlus />
                   </button>
-                )}
-              </div>
-              <div className="card-content">
-                <h3>{hotel.name}</h3>
-                <div className="card-details">
-                  <div className="hotel-info">
-                    <span className="hotel-class">{hotel.hotel_class}</span>
-                    <span className="rating">★ {hotel.location_rating}</span>
-                  </div>
-                  <div className="trip-info">
-                    <h1>{hotel.name_nearby_place}</h1>
-                    <span className="price">{hotel.price}/đêm</span>
-                    <span className="description">
-                      {hotel.description.length > 100
-                        ? hotel.description.substring(0, 100) + "..."
-                        : hotel.description}
-                    </span>
+                </div>
+                <div
+                  className="card-content"
+                  onClick={() => handleCardClick(dest)}
+                >
+                  <h3>{dest.title}</h3>
+                  <div className="card-details">
+                    <span className="rating">★ {dest.rating}</span>
+                    <div className="trip-info">
+                      <h1>{dest.location}</h1>
+                      <span>
+                        Mô tả:{" "}
+                        {dest.description.length > 100
+                          ? dest.description.substring(0, 100) + "..."
+                          : dest.description}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section> */}
+
+      {/* <section className="hotels-section">
+          <h2>Recommended Hotels</h2>
+          <div className="destinations-grid">
+            {hotels.map((hotel) => (
+              <div
+                key={hotel.id}
+                className="destination-card hotel-card"
+                onClick={() => handleHotelClick(hotel)}
+              >
+                <div className="relative">
+                  <img src={hotel.img_origin} alt={hotel.name} />
+                  {isInPlan && (
+                    <button
+                      className="add-to-plan-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle adding hotel to plan
+                      }}
+                      aria-label="Add to plan"
+                    >
+                      <FaPlus />
+                    </button>
+                  )}
+                </div>
+                <div className="card-content">
+                  <h3>{hotel.name}</h3>
+                  <div className="card-details">
+                    <div className="hotel-info">
+                      <span className="hotel-class">{hotel.hotel_class}</span>
+                      <span className="rating">★ {hotel.location_rating}</span>
+                    </div>
+                    <div className="trip-info">
+                      <h1>{hotel.name_nearby_place}</h1>
+                      <span className="price">{hotel.price}/đêm</span>
+                      <span className="description">
+                        {hotel.description.length > 100
+                          ? hotel.description.substring(0, 100) + "..."
+                          : hotel.description}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section> */}
 
       {showHotelDetail && selectedHotel && (
         <div
@@ -811,7 +945,7 @@ const HomePage = ({
       </footer>
 
       {/* {isHomePage && (
-      )} */}
+        )} */}
       <Link href="/Q&A">
         <div className="fixed-logo">
           <img src="/images/LOGO.png" alt="Website Logo" />
