@@ -1,3 +1,13 @@
+.error-message {
+  color: #ff4d6d;
+  background: #fff1f3;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
 .login-container {
   display: flex;
   min-height: 100vh;

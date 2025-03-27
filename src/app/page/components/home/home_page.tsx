@@ -637,11 +637,11 @@ const HomePage = ({
 
       {/* {isHomePage && (
       )} */}
-        <Link href="/Q&A">
-          <div className="fixed-logo">
-            <img src="/images/LOGO.png" alt="Website Logo" />
-          </div>
-        </Link>
+      <Link href="/Q&A">
+        <div className="fixed-logo">
+          <img src="/images/LOGO.png" alt="Website Logo" />
+        </div>
+      </Link>
     </div>
   );
 };
