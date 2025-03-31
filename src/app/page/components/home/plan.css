@@ -1360,3 +1360,9 @@ body.dragging {
 .draggable-activity * {
   user-select: none;
 }
+
+/* Screenshot Modal Styles */
+.w-screenshot {
+  width: 50% !important;
+  max-width: 800px;
+}
