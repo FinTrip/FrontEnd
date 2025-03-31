@@ -28,12 +28,30 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/page/components/ui/av
 import { Sheet, SheetContent, SheetTrigger } from "@/app/page/components/ui/sheet"
 import { Search, Menu, Bell, PlusCircle, Plus, User, Settings, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 export function Navbar() {
   
-  const [isLoggedIn] = useState(true)
+  const [isLoggedIn] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleCreatePost = () => {
+    if (!isLoggedIn) {
+      alert("Vui lòng đăng nhập để tạo bài viết!")
+      router.push('/page/auth/login')
+      return
+    }
+    router.push('/forum/create-post')
+  }
+
+  const handlePlanClick = (e: React.MouseEvent) => {
+    if (!isLoggedIn) {
+      e.preventDefault()
+      alert("Vui lòng đăng nhập để truy cập tính năng này!")
+      router.push('/page/auth/login')
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,7 +62,7 @@ export function Navbar() {
             FinTrip
           </Link>
 
-          { (
+          {isLoggedIn && (
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
@@ -130,6 +148,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/plan"
+            onClick={handlePlanClick}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
               pathname === "/plan" ? "text-foreground bg-accent" : "text-muted-foreground"
@@ -150,12 +169,10 @@ export function Navbar() {
 
               {isLoggedIn ? (
                 <>
-                  <Link href="/create-post">
-                    <Button size="sm" className="gap-1">
-                      <PlusCircle className="h-4 w-4" />
-                      <span>Tạo bài viết</span>
-                    </Button>
-                  </Link>
+                  <Button size="sm" className="gap-1" onClick={handleCreatePost}>
+                    <PlusCircle className="h-4 w-4" />
+                    <span>Tạo bài viết</span>
+                  </Button>
                   <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
                   </Button>
@@ -203,12 +220,12 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                 <Button variant="ghost" size="sm" asChild>
-                 <Link href="/page/auth/login">Đăng nhập</Link>
-                 </Button>
-                 <Button size="sm" asChild>
-                 <Link href="/page/auth/register">Đăng ký</Link>
-                 </Button>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/page/auth/login">Đăng nhập</Link>
+                  </Button>
+                  <Button size="sm" asChild>
+                    <Link href="/page/auth/register">Đăng ký</Link>
+                  </Button>
                 </>
               )}
             </>

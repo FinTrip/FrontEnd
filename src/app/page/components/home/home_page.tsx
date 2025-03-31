@@ -92,6 +92,23 @@ export interface HotelCard {
   location_rating: number;
   amenities: string[];
 }
+//Thêm interface cho địa điểm
+interface Item {
+  title: string;
+  rating: number;
+  description: string;
+  address: string;
+  img?: string;
+}
+//Thêm interface cho món ăn
+interface SearchResult {
+  province: string;
+  food: Item[];
+  places: Item[];
+}
+
+
+
 
 // Thêm data hotels
 // const hotels = [
@@ -544,12 +561,14 @@ const HomePage = ({
     loop: true,
   });
 
+
   const AnimatedDiv = animated.div as ElementType;
 
   return (
     <div className="home-container">
       <header className="hero-section">
         <h1>The whole world awaits.</h1>
+        
         <div className="search-section">
           <div className="search-bar">
             <FaSearch className="search-icon" />
