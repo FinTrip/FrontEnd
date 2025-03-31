@@ -26,6 +26,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import HomePage, { DestinationCard } from "./home_page";
+import Screenshot from "../screenshot";
 
 // Định nghĩa interface cho Activity
 interface Activity {
@@ -853,121 +854,122 @@ const Plan = () => {
       )}
 
       <div className={`plan-container ${showHomePage ? "shifted" : ""}`}>
-        <div className="min-h-screen text-white">
-          {/* Header */}
-          <div className="p-6">
-            <Link href="/" className="flex items-center gap-2 text-white">
-              <IoArrowBackOutline size={24} />
-              <span>Back</span>
-            </Link>
+        <Screenshot className="min-h-screen text-white">
+          <div className="min-h-screen text-white">
+            {/* Header */}
+            <div className="p-6">
+              <Link href="/" className="flex items-center gap-2 text-white">
+                <IoArrowBackOutline size={24} />
+                <span>Back</span>
+              </Link>
 
-            <div className="flex flex-col items-center justify-center text-center">
-              <h1 className="text-2xl font-bold test_title">MY PLAN</h1>
-              <p className="text-lg test_text">14 Feb - 20 Feb</p>
-              <p className="text-lg test_text">Da Nang - Hue</p>
-              {/* <button className="text-blue-400">Editar viaje</button> */}
+              <div className="flex flex-col items-center justify-center text-center">
+                <h1 className="text-2xl font-bold test_title">MY PLAN</h1>
+                <p className="text-lg test_text">14 Feb - 20 Feb</p>
+                <p className="text-lg test_text">Da Nang - Hue</p>
+              </div>
+            </div>
+
+            {/* Timeline Cards Container */}
+            <div
+              ref={scrollContainerRef}
+              className="scroll-container"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {activities.map((day, dayIndex) => (
+                <div key={dayIndex} data-day={dayIndex} className="day-card">
+                  <div className="day-header">
+                    <h2>
+                      Day {day.day} - {day.date}
+                    </h2>
+                  </div>
+
+                  <div className="timeline"></div>
+
+                  <div className="activities-container">
+                    {day.activities.map((activity, actIndex) => (
+                      <DraggableActivity
+                        key={actIndex}
+                        activity={activity}
+                        onDelete={handleDeleteClick}
+                        dayIndex={dayIndex}
+                        activityIndex={actIndex}
+                      >
+                        <div
+                          className={`activity-icon-container ${
+                            getActivityIcon(activity.type).className
+                          }`}
+                        >
+                          {getActivityIcon(activity.type).icon}
+                        </div>
+
+                        <div className="activity-content">
+                          <div className="flex justify-between items-start">
+                            <h3 className="activity-title">{activity.title}</h3>
+                            <button
+                              className="delete-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(dayIndex, actIndex);
+                              }}
+                              title="Delete activity"
+                            >
+                              <IoTrashOutline />
+                            </button>
+                          </div>
+
+                          {activity.image && (
+                            <div className="relative h-48 w-full">
+                              <Image
+                                src={activity.image}
+                                alt={activity.title}
+                                fill
+                                className="object-cover rounded-lg"
+                              />
+                            </div>
+                          )}
+
+                          <p className="activity-description">{activity.description}</p>
+
+                          <div className="flex justify-between items-center">
+                            {activity.location && (
+                              <p className="activity-location">
+                                <span>📍</span>
+                                {activity.location}
+                              </p>
+                            )}
+                            {activity.rating && (
+                              <span className="rating">
+                                <span>★</span>
+                                {activity.rating}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </DraggableActivity>
+                    ))}
+                  </div>
+
+                  <div className="day-card-footer">
+                    <button 
+                      className="add-activity-btn"
+                      onClick={() => toggleHomePage(dayIndex)}
+                    >
+                      <FaPlus />
+                      <span>Add Activity</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* Timeline Cards Container */}
-          <div
-            ref={scrollContainerRef}
-            className="scroll-container"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            {activities.map((day, dayIndex) => (
-              <div key={dayIndex} data-day={dayIndex} className="day-card">
-                <div className="day-header">
-                  <h2>
-                    Day {day.day} - {day.date}
-                  </h2>
-                </div>
-
-                <div className="timeline"></div>
-
-                <div className="activities-container">
-                  {day.activities.map((activity, actIndex) => (
-                    <DraggableActivity
-                      key={actIndex}
-                      activity={activity}
-                      onDelete={handleDeleteClick}
-                      dayIndex={dayIndex}
-                      activityIndex={actIndex}
-                    >
-                      <div
-                        className={`activity-icon-container ${
-                          getActivityIcon(activity.type).className
-                        }`}
-                      >
-                        {getActivityIcon(activity.type).icon}
-                      </div>
-
-                      <div className="activity-content">
-                        <div className="flex justify-between items-start">
-                          <h3 className="activity-title">{activity.title}</h3>
-                          <button
-                            className="delete-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick(dayIndex, actIndex);
-                            }}
-                            title="Delete activity"
-                          >
-                            <IoTrashOutline />
-                          </button>
-                        </div>
-
-                        {activity.image && (
-                          <div className="relative h-48 w-full">
-                            <Image
-                              src={activity.image}
-                              alt={activity.title}
-                              fill
-                              className="object-cover rounded-lg"
-                            />
-                          </div>
-                        )}
-
-                        <p className="activity-description">{activity.description}</p>
-
-                        <div className="flex justify-between items-center">
-                          {activity.location && (
-                            <p className="activity-location">
-                              <span>📍</span>
-                              {activity.location}
-                            </p>
-                          )}
-                          {activity.rating && (
-                            <span className="rating">
-                              <span>★</span>
-                              {activity.rating}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </DraggableActivity>
-                  ))}
-                </div>
-
-                <div className="day-card-footer">
-                  <button 
-                    className="add-activity-btn"
-                    onClick={() => toggleHomePage(dayIndex)}
-                  >
-                    <FaPlus />
-                    <span>Add Activity</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        </Screenshot>
       </div>
     </div>
   );

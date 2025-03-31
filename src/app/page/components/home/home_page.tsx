@@ -110,6 +110,8 @@ interface SearchResult {
 
 
 
+
+
 // Thêm data hotels
 // const hotels = [
 //   {
