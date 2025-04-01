@@ -222,7 +222,7 @@
   line-height: 1.6;
   margin: 12px 0;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  /* -webkit-line-clamp: 3; */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -293,13 +293,22 @@
 
 .draggable-activity {
   position: relative;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
+  margin-bottom: 24px;
   background: white;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: grab;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transform-style: preserve-3d;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.draggable-activity:first-child {
+  margin-top: 45px;
 }
 
 .draggable-activity:hover {
@@ -323,6 +332,8 @@
   transition: all 0.3s ease;
   cursor: pointer;
   z-index: 10;
+  border: none;
+  padding: 0;
 }
 
 .draggable-activity:hover .delete-btn {
@@ -343,15 +354,17 @@
 }
 
 .drop-indicator {
-  height: 2px;
-  background-color: #3b82f6;
-  margin: 10px 0;
+  height: 3px;
+  background: #3b82f6;
+  margin: 0;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .drop-indicator.active {
+  height: 3px;
   opacity: 1;
+  margin: 12px 0;
 }
 
 .activity-placeholder {
@@ -609,9 +622,11 @@
 }
 
 .draggable-activity.dragging {
-  opacity: 0.6;
-  transform: scale(0.95);
+  opacity: 0.9;
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   cursor: grabbing;
+  z-index: 100;
 }
 
 .draggable-activity.destination-dropped {
@@ -693,6 +708,17 @@
   z-index: 1100;
   animation: slideIn 0.3s ease, slideOut 0.3s ease 1.7s forwards;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.success-notification::before {
+  content: "✓";
+  font-size: 1.2em;
+  font-weight: bold;
 }
 
 @keyframes slideIn {
@@ -787,7 +813,7 @@
 /* Styles cho text truncation */
 .line-clamp-2 {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  /* -webkit-line-clamp: 2; */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -862,21 +888,41 @@
 
 /* Styles cho delete button */
 .delete-btn {
-  padding: 4px;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: rgba(239, 68, 68, 0.1);
   border-radius: 50%;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #ef4444;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  z-index: 10;
+  border: none;
+  padding: 0;
+}
+
+.draggable-activity:hover .delete-btn {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .delete-btn:hover {
-  background-color: rgba(239, 68, 68, 0.1);
+  background: #ef4444;
+  color: white;
+  transform: translateY(0) scale(1.1);
 }
 
 .delete-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  transition: all 0.3s ease;
 }
 
 /* Styles cho confirmation modal */
@@ -889,6 +935,7 @@
   justify-content: center;
   z-index: 1100;
   animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
 }
 
 .confirmation-modal .modal-content {
@@ -898,6 +945,7 @@
   max-width: 400px;
   width: 90%;
   animation: scaleIn 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .confirmation-modal .modal-title {
@@ -910,6 +958,7 @@
 .confirmation-modal .modal-message {
   color: #6b7280;
   margin-bottom: 20px;
+  line-height: 1.5;
 }
 
 .confirmation-modal .modal-actions {
@@ -923,6 +972,8 @@
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
 }
 
 .confirmation-modal .cancel-btn {
@@ -941,19 +992,6 @@
 
 .confirmation-modal .confirm-btn:hover {
   background: #dc2626;
-}
-
-/* Hover effect cho delete button container */
-.draggable-activity .activity-header {
-  position: relative;
-}
-
-.draggable-activity:hover .delete-btn {
-  opacity: 1;
-}
-
-.delete-btn {
-  opacity: 0.7;
 }
 
 /* Animation cho khi xóa activity */
@@ -1208,10 +1246,11 @@
 }
 
 .draggable-activity.dragging {
-  opacity: 0.6;
-  transform: scale(0.95);
-  cursor: grabbing !important;
+  opacity: 0.9;
+  transform: scale(1.02);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  cursor: grabbing !important;
+  z-index: 100;
 }
 
 .draggable-activity.drag-over {
@@ -1222,7 +1261,7 @@
 
 /* Drop Zone Indicator */
 .drop-zone {
-  height: 2px;
+  height: 3px;
   background: transparent;
   margin: 8px 0;
   transition: all 0.2s ease;
@@ -1365,4 +1404,128 @@ body.dragging {
 .w-screenshot {
   width: 50% !important;
   max-width: 800px;
+}
+
+/* Time Picker Styles */
+.time-selector-container {
+  position: relative;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  width: fit-content;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+}
+
+.time-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.time-input {
+  width: 110px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #1a365d;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.time-input:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  background: white;
+}
+
+.time-separator {
+  color: #4a5568;
+  font-weight: 500;
+  padding: 0 4px;
+}
+
+.time-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.time-icon {
+  color: #3b82f6;
+}
+
+/* Ensure time picker stays with activity during drag */
+.draggable-activity {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.draggable-activity.dragging {
+  z-index: 1000;
+}
+
+.draggable-activity.dragging .time-selector-container {
+  background: white;
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* Drop zone indicator */
+.drop-indicator {
+  height: 3px;
+  background: #3b82f6;
+  margin: 0;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.drop-indicator.active {
+  height: 3px;
+  opacity: 1;
+  margin: 12px 0;
+}
+
+/* Animation for dropping */
+@keyframes dropAnimation {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.draggable-activity.dropped {
+  animation: dropAnimation 0.3s ease forwards;
+}
+
+/* Animation for new activities */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.draggable-activity {
+  animation: slideInFromTop 0.3s ease-out;
 }
