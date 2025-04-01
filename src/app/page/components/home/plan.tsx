@@ -1,12 +1,32 @@
 "use client";
 
-import React, { useRef, useState, MouseEvent, TouchEvent } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import type { MouseEvent, TouchEvent } from "react";
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useSpring,
+  AnimatePresence
+} from "framer-motion";
 import "./plan.css";
 import { IoArrowBackOutline, IoClose, IoTrashOutline } from "react-icons/io5";
-import { FaPlus } from "react-icons/fa";
+import {
+  FaPlus,
+  FaPlane,
+  FaUtensils,
+  FaMapMarkerAlt,
+  FaCamera,
+  FaWalking,
+  FaHotel,
+  FaTicketAlt,
+  FaLandmark,
+  FaTrash,
+} from "react-icons/fa";
 import Image from "next/image";
 import Link from "next/link";
 import HomePage, { DestinationCard } from "./home_page";
+import Screenshot from "../screenshot";
 
 // Định nghĩa interface cho Activity
 interface Activity {
@@ -25,6 +45,199 @@ interface DayPlan {
   date: string;
   activities: Activity[];
 }
+
+interface TiltActivityCardProps {
+  children: React.ReactNode;
+  onMouseMove?: (e: React.MouseEvent) => void;
+  onMouseLeave?: (e: React.MouseEvent) => void;
+}
+
+const ROTATION_RANGE = 12.5;
+const HALF_ROTATION_RANGE = 12.5 / 2;
+
+const TiltActivityCard: React.FC<TiltActivityCardProps> = ({ children, onMouseMove, onMouseLeave }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const xSpring = useSpring(x);
+  const ySpring = useSpring(y);
+
+  const transform = useMotionTemplate`rotateX(${xSpring}deg) rotateY(${ySpring}deg)`;
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!ref.current) return;
+
+    const rect = ref.current.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    const mouseX = (e.clientX - rect.left) * ROTATION_RANGE;
+    const mouseY = (e.clientY - rect.top) * ROTATION_RANGE;
+
+    const rX = (mouseY / height - HALF_ROTATION_RANGE) * -1;
+    const rY = mouseX / width - HALF_ROTATION_RANGE;
+
+    x.set(rX);
+    y.set(rY);
+    onMouseMove?.(e);
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    x.set(0);
+    y.set(0);
+    onMouseLeave?.(e);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transformStyle: "preserve-3d",
+        transform,
+      }}
+      className="activity-card-container"
+    >
+      <div
+        style={{
+          transform: "translateZ(25px)",
+          transformStyle: "preserve-3d",
+        }}
+        className="activity-card-inner"
+      >
+        {children}
+      </div>
+    </motion.div>
+  );
+};
+
+interface DraggableActivityProps {
+  activity: Activity;
+  onDelete: (dayIndex: number, activityIndex: number) => void;
+  dayIndex: number;
+  activityIndex: number;
+  children?: React.ReactNode;
+}
+
+const DraggableActivity: React.FC<DraggableActivityProps> = ({ activity, onDelete, dayIndex, activityIndex, children }) => {
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(0, { stiffness: 300, damping: 30 });
+  const rotateY = useSpring(0, { stiffness: 300, damping: 30 });
+
+  function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isHovered) return;
+
+    const box = e.currentTarget.getBoundingClientRect();
+    const xValue = (e.clientX - box.left) / box.width - 0.5;
+    const yValue = (e.clientY - box.top) / box.height - 0.5;
+
+    rotateX.set(yValue * 20); // Adjust the multiplier to control tilt sensitivity
+    rotateY.set(xValue * 20);
+  }
+
+  function onMouseEnter() {
+    setIsHovered(true);
+  }
+
+  function onMouseLeave() {
+    setIsHovered(false);
+    rotateX.set(0);
+    rotateY.set(0);
+  }
+
+  const handleDelete = (e: MouseEvent<Element>) => {
+    e.stopPropagation();
+    setShowConfirmation(true);
+  };
+
+  const confirmDelete = () => {
+    onDelete(dayIndex, activityIndex);
+    setShowConfirmation(false);
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData('text/plain', `${dayIndex}-${activityIndex}`);
+    e.currentTarget.classList.add('dragging');
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.classList.remove('dragging');
+  };
+
+  return (
+    <motion.div 
+      className="activity-card-container"
+      style={{
+        perspective: 2000
+      }}
+    >
+      <motion.div
+        className="activity-card-inner"
+        style={{
+          rotateX: rotateX,
+          rotateY: rotateY,
+          transformStyle: "preserve-3d"
+        }}
+        onMouseMove={onMouseMove}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div
+          className="draggable-activity"
+          draggable
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <motion.button 
+            className="delete-btn" 
+            onClick={handleDelete}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isHovered ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <FaTrash />
+          </motion.button>
+          <div className="activity-content">
+            {children}
+          </div>
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {showConfirmation && (
+          <motion.div 
+            className="confirmation-modal"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="modal-content">
+              <h3 className="modal-title">Delete Activity</h3>
+              <p className="modal-message">Are you sure you want to delete this activity?</p>
+              <div className="modal-actions">
+                <button className="cancel-btn" onClick={() => setShowConfirmation(false)}>
+                  Cancel
+                </button>
+                <button className="confirm-btn" onClick={confirmDelete}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 
 const Plan = () => {
   // Thêm state để kiểm soát việc hiển thị HomePage
@@ -450,12 +663,7 @@ const Plan = () => {
   };
 
   // Thêm hàm xử lý hiển thị modal xác nhận xóa
-  const handleDeleteClick = (
-    dayIndex: number,
-    activityIndex: number,
-    e: React.MouseEvent
-  ) => {
-    e.stopPropagation(); // Ngăn không cho modal detail hiện lên
+  const handleDeleteClick = (dayIndex: number, activityIndex: number) => {
     setActivityToDelete({ dayIndex, activityIndex });
     setShowDeleteModal(true);
   };
@@ -486,6 +694,57 @@ const Plan = () => {
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setActivityToDelete(null);
+  };
+
+  // Cập nhật hàm getActivityIcon
+  const getActivityIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "transport":
+        return {
+          icon: <FaPlane size={16} />,
+          className: "icon-transport",
+        };
+      case "food":
+        return {
+          icon: <FaUtensils size={16} />,
+          className: "icon-food",
+        };
+      case "place":
+        return {
+          icon: <FaMapMarkerAlt size={16} />,
+          className: "icon-place",
+        };
+      case "service":
+        return {
+          icon: <FaCamera size={16} />,
+          className: "icon-service",
+        };
+      case "walking":
+        return {
+          icon: <FaWalking size={16} />,
+          className: "icon-place",
+        };
+      case "hotel":
+        return {
+          icon: <FaHotel size={16} />,
+          className: "icon-service",
+        };
+      case "ticket":
+        return {
+          icon: <FaTicketAlt size={16} />,
+          className: "icon-service",
+        };
+      case "attraction":
+        return {
+          icon: <FaLandmark size={16} />,
+          className: "icon-place",
+        };
+      default:
+        return {
+          icon: <FaMapMarkerAlt size={16} />,
+          className: "icon-place",
+        };
+    }
   };
 
   return (
@@ -595,151 +854,122 @@ const Plan = () => {
       )}
 
       <div className={`plan-container ${showHomePage ? "shifted" : ""}`}>
-        <div className="min-h-screen bg-gradient-to-b from-blue-900 to-black text-white">
-          {/* Header */}
-          <div className="p-6">
-            <Link href="/" className="flex items-center gap-2 text-white">
-              <IoArrowBackOutline size={24} />
-              <span>Back</span>
-            </Link>
+        <Screenshot className="min-h-screen text-white">
+          <div className="min-h-screen text-white">
+            {/* Header */}
+            <div className="p-6">
+              <Link href="/" className="flex items-center gap-2 text-white">
+                <IoArrowBackOutline size={24} />
+                <span>Back</span>
+              </Link>
 
-            <div className="flex flex-col items-center justify-center text-center">
-              <h1 className="text-2xl font-bold test_title">MY PLAN</h1>
-              <p className="text-lg test_text">14 Feb - 20 Feb</p>
-              <p className="text-lg test_text">Da Nang - Hue</p>
-              {/* <button className="text-blue-400">Editar viaje</button> */}
+              <div className="flex flex-col items-center justify-center text-center">
+                <h1 className="text-2xl font-bold test_title">MY PLAN</h1>
+                <p className="text-lg test_text">14 Feb - 20 Feb</p>
+                <p className="text-lg test_text">Da Nang - Hue</p>
+              </div>
+            </div>
+
+            {/* Timeline Cards Container */}
+            <div
+              ref={scrollContainerRef}
+              className="scroll-container"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {activities.map((day, dayIndex) => (
+                <div key={dayIndex} data-day={dayIndex} className="day-card">
+                  <div className="day-header">
+                    <h2>
+                      Day {day.day} - {day.date}
+                    </h2>
+                  </div>
+
+                  <div className="timeline"></div>
+
+                  <div className="activities-container">
+                    {day.activities.map((activity, actIndex) => (
+                      <DraggableActivity
+                        key={actIndex}
+                        activity={activity}
+                        onDelete={handleDeleteClick}
+                        dayIndex={dayIndex}
+                        activityIndex={actIndex}
+                      >
+                        <div
+                          className={`activity-icon-container ${
+                            getActivityIcon(activity.type).className
+                          }`}
+                        >
+                          {getActivityIcon(activity.type).icon}
+                        </div>
+
+                        <div className="activity-content">
+                          <div className="flex justify-between items-start">
+                            <h3 className="activity-title">{activity.title}</h3>
+                            <button
+                              className="delete-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(dayIndex, actIndex);
+                              }}
+                              title="Delete activity"
+                            >
+                              <IoTrashOutline />
+                            </button>
+                          </div>
+
+                          {activity.image && (
+                            <div className="relative h-48 w-full">
+                              <Image
+                                src={activity.image}
+                                alt={activity.title}
+                                fill
+                                className="object-cover rounded-lg"
+                              />
+                            </div>
+                          )}
+
+                          <p className="activity-description">{activity.description}</p>
+
+                          <div className="flex justify-between items-center">
+                            {activity.location && (
+                              <p className="activity-location">
+                                <span>📍</span>
+                                {activity.location}
+                              </p>
+                            )}
+                            {activity.rating && (
+                              <span className="rating">
+                                <span>★</span>
+                                {activity.rating}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </DraggableActivity>
+                    ))}
+                  </div>
+
+                  <div className="day-card-footer">
+                    <button 
+                      className="add-activity-btn"
+                      onClick={() => toggleHomePage(dayIndex)}
+                    >
+                      <FaPlus />
+                      <span>Add Activity</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* Timeline Cards Container */}
-          <div
-            ref={scrollContainerRef}
-            className={`scroll-container flex overflow-x-auto gap-4 p-6 ${
-              isDragging ? "dragging" : ""
-            }`}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            style={{
-              cursor: isDragging ? "grabbing" : "grab",
-              userSelect: "none",
-            }}
-          >
-            {activities.map((day, dayIndex) => (
-              <div
-                key={dayIndex}
-                data-day={dayIndex}
-                className="flex-shrink-0 bg-white rounded-xl p-4 w-[320px] text-black"
-                style={{ touchAction: "pan-y pinch-zoom" }}
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-bold">
-                    Day {day.day} - {day.date}
-                  </h2>
-                </div>
-
-                {/* Activities */}
-                <div
-                  className="space-y-4 drop-container"
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                >
-                  {day.activities.map((activity, actIndex) => (
-                    <div
-                      key={actIndex}
-                      className="border rounded-lg overflow-hidden draggable-activity test_card"
-                      draggable
-                      onDragStart={(e) =>
-                        handleDragStart(e, activity, dayIndex)
-                      }
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.currentTarget.classList.add("drag-over");
-                      }}
-                      onDragLeave={(e) => {
-                        e.currentTarget.classList.remove("drag-over");
-                      }}
-                      onDrop={(e) => handleDrop(e, dayIndex, actIndex)}
-                    >
-                      <div className="p-3 flex justify-between items-start">
-                        <div className="flex items-center gap-2">
-                          {activity.icon && renderIcon(activity.icon)}
-                          <span className="font-medium">{activity.title}</span>
-                        </div>
-                      </div>
-
-                      {activity.image && (
-                        <div
-                          className="relative h-48 w-full cursor-pointer"
-                          onClick={() => handleActivityClick(activity)}
-                        >
-                          <Image
-                            src={activity.image}
-                            alt={activity.title}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
-
-                      <div className="p-3">
-                        <div className="flex items-center justify-between gap-2 p-4">
-                          {activity.rating && (
-                            <span className="rating">★ {activity.rating}</span>
-                          )}
-                          <button
-                            className="delete-btn"
-                            onClick={(e) =>
-                              handleDeleteClick(dayIndex, actIndex, e)
-                            }
-                            aria-label="Delete activity"
-                          >
-                            <IoTrashOutline className="text-gray-500 hover:text-red-500 transition-colors" />
-                          </button>
-                        </div>
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {activity.description}
-                        </p>
-                        {activity.location && (
-                          <p className="text-sm text-gray-500 mt-2 truncate">
-                            <span>📍</span> {activity.location}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Drop zone indicator */}
-                  <div
-                    className="drop-zone"
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) =>
-                      handleDrop(e, dayIndex, day.activities.length)
-                    }
-                  ></div>
-                </div>
-
-                {/* Update Add Activity Button */}
-                <div className="mt-4 flex justify-between items-center">
-                  <button
-                    className="flex items-center gap-2 text-blue-500"
-                    onClick={() => toggleHomePage(dayIndex)}
-                  >
-                    <FaPlus size={12} />
-                    <span>Add activities</span>
-                  </button>
-                  {/* <button className="text-blue-500">Ver Mapa</button> */}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        </Screenshot>
       </div>
     </div>
   );

@@ -31,7 +31,7 @@ const destinations = [
   },
   {
     id: 5,
-    image: "/images/Phố cổ Hội An.jpg",
+    image: "/images/Phố cổ Hội An.webp",
     title: "Hội An",
     location: "Vietnam",
   },
@@ -88,42 +88,6 @@ const HomeSlider = () => {
 
   return (
     <div className="main-container">
-      <nav className="cc">
-        <div className="nav-content">
-          <div className="nav-brand">
-            <Link href="/">
-              <img
-                src="/images/LOGO.png"
-                alt="FinTrip Logo"
-                className="nav-logo"
-              />
-            </Link>
-          </div>
-          <div className="nav-links">
-            <Link href="/" className="nav-link">
-              Home
-            </Link>
-            <Link href="/destinations" className="nav-link">
-              Destinations
-            </Link>
-            <Link href="/tours" className="nav-link">
-              Tours
-            </Link>
-            <Link href="/about" className="nav-link">
-              About Us
-            </Link>
-          </div>
-          <div className="auth-links">
-            <Link href="/page/auth/login" className="nav-link login">
-              Login
-            </Link>
-            <Link href="/page/auth/register" className="nav-link register">
-              Register
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       <div className="content-wrapper">
         <div className="left-content">
           <h1 className="main-title">FinTrip</h1>
@@ -134,9 +98,9 @@ const HomeSlider = () => {
             or adventure, we make trip planning seamless and enjoyable. Start
             your journey today!
           </p>
-          <a href="http://localhost:3000/homepage">
+          <Link href="/homepage">
             <button className="see-more-btn">LET'S GO</button>
-          </a>
+          </Link>
         </div>
 
         <div className="slider-section">
