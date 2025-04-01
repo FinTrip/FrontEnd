@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import "./login.css";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { checkAuth } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +22,7 @@ export default function LoginPage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8080/indentity/api/auth/login",
+        "http://localhost:8081/indentity/api/auth/login",
         {
           method: "POST",
           headers: {
@@ -34,9 +36,31 @@ export default function LoginPage() {
       );
 
       const data = await response.json();
+      console.log("API Response:", data); // Log để debug
 
       if (response.ok && data.code === 200) {
+        // Lưu token
         localStorage.setItem("token", data.result.token);
+        
+        // Kiểm tra và lưu thông tin user
+        if (data.result && data.result.user) {
+          const userData = {
+            fullName: data.result.user.fullName || email.split('@')[0], // Fallback nếu không có fullName
+            email: data.result.user.email || email,
+          };
+          localStorage.setItem("user", JSON.stringify(userData));
+          console.log("Stored user data:", userData);
+        } else {
+          // Fallback nếu không có thông tin user
+          const userData = {
+            fullName: email.split('@')[0],
+            email: email,
+          };
+          localStorage.setItem("user", JSON.stringify(userData));
+          console.log("Stored fallback user data:", userData);
+        }
+        
+        checkAuth();
         router.push("/homepage");
       } else {
         setError(

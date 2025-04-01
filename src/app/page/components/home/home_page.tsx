@@ -184,7 +184,7 @@ const AnimatedText = ({ text }: { text: string }) => {
     <div className="search-btn-text">
       <AnimatedDiv
         style={{
-          transform: springs.y.to((y) => `translateY(${y}px)`),
+          transform: springs.y.to((y:any) => `translateY(${y}px)`),
           opacity: springs.opacity,
         }}
       >

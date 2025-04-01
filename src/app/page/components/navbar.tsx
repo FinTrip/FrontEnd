@@ -1,9 +1,7 @@
 "use client"
 
-import React from "react"
-
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
-import { useState } from "react"
 import { Button } from "@/app/page/components/ui/button"
 import { Input } from "@/app/page/components/ui/input"
 import {
@@ -31,24 +29,44 @@ import { cn } from "@/lib/utils"
 import { usePathname, useRouter } from "next/navigation"
 
 export function Navbar() {
-  
-  const [isLoggedIn] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const pathname = usePathname()
   const router = useRouter()
 
-  const handleCreatePost = () => {
-    if (!isLoggedIn) {
-      alert("Vui lòng đăng nhập để tạo bài viết!")
-      router.push('/page/auth/login')
-      return
+  useEffect(() => {
+    // Kiểm tra trạng thái đăng nhập khi component mount
+    const token = localStorage.getItem("token")
+    const userStr = localStorage.getItem("user")
+    
+    if (token && userStr) {
+      try {
+        const userData = JSON.parse(userStr)
+        setIsLoggedIn(true)
+        setUser(userData)
+      } catch (error) {
+        console.error("Error parsing user data:", error)
+        setIsLoggedIn(false)
+        setUser(null)
+      }
+    } else {
+      setIsLoggedIn(false)
+      setUser(null)
     }
-    router.push('/forum/create-post')
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    setIsLoggedIn(false)
+    setUser(null)
+    router.push('/page/auth/login')
   }
 
-  const handlePlanClick = (e: React.MouseEvent) => {
+  const handleNavigation = (e: React.MouseEvent) => {
     if (!isLoggedIn) {
       e.preventDefault()
-      alert("Vui lòng đăng nhập để truy cập tính năng này!")
+      alert("Bạn cần đăng nhập để dùng những chức năng này")
       router.push('/page/auth/login')
     }
   }
@@ -130,6 +148,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           <Link
             href="/forum"
+            onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
               pathname === "/forum" ? "text-foreground bg-accent" : "text-muted-foreground"
@@ -139,6 +158,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/"
+            onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
               pathname === "/" ? "text-foreground bg-accent" : "text-muted-foreground"
@@ -148,7 +168,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/plan"
-            onClick={handlePlanClick}
+            onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
               pathname === "/plan" ? "text-foreground bg-accent" : "text-muted-foreground"
@@ -169,7 +189,7 @@ export function Navbar() {
 
               {isLoggedIn ? (
                 <>
-                  <Button size="sm" className="gap-1" onClick={handleCreatePost}>
+                  <Button size="sm" className="gap-1" onClick={handleNavigation}>
                     <PlusCircle className="h-4 w-4" />
                     <span>Tạo bài viết</span>
                   </Button>
@@ -181,17 +201,17 @@ export function Navbar() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/avatars/01.png" alt="@username" />
-                          <AvatarFallback>SC</AvatarFallback>
+                          <AvatarImage src="/avatars/01.png" alt={user?.fullName || ""} />
+                          <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">username</p>
+                          <p className="text-sm font-medium leading-none">{user?.fullName}</p>
                           <p className="text-xs leading-none text-muted-foreground">
-                            username@example.com
+                            {user?.email}
                           </p>
                         </div>
                       </DropdownMenuLabel>
@@ -211,7 +231,7 @@ export function Navbar() {
                         </Link>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>
                       </DropdownMenuItem>
