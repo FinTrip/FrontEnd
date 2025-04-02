@@ -13,25 +13,11 @@ import { CalendarIcon, MapPin, ArrowLeft } from "lucide-react"
 import CreatePostForm from "@/app/page/components/Forum/create-post-form"
 
 export default function CreatePostPage() {
-  const router = useRouter()
-  const [isLoggedIn] = useState(false) // This should be replaced with your actual auth state
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      alert("Vui lòng đăng nhập để tạo bài viết!")
-      router.push('/page/auth/login')
-    }
-  }, [isLoggedIn, router])
-
-  if (!isLoggedIn) {
-    return null
-  }
-
-  return (
-    <div className="container mx-auto py-8">
-      <CreatePostForm />
-    </div>
-  );
+   return (
+      <div className="container mx-auto py-8">
+      <CreatePostForm />      
+      </div>
+    );
 }
 
-// ... existing code ... 
+// ... existing code ...  
