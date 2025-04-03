@@ -1,9 +1,11 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/app/page/components/ui/button"
-import { Input } from "@/app/page/components/ui/input"
+import React from "react";
+
+import Link from "next/link";
+import { useState } from "react";
+import { Button } from "@/app/page/components/ui/button";
+import { Input } from "@/app/page/components/ui/input";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -12,7 +14,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
-} from "@/app/page/components/ui/navigation-menu"
+} from "@/app/page/components/ui/navigation-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,55 +23,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuGroup,
-} from "@/app/page/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/page/components/ui/avatar"
-import { Sheet, SheetContent, SheetTrigger } from "@/app/page/components/ui/sheet"
-import { Search, Menu, Bell, PlusCircle, Plus, User, Settings, LogOut } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { usePathname, useRouter } from "next/navigation"
+} from "@/app/page/components/ui/dropdown-menu";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/app/page/components/ui/avatar";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/app/page/components/ui/sheet";
+import {
+  Search,
+  Menu,
+  Bell,
+  PlusCircle,
+  Plus,
+  User,
+  Settings,
+  LogOut,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const pathname = usePathname()
-  const router = useRouter()
+  const [isLoggedIn] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
-  useEffect(() => {
-    // Kiểm tra trạng thái đăng nhập khi component mount
-    const token = localStorage.getItem("token")
-    const userStr = localStorage.getItem("user")
-    
-    if (token && userStr) {
-      try {
-        const userData = JSON.parse(userStr)
-        setIsLoggedIn(true)
-        setUser(userData)
-      } catch (error) {
-        console.error("Error parsing user data:", error)
-        setIsLoggedIn(false)
-        setUser(null)
-      }
-    } else {
-      setIsLoggedIn(false)
-      setUser(null)
+  const handleCreatePost = () => {
+    if (!isLoggedIn) {
+      alert("Vui lòng đăng nhập để tạo bài viết!");
+      router.push("/page/auth/login");
+      return;
     }
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    setIsLoggedIn(false)
-    setUser(null)
-    router.push('/page/auth/login')
-  }
+    router.push("/forum/create-post");
+  };
 
   const handleNavigation = (e: React.MouseEvent) => {
     if (!isLoggedIn) {
-      e.preventDefault()
-      alert("Bạn cần đăng nhập để dùng những chức năng này")
-      router.push('/page/auth/login')
+      e.preventDefault();
+      alert("Vui lòng đăng nhập để truy cập tính năng này!");
+      router.push("/page/auth/login");
     }
-  }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -85,29 +83,35 @@ export function Navbar() {
               <NavigationMenuList>
                 <NavigationMenuItem>
                   <Link href="/" legacyBehavior passHref>
-                    <NavigationMenuLink className={cn(
-                      navigationMenuTriggerStyle(),
-                      pathname === "/" && "bg-accent text-accent-foreground"
-                    )}>
+                    <NavigationMenuLink
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        pathname === "/" && "bg-accent text-accent-foreground"
+                      )}
+                    >
                       Trang chủ
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className={cn(
-                    pathname.startsWith("/destinations") && "bg-accent text-accent-foreground"
-                  )}>
+                  <NavigationMenuTrigger
+                    className={cn(
+                      pathname.startsWith("/destinations") &&
+                        "bg-accent text-accent-foreground"
+                    )}
+                  >
                     Điểm đến
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                       {destinations.map((destination) => (
-                        <ListItem 
-                          key={destination.title} 
-                          title={destination.title} 
+                        <ListItem
+                          key={destination.title}
+                          title={destination.title}
                           href={destination.href}
                           className={cn(
-                            pathname === destination.href && "bg-accent text-accent-foreground"
+                            pathname === destination.href &&
+                              "bg-accent text-accent-foreground"
                           )}
                         >
                           {destination.description}
@@ -117,20 +121,24 @@ export function Navbar() {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className={cn(
-                    pathname.startsWith("/categories") && "bg-accent text-accent-foreground"
-                  )}>
+                  <NavigationMenuTrigger
+                    className={cn(
+                      pathname.startsWith("/categories") &&
+                        "bg-accent text-accent-foreground"
+                    )}
+                  >
                     Chủ đề
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                       {categories.map((category) => (
-                        <ListItem 
-                          key={category.title} 
-                          title={category.title} 
+                        <ListItem
+                          key={category.title}
+                          title={category.title}
                           href={category.href}
                           className={cn(
-                            pathname === category.href && "bg-accent text-accent-foreground"
+                            pathname === category.href &&
+                              "bg-accent text-accent-foreground"
                           )}
                         >
                           {category.description}
@@ -151,7 +159,9 @@ export function Navbar() {
             onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
-              pathname === "/forum" ? "text-foreground bg-accent" : "text-muted-foreground"
+              pathname === "/forum"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
             )}
           >
             Forum
@@ -161,7 +171,9 @@ export function Navbar() {
             onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
-              pathname === "/" ? "text-foreground bg-accent" : "text-muted-foreground"
+              pathname === "/"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
             )}
           >
             Home
@@ -171,7 +183,9 @@ export function Navbar() {
             onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
-              pathname === "/plan" ? "text-foreground bg-accent" : "text-muted-foreground"
+              pathname === "/plan"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
             )}
           >
             Plan
@@ -180,7 +194,7 @@ export function Navbar() {
 
         {/* Right Section */}
         <div className="flex items-center gap-4">
-          {(
+          {
             <>
               <div className="relative w-60">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -189,7 +203,11 @@ export function Navbar() {
 
               {isLoggedIn ? (
                 <>
-                  <Button size="sm" className="gap-1" onClick={handleNavigation}>
+                  <Button
+                    size="sm"
+                    className="gap-1"
+                    onClick={handleCreatePost}
+                  >
                     <PlusCircle className="h-4 w-4" />
                     <span>Tạo bài viết</span>
                   </Button>
@@ -199,17 +217,26 @@ export function Navbar() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Button
+                        variant="ghost"
+                        className="relative h-8 w-8 rounded-full"
+                      >
                         <Avatar className="h-8 w-8">
                           <AvatarImage src="/avatars/01.png" alt={user?.fullName || ""} />
                           <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuContent
+                      className="w-56"
+                      align="end"
+                      forceMount
+                    >
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{user?.fullName}</p>
+                          <p className="text-sm font-medium leading-none">
+                            username
+                          </p>
                           <p className="text-xs leading-none text-muted-foreground">
                             {user?.email}
                           </p>
@@ -249,9 +276,9 @@ export function Navbar() {
                 </>
               )}
             </>
-          )}
+          }
 
-          {(
+          {
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -291,26 +318,41 @@ export function Navbar() {
                           </Button>
                         </Link>
                         <Link href="/profile">
-                          <Button variant="ghost" className="w-full justify-start">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                          >
                             Hồ sơ cá nhân
                           </Button>
                         </Link>
                         <Link href="/my-posts">
-                          <Button variant="ghost" className="w-full justify-start">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                          >
                             Bài viết của tôi
                           </Button>
                         </Link>
                         <Link href="/saved">
-                          <Button variant="ghost" className="w-full justify-start">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                          >
                             Đã lưu
                           </Button>
                         </Link>
                         <Link href="/settings">
-                          <Button variant="ghost" className="w-full justify-start">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                          >
                             Cài đặt
                           </Button>
                         </Link>
-                        <Button variant="ghost" className="w-full justify-start">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                        >
                           Đăng xuất
                         </Button>
                       </>
@@ -326,79 +368,89 @@ export function Navbar() {
                 </div>
               </SheetContent>
             </Sheet>
-          )}
+          }
         </div>
       </div>
     </header>
-  )
+  );
 }
 
-const ListItem = React.forwardRef<React.ElementRef<"a">, React.ComponentPropsWithoutRef<"a">>(
-  ({ className, title, children, ...props }, ref) => {
-    return (
-      <li>
-        <NavigationMenuLink asChild>
-          <a
-            ref={ref}
-            className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-              className,
-            )}
-            {...props}
-          >
-            <div className="text-sm font-medium leading-none">{title}</div>
-            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">{children}</p>
-          </a>
-        </NavigationMenuLink>
-      </li>
-    )
-  },
-)
-ListItem.displayName = "ListItem"
+const ListItem = React.forwardRef<
+  React.ElementRef<"a">,
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, title, children, ...props }, ref) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <a
+          ref={ref}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            className
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </a>
+      </NavigationMenuLink>
+    </li>
+  );
+});
+ListItem.displayName = "ListItem";
 
 const destinations = [
   {
     title: "Miền Bắc",
     href: "/destinations/north",
-    description: "Khám phá vẻ đẹp của Hà Nội, Sapa, Hạ Long, Ninh Bình và các điểm đến miền Bắc",
+    description:
+      "Khám phá vẻ đẹp của Hà Nội, Sapa, Hạ Long, Ninh Bình và các điểm đến miền Bắc",
   },
   {
     title: "Miền Trung",
     href: "/destinations/central",
-    description: "Khám phá vẻ đẹp của Huế, Đà Nẵng, Hội An, Nha Trang và các điểm đến miền Trung",
+    description:
+      "Khám phá vẻ đẹp của Huế, Đà Nẵng, Hội An, Nha Trang và các điểm đến miền Trung",
   },
   {
     title: "Miền Nam",
     href: "/destinations/south",
-    description: "Khám phá vẻ đẹp của TP.HCM, Vũng Tàu, Phú Quốc, Cần Thơ và các điểm đến miền Nam",
+    description:
+      "Khám phá vẻ đẹp của TP.HCM, Vũng Tàu, Phú Quốc, Cần Thơ và các điểm đến miền Nam",
   },
   {
     title: "Quốc tế",
     href: "/destinations/international",
-    description: "Khám phá các điểm đến nổi tiếng trên thế giới từ châu Á đến châu Âu, châu Mỹ",
+    description:
+      "Khám phá các điểm đến nổi tiếng trên thế giới từ châu Á đến châu Âu, châu Mỹ",
   },
-]
+];
 
 const categories = [
   {
     title: "Du lịch biển",
     href: "/categories/beach",
-    description: "Những bãi biển đẹp nhất với cát trắng, nước xanh và hoàng hôn tuyệt đẹp",
+    description:
+      "Những bãi biển đẹp nhất với cát trắng, nước xanh và hoàng hôn tuyệt đẹp",
   },
   {
     title: "Du lịch núi",
     href: "/categories/mountain",
-    description: "Khám phá những dãy núi hùng vĩ, những cung đường trekking thử thách",
+    description:
+      "Khám phá những dãy núi hùng vĩ, những cung đường trekking thử thách",
   },
   {
     title: "Du lịch văn hóa",
     href: "/categories/culture",
-    description: "Tìm hiểu về văn hóa, lịch sử và con người ở các vùng miền khác nhau",
+    description:
+      "Tìm hiểu về văn hóa, lịch sử và con người ở các vùng miền khác nhau",
   },
   {
     title: "Ẩm thực",
     href: "/categories/food",
-    description: "Khám phá nền ẩm thực phong phú từ các vùng miền trong nước và quốc tế",
+    description:
+      "Khám phá nền ẩm thực phong phú từ các vùng miền trong nước và quốc tế",
   },
-]
-
+];

@@ -10,44 +10,50 @@ import React, {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import "./home_page.css";
-import { FaPlus, FaChevronDown, FaMapMarkerAlt, FaSearch } from "react-icons/fa";
+import {
+  FaPlus,
+  FaChevronDown,
+  FaMapMarkerAlt,
+  FaSearch,
+} from "react-icons/fa";
 import { animated, useSpring } from "@react-spring/web";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 const destinations = [
   {
     id: 1,
-    image: "/images/chùa một cột.jpg",
+    img: "/images/chùa một cột.jpg",
     title: "Chùa Một Cột",
     rating: 4.8,
-    location: "Hà Nội",
+    address: "Hà Nội",
     description:
       "Chùa Một Cột là một trong những biểu tượng văn hóa của Hà Nội, nổi bật với kiến trúc độc đáo hình bông sen. Được xây dựng từ thời Lý, ngôi chùa mang ý nghĩa tâm linh và lịch sử quan trọng.",
   },
   {
     id: 2,
-    image: "/images/Đảo Bình Ba.jpg",
+    img: "/images/Đảo Bình Ba.jpg",
     title: "Đảo Bình Ba",
     rating: 4.7,
-    location: "Nha Trang",
+    address: "Nha Trang",
     description:
       "Đảo Bình Ba, được mệnh danh là 'đảo tôm hùm', sở hữu những bãi biển hoang sơ và làn nước trong xanh. Đây là điểm đến lý tưởng cho du khách yêu thích lặn ngắm san hô và thưởng thức hải sản tươi ngon.",
   },
   {
     id: 3,
-    image: "/images/Tháp Bà Ponagar.webp",
+    img: "/images/Tháp Bà Ponagar.webp",
     title: "Tháp Bà Ponagar",
     rating: 4.9,
-    location: "Nha Trang",
+    address: "Nha Trang",
     description:
       "Tháp Bà Ponagar là di tích Chăm Pa cổ, mang đậm dấu ấn kiến trúc và văn hóa Hindu. Du khách có thể chiêm ngưỡng các tượng thần tinh xảo và trải nghiệm tắm bùn khoáng gần đó.",
   },
   {
     id: 4,
-    image: "/images/phodibo.webp",
+    img: "/images/phodibo.webp",
     title: "Phố đi bộ",
     rating: 4.6,
-    location: "Đà Nẵng",
+    address: "Đà Nẵng",
     description:
       "Phố đi bộ Đà Nẵng là nơi tụ hội nhiều hoạt động giải trí về đêm, với các quán cà phê, cửa hàng lưu niệm và nghệ sĩ đường phố. Đây là điểm dừng chân lý tưởng để tận hưởng không khí sôi động của thành phố biển.",
   },
@@ -63,13 +69,22 @@ const destinations = [
 ];
 
 // Thêm interface để chia sẻ kiểu dữ liệu giữa các component
+// export interface DestinationCard {
+//   id: number;
+//   image: string;
+//   title: string;
+//   rating: number;
+//   location: string;
+//   description: string;
+// }
 export interface DestinationCard {
-  id: number;
-  image: string;
+  // id: number; // Có thể bỏ nếu không cần
+  img: string;
   title: string;
   rating: number;
-  location: string;
+  address: string;
   description: string;
+  // link?: string; // Thêm link nếu cần sử dụng
 }
 
 // Thêm interface cho props
@@ -106,11 +121,6 @@ interface SearchResult {
   food: Item[];
   places: Item[];
 }
-
-
-
-
-
 
 // Thêm data hotels
 // const hotels = [
@@ -208,25 +218,25 @@ interface SquishySearchCardProps {
   vietnamProvinces: string[];
 }
 
-const SquishySearchCard = ({ 
-  showSearchCard, 
-  onClose, 
-  selectedLocation, 
-  onLocationChange, 
+const SquishySearchCard = ({
+  showSearchCard,
+  onClose,
+  selectedLocation,
+  onLocationChange,
   onConfirm,
-  vietnamProvinces 
+  vietnamProvinces,
 }: SquishySearchCardProps) => {
   return (
     <motion.div
       className={`search-card ${showSearchCard ? "active" : ""}`}
       initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ 
+      animate={{
         opacity: showSearchCard ? 1 : 0,
-        scale: showSearchCard ? 1 : 0.8
+        scale: showSearchCard ? 1 : 0.8,
       }}
       transition={{
         duration: 0.3,
-        ease: "easeOut"
+        ease: "easeOut",
       }}
     >
       <div className="search-card-content">
@@ -239,7 +249,7 @@ const SquishySearchCard = ({
           Tìm nơi bạn dự định sẽ đến
         </motion.span>
 
-        <motion.div 
+        <motion.div
           className="location-dropdown"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -258,7 +268,7 @@ const SquishySearchCard = ({
           </select>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="search-card-buttons"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -301,12 +311,7 @@ const Background = () => {
       animate={{ opacity: 0.1 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.circle
-        cx="160.5"
-        cy="114.5"
-        r="101.5"
-        fill="#262626"
-      />
+      <motion.circle cx="160.5" cy="114.5" r="101.5" fill="#262626" />
       <motion.ellipse
         cx="160.5"
         cy="265.5"
@@ -343,6 +348,10 @@ const HomePage = ({
   const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
   const [showSearchCard, setShowSearchCard] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
+  //Tạo các state riêng biệt:
+  const [topDestinations, setTopDestinations] = useState([]);
+  const [favoriteDestinations, setFavoriteDestinations] = useState([]);
+  const [mustVisitCities, setMustVisitCities] = useState([]);
 
   // Sử dụng useTransition cho animation
   const [isPending, startTransition] = useTransition();
@@ -556,6 +565,41 @@ const HomePage = ({
     }
   }, []);
 
+  //Thêm logic để fetch dữ liệu từ API
+  // useEffect(() => {
+  //   const fetchDestinations = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         "http://127.0.0.1:8000/recommend/homepage-place/"
+  //       );
+  //       const data = await response.json();
+  //       setFilteredDestinations(data.places); // Cập nhật state với dữ liệu từ API
+  //     } catch (error) {
+  //       console.error("Error fetching destinations:", error);
+  //     }
+  //   };
+
+  //   fetchDestinations();
+  // }, []);
+
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/recommend/homepage-place/"
+        );
+        const data = await response.json();
+        setTopDestinations(data.places.slice(0, 8)); // Chỉ lấy 3 địa điểm
+        setFavoriteDestinations(data.places.slice(10, 14)); // Toàn bộ dữ liệu
+        setMustVisitCities(data.places.slice(0, 4)); // Toàn bộ dữ liệu (hoặc lọc theo điều kiện khác)
+      } catch (error) {
+        console.error("Error fetching destinations:", error);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
+
   const buttonSpring = useSpring({
     from: { scale: 1 },
     to: [{ scale: 1.1 }, { scale: 1 }],
@@ -563,20 +607,19 @@ const HomePage = ({
     loop: true,
   });
 
-
   const AnimatedDiv = animated.div as ElementType;
 
   return (
     <div className="home-container">
       <header className="hero-section">
         <h1>The whole world awaits.</h1>
-        
+
         <div className="search-section">
           <div className="search-bar">
             <FaSearch className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Search destinations, hotels, activities..." 
+            <input
+              type="text"
+              placeholder="Search destinations, hotels, activities..."
               onChange={(e) => {
                 // Handle search input
                 console.log(e.target.value);
@@ -589,9 +632,7 @@ const HomePage = ({
       <div className="search-location-btn" onClick={handleSearchButtonClick}>
         <FaMapMarkerAlt />
       </div>
-      <div className="search-btn-text">
-        Bạn chưa biết phải đi đâu?
-      </div>
+      <div className="search-btn-text">Bạn chưa biết phải đi đâu?</div>
 
       <div
         className={`overlay ${showSearchCard ? "active" : ""}`}
@@ -610,7 +651,7 @@ const HomePage = ({
       <section className="destinations-section">
         <h2>Điểm Đến Được Yêu Thích Nhất</h2>
         <div className="destinations-grid">
-          {filteredDestinations.map((dest) => (
+          {favoriteDestinations.map((dest) => (
             <div
               key={dest.id}
               className="destination-card"
@@ -619,7 +660,7 @@ const HomePage = ({
               onDragEnd={handleDragEnd}
             >
               <div className="relative">
-                <img src={dest.image} alt={dest.title} />
+                <img src={dest.img} alt={dest.title} />
                 <button
                   className="add-to-plan-btn"
                   onClick={(e) => handleAddToPlan(dest, e)}
@@ -690,10 +731,17 @@ const HomePage = ({
       <section className="recently-viewed">
         <h2>Top Địa Điểm Du Lịch Hấp Dẫn</h2>
         <div className="destinations-grid">
-          {filteredDestinations.slice(0, 3).map((dest) => (
-            <div key={dest.id} className="destination-card">
+          {topDestinations.map((dest) => (
+            <div className="destination-card" key={dest.title}>
               <div className="relative">
-                <img src={dest.image} alt={dest.title} />
+                <img src={dest.img} alt={dest.title} />
+                {/* <Image
+                  src={dest.img}
+                  alt={dest.title}
+                  width={300} // Chiều rộng cố định
+                  height={200} // Chiều cao cố định
+                  style={{ objectFit: "cover" }} // Thay thế objectFit
+                /> */}
                 <button
                   className="add-to-plan-btn"
                   onClick={(e) => handleAddToPlan(dest, e)}
@@ -710,7 +758,7 @@ const HomePage = ({
                 <div className="card-details">
                   <span className="rating">★ {dest.rating}</span>
                   <div className="trip-info">
-                    <h1>{dest.location}</h1>
+                    <h1>{dest.address}</h1>
                     <span>
                       Mô tả:{" "}
                       {dest.description.length > 100
@@ -728,10 +776,10 @@ const HomePage = ({
       <section className="packages-section">
         <h2>Những Thành Phố Không Thể Bỏ Lỡ!</h2>
         <div className="destinations-grid">
-          {filteredDestinations.map((dest) => (
+          {mustVisitCities.map((dest) => (
             <div key={dest.id} className="destination-card">
               <div className="relative">
-                <img src={dest.image} alt={dest.title} />
+                <img src={dest.img} alt={dest.title} />
                 <button
                   className="add-to-plan-btn"
                   onClick={(e) => handleAddToPlan(dest, e)}
