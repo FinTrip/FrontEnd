@@ -41,9 +41,7 @@ button {
   cursor: pointer;
 }
 
-input, button {
+input,
+button {
   font-family: inherit;
 }
-
-
-

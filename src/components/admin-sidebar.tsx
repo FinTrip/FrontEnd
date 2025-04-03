@@ -67,11 +67,11 @@ export default function AdminSidebar() {
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
             <span className="text-lg font-bold">F</span>
           </div>
-          {state === "expanded" && (
-            <span className="text-xl font-bold text-blue-600 transition-opacity duration-300">
-              FinTrip
-            </span>
-          )}
+          {/*{state === "expanded" && (*/}
+          {/*  <span className="text-xl font-bold text-blue-600 transition-opacity duration-300">*/}
+          {/*    FinTrip*/}
+          {/*  </span>*/}
+          {/*)}*/}
         </Link>
         <Button
           variant="outline"
