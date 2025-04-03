@@ -44,7 +44,7 @@ export default function SettingsForm() {
             </div>
             <Switch
               checked={notifications.email}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 setNotifications({ ...notifications, email: checked })
               }
             />
@@ -58,7 +58,7 @@ export default function SettingsForm() {
             </div>
             <Switch
               checked={notifications.push}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 setNotifications({ ...notifications, push: checked })
               }
             />
@@ -72,7 +72,7 @@ export default function SettingsForm() {
             </div>
             <Switch
               checked={notifications.marketing}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 setNotifications({ ...notifications, marketing: checked })
               }
             />

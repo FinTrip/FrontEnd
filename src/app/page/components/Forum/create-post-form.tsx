@@ -6,19 +6,55 @@ import { Input } from "@/app/page/components/ui/input";
 import { Label } from "@/app/page/components/ui/label";
 import { Textarea } from "@/app/page/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/page/components/ui/select";
-
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+interface CreatePost {
+  title: string;
+  content: string;
+}
 export default function CreatePostForm() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreatePost>({
     title: "",
-    destination: "",
     content: "",
-    category: "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  }
+  );
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { checkAuth, token} = useAuth();
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log(formData);
+    setIsLoading(true);
+    setError("");
+    //Kiem tra dang nhap hay chua
+    if (!token) {
+      setError("You are not authenticated. Please log in.");
+      setIsLoading(false);
+      return;
+    }
+    try{
+      const response = await fetch(
+        "http://localhost:8081/indentity/api/blog/create",
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+             Authorization:`Bearer ${token}`
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to create post. Please try again.");
+      }
+      router.push("/forum")
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+    
+   
   };
 
   return (
@@ -38,17 +74,7 @@ export default function CreatePostForm() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="destination">Destination</Label>
-            <Input
-              id="destination"
-              value={formData.destination}
-              onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-              placeholder="Enter destination"
-            />
-          </div>
-
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
             <Select
               value={formData.category}
@@ -65,7 +91,7 @@ export default function CreatePostForm() {
                 <SelectItem value="transportation">Transportation</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
@@ -85,4 +111,4 @@ export default function CreatePostForm() {
       </CardContent>
     </Card>
   );
-} 
+}

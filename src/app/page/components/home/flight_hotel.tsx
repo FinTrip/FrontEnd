@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import "./flight_hotel.css";
-import { FaPlus, FaSearch, FaMapMarkerAlt } from "react-icons/fa";
+import { FaPlus, FaSearch, FaMapMarkerAlt, FaPlane, FaHotel } from "react-icons/fa";
 import Image from "next/image";
 import Link from "next/link";
 import "./home_page.css";
@@ -101,6 +101,9 @@ const FlightHotel = () => {
   const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
   const [showSearchCard, setShowSearchCard] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
+  const [flightDate, setFlightDate] = useState("");
+  const [flights, setFlights] = useState<any[]>([]);
+  const [recommendedHotels, setRecommendedHotels] = useState<HotelCard[]>([]);
 
   const vietnamProvinces = [
     "An Giang",
@@ -217,9 +220,67 @@ const FlightHotel = () => {
     }
   };
 
+  const handleSearchFlight = async () => {
+    const flightPayload = {
+        origin: departureInput,
+        destination: destinationInput,
+        departure_date: flightDate
+    };
+    try {
+        const flightResponse = await fetch(
+            "http://127.0.0.1:8000/recommend/rcm-flight/",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(flightPayload),
+            }
+        );
+        const flightData = await flightResponse.json();
+        setFlights(flightData);
+        // Sau khi tìm chuyến bay thành công, gọi API recommend khách sạn
+        handleSearchHotels();
+    } catch (error) {
+        console.error("Error fetching flights:", error);
+    }
+  };
+
+  const handleSearchHotels = async () => {
+    const hotelPayload = { destinationInput };
+    try {
+        const hotelResponse = await fetch(
+            "http://127.0.0.1:8000/recommend/rcm-hotel/",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(hotelPayload),
+            }
+        );
+        //Dũng  code trang này .... 
+        const hotelData = await hotelResponse.json();
+        const hotelsArray = hotelData.hotels ? hotelData.hotels.slice(0, 12) : [];
+        setRecommendedHotels(hotelsArray);
+    } catch (error) {
+        console.error("Error fetching hotels:", error);
+    }
+  };
+
   return (
     <div className="flight-hotel-container">
       <div className="hero-header">
+        <div className="hero-icons">
+          <div className="plane-icon">
+            <FaPlane size={120} />
+          </div>
+          <div className="plane-icon">
+            <FaPlane size={120} />
+          </div>
+          <div className="hotel-icon">
+            <FaHotel size={150} />
+          </div>
+          <div className="hotel-icon">
+            <FaHotel size={150} />
+          </div>
+        </div>
         <CircularText />
         <div className="hero-content">
           <h1>Find Your Perfect Stay & Flight</h1>
@@ -281,7 +342,8 @@ const FlightHotel = () => {
                       province
                         .toLowerCase()
                         .includes(destinationInput.toLowerCase())
-                    )
+                    )        //Dũng  code trang này .... 
+
                     .map((province, index) => (
                       <div
                         key={index}
@@ -301,8 +363,12 @@ const FlightHotel = () => {
           <div className="input-group">
             <span className="input-icon">📅</span>
             <div className="input-wrapper">
-              <label>Check-in</label>
-              <input type="date" />
+              <label>Ngày đi</label>
+              <input
+                type="date"
+                value={flightDate}
+                onChange={(e) => setFlightDate(e.target.value)}
+              />
             </div>
           </div>
 
@@ -315,8 +381,71 @@ const FlightHotel = () => {
           </div> */}
         </div>
 
-        <button className="search-flight-btn">Search Flights & Hotels</button>
+        <button className="search-flight-btn" onClick={handleSearchFlight}>
+          Tìm chuyến bay
+        </button>
       </div>
+
+      {flights.length > 0 && (
+        <section className="flight-results-section">
+          <h2>Kết quả chuyến bay</h2>
+          <div className="destinations-grid">
+            {flights.map((flight, index) => (
+              <div key={index} className="destination-card">
+                <div className="card-content">
+                  <h3>Chuyến bay: {flight.outbound_flight_code}</h3>
+                  <div className="card-details">
+                    <div className="trip-info">
+                      <p>Thời gian khởi hành: {flight.outbound_time}</p>
+                      <p>Giá vé: {flight.total_price_vnd}</p>
+                      <p>Giá cơ bản: {flight.base_price_vnd}</p>
+                      <p>Loại vé: {flight.fare_basis}</p>
+                      <p>Hạng ghế: {flight.cabin}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {recommendedHotels.length > 0 && (
+        <section className="recommended-hotels-section">
+          <h2>Khách sạn được đề xuất tại {destinationInput}</h2>
+          <div className="destinations-grid">
+            {recommendedHotels.map((hotel, index) => (
+              <div
+                key={index}
+                className="destination-card hotel-card"
+                onClick={() => handleHotelClick(hotel)}
+              >
+                <div className="relative">
+                  <img src={hotel.img_origin.split(",")[0].trim()} alt={hotel.name} />
+                </div>
+                <div className="card-content">
+                  <h3>{hotel.name}</h3>
+                  <div className="card-details">
+                    <div className="hotel-info">
+                      <span className="hotel-class">{hotel.hotel_class}</span>
+                      <span className="rating">★ {hotel.location_rating}</span>
+                    </div>
+                    <div className="trip-info">
+                      <h1>{hotel.name_nearby_place}</h1>
+                      <span className="price">{hotel.price}/đêm</span>
+                      <span className="description">
+                        {hotel.description.length > 100
+                          ? hotel.description.substring(0, 100) + "..."
+                          : hotel.description}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="hotels-section">
         <h2>Featured Hotels</h2>

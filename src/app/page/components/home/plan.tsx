@@ -22,6 +22,7 @@ import {
   FaTicketAlt,
   FaLandmark,
   FaTrash,
+  FaClock,
 } from "react-icons/fa";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,6 +38,8 @@ interface Activity {
   image?: string;
   location?: string;
   rating?: number;
+  startTime?: string;
+  endTime?: string;
 }
 
 // Định nghĩa interface cho Day
@@ -118,86 +121,105 @@ interface DraggableActivityProps {
   onDelete: (dayIndex: number, activityIndex: number) => void;
   dayIndex: number;
   activityIndex: number;
+  onDragStart: (e: React.DragEvent, dayIndex: number, activityIndex: number) => void;
+  onDragEnd: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent, dayIndex: number, activityIndex: number) => void;
+  onActivityClick: (activity: Activity) => void;
+  onTimeChange?: (dayIndex: number, activityIndex: number, startTime: string, endTime: string) => void;
   children?: React.ReactNode;
 }
 
-const DraggableActivity: React.FC<DraggableActivityProps> = ({ activity, onDelete, dayIndex, activityIndex, children }) => {
-  const [showConfirmation, setShowConfirmation] = useState(false);
+const DraggableActivity: React.FC<DraggableActivityProps> = ({
+  activity,
+  onDelete,
+  dayIndex,
+  activityIndex,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onActivityClick,
+  onTimeChange,
+  children,
+}) => {
   const [isHovered, setIsHovered] = useState(false);
-  
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useSpring(0, { stiffness: 300, damping: 30 });
-  const rotateY = useSpring(0, { stiffness: 300, damping: 30 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [localStartTime, setLocalStartTime] = useState(activity.startTime || "");
+  const [localEndTime, setLocalEndTime] = useState(activity.endTime || "");
 
-  function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    if (!isHovered) return;
+  // Update local time when activity prop changes
+  useEffect(() => {
+    setLocalStartTime(activity.startTime || "");
+    setLocalEndTime(activity.endTime || "");
+  }, [activity.startTime, activity.endTime]);
 
-    const box = e.currentTarget.getBoundingClientRect();
-    const xValue = (e.clientX - box.left) / box.width - 0.5;
-    const yValue = (e.clientY - box.top) / box.height - 0.5;
+  const handleTimeChange = (newStartTime: string, newEndTime: string) => {
+    setLocalStartTime(newStartTime);
+    setLocalEndTime(newEndTime);
+    if (onTimeChange) {
+      onTimeChange(dayIndex, activityIndex, newStartTime, newEndTime);
+    }
+  };
 
-    rotateX.set(yValue * 20); // Adjust the multiplier to control tilt sensitivity
-    rotateY.set(xValue * 20);
-  }
+  const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true);
+    // Include time data in drag event
+    const dragData = {
+      dayIndex,
+      activityIndex,
+      startTime: localStartTime,
+      endTime: localEndTime
+    };
+    e.dataTransfer.setData("text/plain", JSON.stringify(dragData));
+    onDragStart(e, dayIndex, activityIndex);
+    e.currentTarget.classList.add("dragging");
+  };
 
-  function onMouseEnter() {
-    setIsHovered(true);
-  }
-
-  function onMouseLeave() {
-    setIsHovered(false);
-    rotateX.set(0);
-    rotateY.set(0);
-  }
+  const handleDragEnd = (e: React.DragEvent) => {
+    setIsDragging(false);
+    onDragEnd(e);
+    e.currentTarget.classList.remove("dragging");
+    e.currentTarget.classList.add("dropped");
+    setTimeout(() => {
+      e.currentTarget.classList.remove("dropped");
+    }, 300);
+  };
 
   const handleDelete = (e: MouseEvent<Element>) => {
     e.stopPropagation();
-    setShowConfirmation(true);
-  };
-
-  const confirmDelete = () => {
     onDelete(dayIndex, activityIndex);
-    setShowConfirmation(false);
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    e.dataTransfer.setData('text/plain', `${dayIndex}-${activityIndex}`);
-    e.currentTarget.classList.add('dragging');
-  };
-
-  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
-    e.currentTarget.classList.remove('dragging');
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onActivityClick(activity);
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="activity-card-container"
-      style={{
-        perspective: 2000
-      }}
+      style={{ perspective: 2000 }}
+      onDragOver={(e) => onDragOver(e, dayIndex, activityIndex)}
     >
       <motion.div
         className="activity-card-inner"
-        style={{
-          rotateX: rotateX,
-          rotateY: rotateY,
-          transformStyle: "preserve-3d"
-        }}
-        onMouseMove={onMouseMove}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.2 }}
       >
         <div
-          className="draggable-activity"
+          className={`draggable-activity ${isDragging ? "dragging" : ""}`}
           draggable
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
-          <motion.button 
-            className="delete-btn" 
+          <TimePicker
+            startTime={localStartTime}
+            endTime={localEndTime}
+            onChange={handleTimeChange}
+          />
+          <motion.button
+            className="delete-btn"
             onClick={handleDelete}
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered ? 1 : 0 }}
@@ -205,37 +227,48 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({ activity, onDelet
           >
             <FaTrash />
           </motion.button>
-          <div className="activity-content">
+          <div className="activity-content" onClick={handleContentClick}>
             {children}
           </div>
         </div>
       </motion.div>
-
-      <AnimatePresence>
-        {showConfirmation && (
-          <motion.div 
-            className="confirmation-modal"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="modal-content">
-              <h3 className="modal-title">Delete Activity</h3>
-              <p className="modal-message">Are you sure you want to delete this activity?</p>
-              <div className="modal-actions">
-                <button className="cancel-btn" onClick={() => setShowConfirmation(false)}>
-                  Cancel
-                </button>
-                <button className="confirm-btn" onClick={confirmDelete}>
-                  Delete
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
+  );
+};
+
+interface TimePickerProps {
+  startTime: string;
+  endTime: string;
+  onChange: (startTime: string, endTime: string) => void;
+}
+
+const TimePicker: React.FC<TimePickerProps> = ({ startTime, endTime, onChange }) => {
+  return (
+    <div className="time-selector-container">
+      <div className="time-picker">
+        <div className="time-label">
+          <FaClock className="time-icon" size={14} />
+          <span>Start</span>
+        </div>
+        <input
+          type="time"
+          value={startTime}
+          onChange={(e) => onChange(e.target.value, endTime)}
+          className="time-input"
+        />
+        <span className="time-separator">to</span>
+        <div className="time-label">
+          <FaClock className="time-icon" size={14} />
+          <span>End</span>
+        </div>
+        <input
+          type="time"
+          value={endTime}
+          onChange={(e) => onChange(startTime, e.target.value)}
+          className="time-input"
+        />
+      </div>
+    </div>
   );
 };
 
@@ -434,7 +467,9 @@ const Plan = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [draggedActivity, setDraggedActivity] = useState<any>(null);
   const [draggedDay, setDraggedDay] = useState<number | null>(null);
-  const [activities, setActivities] = useState(planData);
+  const [activities, setActivities] = useState<DayPlan[]>(planData);
+
+  const [dragOverIndex, setDragOverIndex] = useState<{ day: number; index: number } | null>(null);
 
   const startDragging = (e: React.MouseEvent | TouchEvent) => {
     if (!scrollContainerRef.current) return;
@@ -486,124 +521,51 @@ const Plan = () => {
   };
 
   // Handlers cho activity drag
-  const handleDragStart = (
-    e: React.DragEvent,
-    activity: Activity,
-    dayIndex: number
-  ) => {
-    setDraggedActivity(activity);
-    setDraggedDay(dayIndex);
+  const handleDragStart = (e: React.DragEvent, dayIndex: number, activityIndex: number) => {
+    e.dataTransfer.setData("text/plain", `${dayIndex}-${activityIndex}`);
     e.currentTarget.classList.add("dragging");
-    // Thêm data để phân biệt với destination card
-    e.dataTransfer.setData(
-      "application/json",
-      JSON.stringify({
-        type: "activity",
-        data: activity,
-        sourceDay: dayIndex,
-      })
-    );
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
     e.currentTarget.classList.remove("dragging");
-    setDraggedActivity(null);
-    setDraggedDay(null);
+    setDragOverIndex(null);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, dayIndex: number, activityIndex: number) => {
     e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
-    target.classList.add("drag-over");
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midPoint = rect.top + rect.height / 2;
+    const isBefore = e.clientY < midPoint;
+
+    const newIndex = isBefore ? activityIndex : activityIndex + 1;
+    setDragOverIndex({ day: dayIndex, index: newIndex });
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    const target = e.currentTarget as HTMLElement;
-    target.classList.remove("drag-over");
-  };
-
-  const handleDrop = (
-    e: React.DragEvent,
-    targetDayIndex: number,
-    targetIndex: number
-  ) => {
+  const handleDrop = (e: React.DragEvent, targetDayIndex: number) => {
     e.preventDefault();
-    try {
-      const droppedData = JSON.parse(
-        e.dataTransfer.getData("application/json")
-      );
+    const [sourceDayIndex, sourceActivityIndex] = e.dataTransfer
+      .getData("text/plain")
+      .split("-")
+      .map(Number);
 
-      if (droppedData.type === "destination") {
-        // Xử lý kéo thả từ HomePage
-        const newActivities = [...activities];
-        const destinationActivity: Activity = {
-          type: "place",
-          title: droppedData.data.title,
-          description: droppedData.data.description,
-          image: droppedData.data.image,
-          location: droppedData.data.location,
-          rating: droppedData.data.rating,
-        };
+    if (!dragOverIndex) return;
 
-        const targetDay = newActivities[targetDayIndex];
-        targetDay.activities.splice(targetIndex, 0, destinationActivity);
-        setActivities(newActivities);
+    const targetIndex =
+      dragOverIndex.day === targetDayIndex
+        ? dragOverIndex.index
+        : activities[targetDayIndex].activities.length;
 
-        // Thêm hiệu ứng cho card mới
-        requestAnimationFrame(() => {
-          const dayContainer = document.querySelector(
-            `[data-day="${targetDayIndex}"]`
-          );
-          if (dayContainer) {
-            const cards = dayContainer.querySelectorAll(".draggable-activity");
-            const newCard = cards[targetIndex];
-            if (newCard) {
-              newCard.classList.add("destination-dropped");
-              setTimeout(() => {
-                newCard.classList.remove("destination-dropped");
-              }, 500);
-            }
-          }
-        });
-      } else if (droppedData.type === "activity") {
-        // Xử lý kéo thả trong Plan
-        const sourceDayIndex = droppedData.sourceDay;
-        const newActivities = [...activities];
+    if (sourceDayIndex === targetDayIndex && sourceActivityIndex === targetIndex) return;
 
-        // Xóa activity từ vị trí cũ
-        const sourceDay = newActivities[sourceDayIndex];
-        const [movedActivity] = sourceDay.activities.splice(
-          sourceDay.activities.findIndex(
-            (act) => act.title === droppedData.data.title
-          ),
-          1
-        );
+    const newActivities = [...activities];
+    const sourceDay = newActivities[sourceDayIndex];
+    const targetDay = newActivities[targetDayIndex];
 
-        // Thêm vào vị trí mới
-        const targetDay = newActivities[targetDayIndex];
-        targetDay.activities.splice(targetIndex, 0, movedActivity);
+    const [movedActivity] = sourceDay.activities.splice(sourceActivityIndex, 1);
+    targetDay.activities.splice(targetIndex, 0, movedActivity);
 
-        setActivities(newActivities);
-
-        // Thêm hiệu ứng cho card được di chuyển
-        requestAnimationFrame(() => {
-          const cards = document.querySelectorAll(".draggable-activity");
-          const movedCard = Array.from(cards).find(
-            (card) =>
-              card.querySelector(".font-medium")?.textContent ===
-              movedActivity.title
-          );
-          if (movedCard) {
-            movedCard.classList.add("activity-moved");
-            setTimeout(() => {
-              movedCard.classList.remove("activity-moved");
-            }, 500);
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Error handling drop:", error);
-    }
+    setActivities(newActivities);
+    setDragOverIndex(null);
   };
 
   const renderIcon = (icon: string | React.ReactNode) => {
@@ -663,7 +625,7 @@ const Plan = () => {
   };
 
   // Thêm hàm xử lý hiển thị modal xác nhận xóa
-  const handleDeleteClick = (dayIndex: number, activityIndex: number) => {
+  const handleDeleteActivity = (dayIndex: number, activityIndex: number) => {
     setActivityToDelete({ dayIndex, activityIndex });
     setShowDeleteModal(true);
   };
@@ -676,18 +638,24 @@ const Plan = () => {
       newActivities[dayIndex].activities.splice(activityIndex, 1);
       setActivities(newActivities);
 
-      // Hiển thị thông báo xóa thành công
+      // Hiển thị thông báo thành công
       const notification = document.createElement("div");
       notification.className = "success-notification";
-      notification.textContent = "Deleted successfully!";
+      notification.innerHTML = `
+        <div class="notification-content">
+          <div class="notification-icon">✓</div>
+          <div class="notification-message">Đã xóa hoạt động thành công!</div>
+        </div>
+      `;
       document.body.appendChild(notification);
 
       setTimeout(() => {
         notification.remove();
       }, 2000);
+
+      setShowDeleteModal(false);
+      setActivityToDelete(null);
     }
-    setShowDeleteModal(false);
-    setActivityToDelete(null);
   };
 
   // Thêm hàm hủy xóa
@@ -747,9 +715,16 @@ const Plan = () => {
     }
   };
 
+  const handleTimeChange = (dayIndex: number, activityIndex: number, startTime: string, endTime: string) => {
+    const newActivities = [...activities];
+    newActivities[dayIndex].activities[activityIndex].startTime = startTime;
+    newActivities[dayIndex].activities[activityIndex].endTime = endTime;
+    setActivities(newActivities);
+  };
+
   return (
     <div className={`plan-wrapper ${showHomePage ? "with-sidebar" : ""}`}>
-      {/* Thêm Delete Confirmation Modal */}
+      {/* Modal xác nhận xóa */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
@@ -761,7 +736,7 @@ const Plan = () => {
             </p>
             <div className="flex justify-end gap-4">
               <button
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 rounded-lg"
                 onClick={handleCancelDelete}
               >
                 Không
@@ -892,67 +867,81 @@ const Plan = () => {
 
                   <div className="timeline"></div>
 
-                  <div className="activities-container">
+                  <div
+                    className="activities-container"
+                    onDrop={(e) => handleDrop(e, dayIndex)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (!dragOverIndex || dragOverIndex.day !== dayIndex) {
+                        setDragOverIndex({ day: dayIndex, index: day.activities.length });
+                      }
+                    }}
+                  >
                     {day.activities.map((activity, actIndex) => (
-                      <DraggableActivity
-                        key={actIndex}
-                        activity={activity}
-                        onDelete={handleDeleteClick}
-                        dayIndex={dayIndex}
-                        activityIndex={actIndex}
-                      >
-                        <div
-                          className={`activity-icon-container ${
-                            getActivityIcon(activity.type).className
-                          }`}
+                      <React.Fragment key={actIndex}>
+                        {dragOverIndex?.day === dayIndex && dragOverIndex?.index === actIndex && (
+                          <div className="drop-indicator" />
+                        )}
+                        <DraggableActivity
+                          activity={activity}
+                          onDelete={handleDeleteActivity}
+                          dayIndex={dayIndex}
+                          activityIndex={actIndex}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={handleDragOver}
+                          onActivityClick={handleActivityClick}
+                          onTimeChange={handleTimeChange}
                         >
-                          {getActivityIcon(activity.type).icon}
-                        </div>
-
-                        <div className="activity-content">
-                          <div className="flex justify-between items-start">
-                            <h3 className="activity-title">{activity.title}</h3>
-                            <button
-                              className="delete-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(dayIndex, actIndex);
-                              }}
-                              title="Delete activity"
-                            >
-                              <IoTrashOutline />
-                            </button>
+                          <div
+                            className={`activity-icon-container ${getActivityIcon(activity.type).className}`}
+                          >
+                            {getActivityIcon(activity.type).icon}
                           </div>
-
-                          {activity.image && (
-                            <div className="relative h-48 w-full">
-                              <Image
-                                src={activity.image}
-                                alt={activity.title}
-                                fill
-                                className="object-cover rounded-lg"
-                              />
+                          <div className="activity-content">
+                            <div className="flex justify-between items-start">
+                              <h3 className="activity-title">{activity.title}</h3>
+                              <button
+                                className="delete-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteActivity(dayIndex, actIndex);
+                                }}
+                                title="Delete activity"
+                              >
+                                <IoTrashOutline />
+                              </button>
                             </div>
-                          )}
-
-                          <p className="activity-description">{activity.description}</p>
-
-                          <div className="flex justify-between items-center">
-                            {activity.location && (
-                              <p className="activity-location">
-                                <span>📍</span>
-                                {activity.location}
-                              </p>
+                            {activity.image && (
+                              <div className="relative h-48 w-full">
+                                <Image
+                                  src={activity.image}
+                                  alt={activity.title}
+                                  fill
+                                  className="object-cover rounded-lg"
+                                />
+                              </div>
                             )}
-                            {activity.rating && (
-                              <span className="rating">
-                                <span>★</span>
-                                {activity.rating}
-                              </span>
-                            )}
+                            <p className="activity-description">{activity.description}</p>
+                            <div className="flex justify-between items-center">
+                              {activity.location && (
+                                <p className="activity-location">
+                                  <span>📍</span>
+                                  {activity.location}
+                                </p>
+                              )}
+                              {activity.rating && (
+                                <span className="rating">
+                                  <span>★</span>
+                                  {activity.rating}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </DraggableActivity>
+                        </DraggableActivity>
+                        {dragOverIndex?.day === dayIndex &&
+                          dragOverIndex?.index === actIndex + 1 && <div className="drop-indicator" />}
+                      </React.Fragment>
                     ))}
                   </div>
 

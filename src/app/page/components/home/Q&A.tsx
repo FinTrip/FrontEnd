@@ -1,6 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaCalendarAlt, FaMoneyBillWave, FaMapMarkerAlt, FaArrowRight, FaCheck } from "react-icons/fa";
 import "./Q&A.css";
 
 const QA = () => {
@@ -13,6 +15,7 @@ const QA = () => {
   const [cityInput, setCityInput] = useState("");
   const [customBudget, setCustomBudget] = useState<string>("");
   const [selectedOption, setSelectedOption] = useState<string>("");
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const router = useRouter();
 
   const vietnamProvinces = [
@@ -85,9 +88,12 @@ const QA = () => {
     {
       question: "Bạn dự định đi trong khoảng thời gian nào?",
       type: "date",
+      icon: <FaCalendarAlt />,
     },
     {
       question: "Kinh phí dự định của bạn khoảng bao nhiêu?",
+      type: "budget",
+      icon: <FaMoneyBillWave />,
       options: [
         "A: 2 triệu đến 3 triệu",
         "B: 4 triệu đến 5 triệu",
@@ -99,6 +105,7 @@ const QA = () => {
     {
       question: "Địa điểm bạn muốn đi từ đâu đến đâu",
       type: "location",
+      icon: <FaMapMarkerAlt />,
     },
   ];
 
@@ -126,11 +133,12 @@ const QA = () => {
   const handleCitySelect = (city: string) => {
     setSelectedCities((prev) => {
       if (prev.includes(city)) {
-        return prev.filter((c) => c !== city); // Remove city if already selected
+        return prev.filter((c) => c !== city);
       } else {
-        return [...prev, city]; // Add city if not selected
+        return [...prev, city];
       }
     });
+    setCityInput("");
   };
 
   const handleRemoveCity = (city: string) => {
@@ -138,8 +146,10 @@ const QA = () => {
   };
 
   const handleComplete = () => {
-    // Navigate to the plan page
-    router.push("/plan");
+    setShowSuccessMessage(true);
+    setTimeout(() => {
+      router.push("/plan");
+    }, 1500);
   };
 
   const handleOptionSelect = (option: string) => {
@@ -154,120 +164,199 @@ const QA = () => {
   const handleCustomBudgetSubmit = () => {
     if (parseInt(customBudget) >= 1000000) {
       handleNextQuestion();
-      setCustomBudget(""); // Reset custom budget after moving to next question
+      setCustomBudget("");
     }
   };
 
   return (
     <div className="qa-container">
-      <div className="qa-card">
-        <h2>{questions[currentQuestion].question}</h2>
-        {questions[currentQuestion].type === "date" ? (
-          <div className="date-range-container">
-            <div className="date-input-group">
-              <label>Ngày đi:</label>
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => handleDateChange("start", e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
-              />
-            </div>
-            <div className="date-input-group">
-              <label>Ngày về:</label>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => handleDateChange("end", e.target.value)}
-                min={dateRange.start || new Date().toISOString().split("T")[0]}
-              />
-            </div>
-            <button
-              className="next-button"
-              onClick={handleNextQuestion}
-              disabled={!dateRange.start || !dateRange.end}
-            >
-              Tiếp theo
-            </button>
-          </div>
-        ) : questions[currentQuestion].type === "location" ? (
-          <div className="location-container">
-            <div className="location-input-group">
-              <input
-                type="text"
-                placeholder="Nhập tên tỉnh thành..."
-                value={cityInput}
-                onChange={handleCityInputChange}
-                className="city-input"
-              />
-              {cityInput && (
-                <div className="suggestions-dropdown">
-                  {filteredCities.map((city, index) => (
-                    <div
-                      key={index}
-                      className="suggestion-item"
-                      onClick={() => handleCitySelect(city)}
-                    >
-                      {city}
-                    </div>
-                  ))}
+      <motion.div
+        className="qa-card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentQuestion}
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -50, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2>
+              <span className="question-icon">{questions[currentQuestion].icon}</span>
+              {questions[currentQuestion].question}
+            </h2>
+
+            {questions[currentQuestion].type === "date" ? (
+              <motion.div
+                className="date-range-container"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="date-input-group">
+                  <label>Ngày đi:</label>
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => handleDateChange("start", e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                  />
                 </div>
-              )}
-            </div>
-            <div className="selected-cities">
-              {selectedCities.map((city, index) => (
-                <span key={index} className="city-badge">
-                  {city}
-                  <span
-                    className="remove"
-                    onClick={() => handleRemoveCity(city)}
+                <div className="date-input-group">
+                  <label>Ngày về:</label>
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => handleDateChange("end", e.target.value)}
+                    min={dateRange.start || new Date().toISOString().split("T")[0]}
+                  />
+                </div>
+                <motion.button
+                  className="next-button"
+                  onClick={handleNextQuestion}
+                  disabled={!dateRange.start || !dateRange.end}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Tiếp theo <FaArrowRight />
+                </motion.button>
+              </motion.div>
+            ) : questions[currentQuestion].type === "location" ? (
+              <motion.div
+                className="location-container"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="location-input-group">
+                  <input
+                    type="text"
+                    placeholder="Nhập tên tỉnh thành..."
+                    value={cityInput}
+                    onChange={handleCityInputChange}
+                    className="city-input"
+                  />
+                  {cityInput && (
+                    <div className="suggestions-dropdown">
+                      {filteredCities.map((city, index) => (
+                        <motion.div
+                          key={index}
+                          className="suggestion-item"
+                          onClick={() => handleCitySelect(city)}
+                          whileHover={{ backgroundColor: "#f0f9ff", x: 5 }}
+                        >
+                          {city}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="selected-cities">
+                  <AnimatePresence>
+                    {selectedCities.map((city, index) => (
+                      <motion.span
+                        key={city}
+                        className="city-badge"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {city}
+                        <span
+                          className="remove"
+                          onClick={() => handleRemoveCity(city)}
+                        >
+                          ×
+                        </span>
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
+                </div>
+                {selectedCities.length > 0 && (
+                  <motion.button
+                    className="complete-button"
+                    onClick={handleComplete}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    ×
-                  </span>
-                </span>
-              ))}
-            </div>
-            {selectedCities.length > 0 && (
-              <button className="complete-button" onClick={handleComplete}>
-                Hoàn thành
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="qa-options">
-            {questions[currentQuestion].options &&
-              questions[currentQuestion].options.map((option, index) => (
-                <button key={index} onClick={() => handleOptionSelect(option)}>
-                  {option}
-                </button>
-              ))}
-            {selectedOption === "E: Khác" && customBudget && (
-              <div className="custom-budget-container">
-                <input
-                  type="number"
-                  value={customBudget}
-                  onChange={(e) => setCustomBudget(e.target.value)}
-                  placeholder="Nhập số tiền mong muốn (tối thiểu 1 triệu VND)"
-                  min="1000000"
-                  className="custom-budget-input"
-                />
-                {parseInt(customBudget) < 1000000 ? (
-                  <p className="error-message">
-                    Số tiền tối thiểu là 1 triệu VND.
-                  </p>
-                ) : (
-                  <button
-                    className="next-button"
-                    onClick={handleCustomBudgetSubmit}
-                  >
-                    Tiếp theo
-                  </button>
+                    Hoàn thành <FaCheck />
+                  </motion.button>
                 )}
-              </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="qa-options"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                {questions[currentQuestion].options &&
+                  questions[currentQuestion].options.map((option, index) => (
+                    <motion.button
+                      key={index}
+                      onClick={() => handleOptionSelect(option)}
+                      whileHover={{ scale: 1.02, x: 5 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span>{option}</span>
+                    </motion.button>
+                  ))}
+                {selectedOption === "E: Khác" && customBudget && (
+                  <motion.div
+                    className="custom-budget-container"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <input
+                      type="number"
+                      value={customBudget}
+                      onChange={(e) => setCustomBudget(e.target.value)}
+                      placeholder="Nhập số tiền mong muốn (tối thiểu 1 triệu VND)"
+                      min="1000000"
+                      className="custom-budget-input"
+                    />
+                    {parseInt(customBudget) < 1000000 ? (
+                      <motion.p
+                        className="error-message"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        Số tiền tối thiểu là 1 triệu VND.
+                      </motion.p>
+                    ) : (
+                      <motion.button
+                        className="next-button"
+                        onClick={handleCustomBudgetSubmit}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Tiếp theo <FaArrowRight />
+                      </motion.button>
+                    )}
+                  </motion.div>
+                )}
+              </motion.div>
             )}
-          </div>
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      <AnimatePresence>
+        {showSuccessMessage && (
+          <motion.div
+            className="success-message"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+          >
+            <FaCheck /> Đang chuyển hướng đến trang lập kế hoạch...
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 };

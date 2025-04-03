@@ -61,7 +61,7 @@ export function Navbar() {
     router.push("/forum/create-post");
   };
 
-  const handlePlanClick = (e: React.MouseEvent) => {
+  const handleNavigation = (e: React.MouseEvent) => {
     if (!isLoggedIn) {
       e.preventDefault();
       alert("Vui lòng đăng nhập để truy cập tính năng này!");
@@ -156,6 +156,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           <Link
             href="/forum"
+            onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
               pathname === "/forum"
@@ -167,6 +168,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/"
+            onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
               pathname === "/"
@@ -178,7 +180,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/plan"
-            onClick={handlePlanClick}
+            onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
               pathname === "/plan"
@@ -220,8 +222,8 @@ export function Navbar() {
                         className="relative h-8 w-8 rounded-full"
                       >
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/avatars/01.png" alt="@username" />
-                          <AvatarFallback>SC</AvatarFallback>
+                          <AvatarImage src="/avatars/01.png" alt={user?.fullName || ""} />
+                          <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
@@ -236,7 +238,7 @@ export function Navbar() {
                             username
                           </p>
                           <p className="text-xs leading-none text-muted-foreground">
-                            username@example.com
+                            {user?.email}
                           </p>
                         </div>
                       </DropdownMenuLabel>
@@ -256,7 +258,7 @@ export function Navbar() {
                         </Link>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>
                       </DropdownMenuItem>

@@ -15,29 +15,32 @@ export function useAuth() {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-
+  const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
     // Kiểm tra authentication khi component mount
     checkAuth()
   }, [])
 
   const checkAuth = () => {
-    const token = localStorage.getItem('token')
+    const storedToken = localStorage.getItem("token");
     const userStr = localStorage.getItem('user')
     
-    if (token && userStr) {
+    if (storedToken && userStr) {
       try {
         const userData = JSON.parse(userStr)
         setIsAuthenticated(true)
         setUser(userData)
+        setToken(storedToken); 
       } catch (error) {
         console.error('Error parsing user data:', error)
         setIsAuthenticated(false)
         setUser(null)
+        setToken(null)
       }
     } else {
       setIsAuthenticated(false)
       setUser(null)
+      setToken(null)
     }
   }
 
@@ -46,8 +49,9 @@ export function useAuth() {
     localStorage.removeItem('user')
     setIsAuthenticated(false)
     setUser(null)
+    setToken(null)
     router.push('/page/auth/login')
   }
 
-  return { isAuthenticated, user, logout, checkAuth }
+  return { isAuthenticated, user, token, logout, checkAuth }
 }
