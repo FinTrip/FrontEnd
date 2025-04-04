@@ -1,6 +1,6 @@
 // G:\Cap2FinTrip\FrontEnd\src\app\page\auth\login\page.tsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -13,14 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { login, isAuthenticated } = useAuth();
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/homepage");
-    }
-  }, [isAuthenticated, router]);
+  const { checkAuth } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,27 +36,39 @@ export default function LoginPage() {
       );
 
       const data = await response.json();
-      console.log("API Response:", data);
+      console.log("API Response:", data); // Log để debug
 
       if (response.ok && data.code === 200) {
-        // Tạo user data từ response
-        const userData = {
-          fullName: data.result.user?.fullName || email.split('@')[0],
-          email: data.result.user?.email || email,
-        };
-
-        // Sử dụng hàm login mới để cập nhật trạng thái xác thực
-        login(data.result.token, userData);
+        // Lưu token
+        localStorage.setItem("token", data.result.token);
         
-        // Redirect to homepage
+        // Kiểm tra và lưu thông tin user
+        if (data.result && data.result.user) {
+          const userData = {
+            fullName: data.result.user.fullName || email.split('@')[0], // Fallback nếu không có fullName
+            email: data.result.user.email || email,
+          };
+          localStorage.setItem("user", JSON.stringify(userData));
+          console.log("Stored user data:", userData);
+        } else {
+          // Fallback nếu không có thông tin user
+          const userData = {
+            fullName: email.split('@')[0],
+            email: email,
+          };
+          localStorage.setItem("user", JSON.stringify(userData));
+          console.log("Stored fallback user data:", userData);
+        }
+        
+        checkAuth();
         router.push("/homepage");
       } else {
         setError(
-          data.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
+          data.message || "Login failed. Please check your credentials."
         );
       }
     } catch (err) {
-      setError("Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError("An error occurred. Please try again later.");
       console.error("Login error:", err);
     } finally {
       setIsLoading(false);

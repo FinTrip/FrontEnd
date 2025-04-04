@@ -46,15 +46,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
 
 export function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const [isLoggedIn] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   const handleCreatePost = () => {
-    if (!isAuthenticated) {
+    if (!isLoggedIn) {
       alert("Vui lòng đăng nhập để tạo bài viết!");
       router.push("/page/auth/login");
       return;
@@ -63,15 +62,11 @@ export function Navbar() {
   };
 
   const handleNavigation = (e: React.MouseEvent) => {
-    if (!isAuthenticated) {
+    if (!isLoggedIn) {
       e.preventDefault();
       alert("Vui lòng đăng nhập để truy cập tính năng này!");
       router.push("/page/auth/login");
     }
-  };
-
-  const handleLogout = () => {
-    logout();
   };
 
   return (
@@ -83,7 +78,7 @@ export function Navbar() {
             FinTrip
           </Link>
 
-          {isAuthenticated && (
+          {isLoggedIn && (
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
@@ -206,7 +201,7 @@ export function Navbar() {
                 <Input placeholder="Tìm kiếm..." className="pl-8" />
               </div>
 
-              {isAuthenticated ? (
+              {isLoggedIn ? (
                 <>
                   <Button
                     size="sm"
@@ -240,7 +235,7 @@ export function Navbar() {
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-medium leading-none">
-                            {user?.fullName || "User"}
+                            username
                           </p>
                           <p className="text-xs leading-none text-muted-foreground">
                             {user?.email}
@@ -314,7 +309,7 @@ export function Navbar() {
                       </Button>
                     </Link>
 
-                    {isAuthenticated ? (
+                    {isLoggedIn ? (
                       <>
                         <Link href="/create-post">
                           <Button className="w-full mt-2">
@@ -357,18 +352,15 @@ export function Navbar() {
                         <Button
                           variant="ghost"
                           className="w-full justify-start"
-                          onClick={handleLogout}
                         >
                           Đăng xuất
                         </Button>
                       </>
                     ) : (
                       <>
-                        <Button className="w-full mt-2" asChild>
-                          <Link href="/page/auth/login">Đăng nhập</Link>
-                        </Button>
-                        <Button variant="outline" className="w-full" asChild>
-                          <Link href="/page/auth/register">Đăng ký</Link>
+                        <Button className="w-full mt-2">Đăng nhập</Button>
+                        <Button variant="outline" className="w-full">
+                          Đăng ký
                         </Button>
                       </>
                     )}

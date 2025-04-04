@@ -1,111 +1,113 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import './Chatbot.css';
+'use client';
 
-const BOT_IMG = "/static/img/Fintrip.png";
-const PERSON_IMG = "/static/img/person.png";
-const LOGO_EDUCARE = "/static/img/Fintrip.png";
+import React, { useState, useEffect, useRef } from 'react';
+import './page.css';
 
-const Chatbot = () => {
+const BOT_IMG = "/images/Fintrip.png";
+const PERSON_IMG = "/images/person.jpg";
+const LOGO_EDUCARE = "/images/Fintrip.png";
+
+export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
-      name: 'FinTrip Bot',
+      name: "FinTrip",
       img: BOT_IMG,
-      side: 'left',
-      text: 'FinTrip xin chào! Hãy cùng chúng tôi lên kế hoạch cho hành trình đáng nhớ tiếp theo của bạn.',
-      time: getCurrentTime(),
-    },
+      side: "left",
+      text: "Xin chào! Tôi là FinTrip, trợ lý ảo của bạn. Tôi có thể giúp gì cho bạn?",
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
   ]);
-  const [userInput, setUserInput] = useState('');
-  const [isBotTyping, setIsBotTyping] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  function getCurrentTime() {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    return `${hours}:${minutes.toString().padStart(2, '0')}`;
-  }
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-  const updateMessageTimes = useCallback(() => {
-    setMessages((prevMessages) =>
-      prevMessages.map((msg) => ({ ...msg, time: getCurrentTime() }))
-    );
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessages(prevMessages => 
+        prevMessages.map(msg => ({
+          ...msg,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }))
+      );
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      updateMessageTimes();
-    }, 60000);
-    return () => clearInterval(timer);
-  }, [updateMessageTimes]);
-
-  useEffect(() => {
-    if (isOpen) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isOpen]);
-
   const toggleChat = () => {
-    setIsOpen((prevIsOpen) => !prevIsOpen);
+    setIsOpen(!isOpen);
   };
 
   const sendMessage = async () => {
-    if (userInput.trim() === '') return;
+    if (input.trim() === "") return;
 
-    const newMessage = {
-      name: 'You',
+    const userMessage = {
+      name: "You",
       img: PERSON_IMG,
-      side: 'right',
-      text: userInput,
-      time: getCurrentTime(),
+      side: "right",
+      text: input,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setUserInput('');
-    setIsBotTyping(true);
+    setMessages(prev => [...prev, userMessage]);
+    setInput("");
+    setIsTyping(true);
 
     try {
       const response = await fetch('http://localhost:8000/chatbot/chat/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({ text: userInput }),
+        body: JSON.stringify({ 
+          text: input,
+          user_id: "default_user",
+          session_id: "default_session"
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
 
       const botMessage = {
-        name: 'FinTrip Bot',
+        name: "FinTrip",
         img: BOT_IMG,
-        side: 'left',
-        text: data.response || 'Sorry, there was an error processing your request.',
-        time: getCurrentTime(),
+        side: "left",
+        text: data.response || "Xin lỗi, tôi không thể trả lời ngay lúc này.",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
-      setMessages((prevMessages) => [...prevMessages, botMessage]);
+      setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error:', error);
       const errorMessage = {
-        name: 'FinTrip Bot',
+        name: "FinTrip",
         img: BOT_IMG,
-        side: 'left',
-        text: 'There was an error. Please try again later.',
-        time: getCurrentTime(),
+        side: "left",
+        text: "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
-      setIsBotTyping(false);
+      setIsTyping(false);
     }
   };
 
-  const handleKeyPress = (e:React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -115,99 +117,65 @@ const Chatbot = () => {
     <div className="chatbot-container">
       {!isOpen && (
         <div className="chatbot-icon" onClick={toggleChat}>
-          <img src={BOT_IMG} alt="Open Chat" className="chat-icon" height={50} width={50} />
+          <img src={BOT_IMG} alt="Chat" />
         </div>
       )}
-
+      
       {isOpen && (
-        <div className="chatbox" style={{ height: '450px', width: '300px' }}>
+        <div className="chatbox">
           <div className="chatbox-header">
             <div className="main-title">
-              <img 
-                src={LOGO_EDUCARE} 
-                alt="EduCare Logo" 
-                className="logo-educare" 
-                style={{ width: '45px', height: '45px' }} 
-              />
-              FinTrip Bot
+              <img src={LOGO_EDUCARE} alt="Logo" className="logo-educare" />
+              <span>FinTrip Chat</span>
             </div>
-            <button className="chatbox-close-btn" onClick={toggleChat}>
-              ✕
-            </button>
+            <button className="chatbox-close-btn" onClick={toggleChat}>×</button>
           </div>
-          <div className="chatbox-body" style={{ paddingLeft: '5px' }}>
+          
+          <div className="chatbox-body">
             {messages.map((msg, index) => (
-              <div key={index} className={`msg ${msg.side}-msg`} style={{ marginRight: '2px' }}>
-                {msg.side === 'left' && (
-                  <div
-                    className="msg-img"
-                    style={{
-                      backgroundImage: `url(${msg.img})`,
-                      marginRight: '0px'
-                    }}
-                  ></div>
-                )}
-                <div className="msg-bubble" style={{ paddingLeft: '2px' }}>
+              <div key={index} className={`msg ${msg.side}-msg`}>
+                <img src={msg.img} alt={msg.name} className="msg-img" />
+                <div className="msg-bubble">
                   <div className="msg-info">
-                    <span className="msg-info-name">{msg.name}</span>
-                    <span className="msg-info-time">{msg.time}</span>
+                    <div className="msg-info-name">{msg.name}</div>
+                    <div className="msg-info-time">{msg.time}</div>
                   </div>
                   <div className="msg-text">{msg.text}</div>
                 </div>
-                {msg.side === 'right' && (
-                  <div
-                    className="msg-img"
-                    style={{
-                      backgroundImage: `url(${msg.img})`,
-                    }}
-                  ></div>
-                )}
               </div>
             ))}
-            {isBotTyping && (
-              <div className="msg left-msg" style={{ marginRight: '2px' }}>
-                <div
-                  className="msg-img"
-                  style={{
-                    backgroundImage: `url(${BOT_IMG})`,
-                    marginRight: '0px'
-                  }}
-                ></div>
-                <div className="msg-bubble" style={{ paddingLeft: '2px' }}>
+            {isTyping && (
+              <div className="msg left-msg">
+                <img src={BOT_IMG} alt="FinTrip" className="msg-img" />
+                <div className="msg-bubble">
                   <div className="msg-info">
-                    <span className="msg-info-name">FinTrip Bot</span>
-                    <span className="msg-info-time">{getCurrentTime()}</span>
+                    <div className="msg-info-name">FinTrip</div>
+                    <div className="msg-info-time">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
-                  <div className="msg-text" aria-label="Bot đang gõ">
-                    <span className="typing-indicator">
-                      <span>.</span>
-                      <span>.</span>
-                      <span>.</span>
-                    </span>
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                   </div>
                 </div>
               </div>
             )}
-            <div ref={chatEndRef} />
+            <div ref={messagesEndRef} />
           </div>
           
-          <form className="msger-inputarea" style={{ margin: '0px' }} onSubmit={(e) => { e.preventDefault(); sendMessage(); }}>
+          <div className="msger-inputarea">
             <input
               type="text"
               className="msger-input"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Type a message..."
+              placeholder="Nhập tin nhắn..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
             />
-            <button type="submit" className="msger-send-btn">
-              ►
-            </button>
-          </form>
+            <button className="msger-send-btn" onClick={sendMessage}>Gửi</button>
+          </div>
         </div>
       )}
     </div>
   );
-};
-
-export default Chatbot;
+}
