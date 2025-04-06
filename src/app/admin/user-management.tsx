@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 import {
   Pencil,
   Trash2,
@@ -61,73 +62,11 @@ const initialUsers = [
     role: "Editor",
     status: "inactive",
   },
-  {
-    id: 4,
-    fullName: "Alice Brown",
-    email: "alice@example.com",
-    role: "User",
-    status: "banned",
-  },
-  {
-    id: 5,
-    fullName: "Charlie Wilson",
-    email: "charlie@example.com",
-    role: "User",
-    status: "active",
-  },
-  {
-    id: 6,
-    fullName: "Diana Miller",
-    email: "diana@example.com",
-    role: "Editor",
-    status: "inactive",
-  },
-  {
-    id: 7,
-    fullName: "Edward Davis",
-    email: "edward@example.com",
-    role: "User",
-    status: "active",
-  },
-  {
-    id: 8,
-    fullName: "Fiona Clark",
-    email: "fiona@example.com",
-    role: "Admin",
-    status: "active",
-  },
-  {
-    id: 9,
-    fullName: "George White",
-    email: "george@example.com",
-    role: "User",
-    status: "banned",
-  },
-  {
-    id: 10,
-    fullName: "Hannah Green",
-    email: "hannah@example.com",
-    role: "Editor",
-    status: "active",
-  },
-  {
-    id: 11,
-    fullName: "Ian Black",
-    email: "ian@example.com",
-    role: "User",
-    status: "inactive",
-  },
-  {
-    id: 12,
-    fullName: "Julia Red",
-    email: "julia@example.com",
-    role: "User",
-    status: "active",
-  },
 ];
 
 export default function UserManagement() {
-  const [users, setUsers] = useState(initialUsers);
+  // const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -136,6 +75,34 @@ export default function UserManagement() {
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
 
   const usersPerPage = 10;
+
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("token"); // Lấy token từ localStorage
+        const response = await fetch(
+          "http://localhost:8080/indentity/api/user",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+        if (response.ok && data.code === 200) {
+          setUsers(data.result);
+        } else {
+          console.error("Failed to fetch users:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Filter users based on search term and filters
   const filteredUsers = users.filter((user) => {

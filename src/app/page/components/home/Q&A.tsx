@@ -1,8 +1,15 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaCalendarAlt, FaMoneyBillWave, FaMapMarkerAlt, FaArrowRight, FaCheck } from "react-icons/fa";
+import {
+  FaCalendarAlt,
+  FaMoneyBillWave,
+  FaMapMarkerAlt,
+  FaArrowRight,
+  FaCheck,
+} from "react-icons/fa";
 import "./Q&A.css";
 
 const QA = () => {
@@ -145,11 +152,44 @@ const QA = () => {
     setSelectedCities((prev) => prev.filter((c) => c !== city));
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     setShowSuccessMessage(true);
-    setTimeout(() => {
-      router.push("/plan");
-    }, 1500);
+
+    // Chuẩn bị dữ liệu gửi API
+    const requestBody = {
+      start_day: dateRange.start,
+      end_day: dateRange.end,
+      province: selectedCities[0]?.toLowerCase() || "quảng nam", // Lấy tỉnh đầu tiên hoặc mặc định là "quảng nam"
+    };
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/recommend/travel-schedule/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch travel schedule");
+      }
+
+      const data = await response.json();
+      // Lưu dữ liệu vào localStorage
+      localStorage.setItem("travelSchedule", JSON.stringify(data));
+
+      // Chuyển hướng sang /plan sau 1.5 giây
+      setTimeout(() => {
+        router.push("/plan");
+      }, 1500);
+    } catch (error) {
+      console.error("Error fetching travel schedule:", error);
+      setShowSuccessMessage(false);
+    }
   };
 
   const handleOptionSelect = (option: string) => {
@@ -185,7 +225,9 @@ const QA = () => {
             transition={{ duration: 0.3 }}
           >
             <h2>
-              <span className="question-icon">{questions[currentQuestion].icon}</span>
+              <span className="question-icon">
+                {questions[currentQuestion].icon}
+              </span>
               {questions[currentQuestion].question}
             </h2>
 
@@ -211,7 +253,9 @@ const QA = () => {
                     type="date"
                     value={dateRange.end}
                     onChange={(e) => handleDateChange("end", e.target.value)}
-                    min={dateRange.start || new Date().toISOString().split("T")[0]}
+                    min={
+                      dateRange.start || new Date().toISOString().split("T")[0]
+                    }
                   />
                 </div>
                 <motion.button

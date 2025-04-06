@@ -11,6 +11,16 @@ const nextConfig = {
   notFound: {
     page: "/page/404/404.js",
   },
+
+  images: {
+    domains: ["lh3.googleusercontent.com", "kamp.vn"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**", // Cho phép tất cả các hostname
+      },
+    ],
+  },
 };
 
 module.exports = nextConfig;

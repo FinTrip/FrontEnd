@@ -7,7 +7,7 @@ import {
   Users,
   Map,
   BarChart3,
-  LogOut,
+  // LogOut,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -45,11 +45,11 @@ export default function AdminSidebar() {
     },
   ];
 
-  const handleLogout = () => {
-    // In a real application, you would implement actual logout logic here
-    console.log("Logging out...");
-    // window.location.href = "/login"
-  };
+  // const handleLogout = () => {
+  //   // In a real application, you would implement actual logout logic here
+  //   console.log("Logging out...");
+  //   // window.location.href = "/login"
+  // };
 
   if (!isMounted) {
     return null;
@@ -115,7 +115,7 @@ export default function AdminSidebar() {
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-0 w-full border-t border-gray-100 p-4">
+      {/* <div className="absolute bottom-0 w-full border-t border-gray-100 p-4">
         <Button
           variant="outline"
           className={`w-full justify-start hover:bg-gray-100 ${
@@ -128,7 +128,7 @@ export default function AdminSidebar() {
             <span className="ml-3 transition-opacity duration-300">Logout</span>
           )}
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 }
