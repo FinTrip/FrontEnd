@@ -1,0 +1,238 @@
+:root {
+  --primary-color: #4CAF50;
+  --secondary-color: #45a049;
+  --background-color: #f0f2f5;
+  --message-bg: #fff;
+  --text-color: #333;
+  --border-radius: 8px;
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+html, body {
+  background: #efefef;      
+  height: 100%;  
+}
+
+.chatbot-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.chatbot-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+}
+
+.chatbot-icon:hover {
+  transform: scale(1.1);
+  background: var(--secondary-color);
+}
+
+.chatbot-icon img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.chatbox {
+  width: 350px;
+  height: 500px;
+  background: var(--message-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chatbox-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.main-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-educare {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.chatbox-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  transition: transform 0.3s ease;
+}
+
+.chatbox-close-btn:hover {
+  transform: scale(1.2);
+}
+
+.chatbox-body {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background: var(--background-color);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 80%;
+}
+
+.left-msg {
+  align-self: flex-start;
+}
+
+.right-msg {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.msg-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.msg-bubble {
+  background: var(--message-bg);
+  padding: 10px 15px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.right-msg .msg-bubble {
+  background: var(--primary-color);
+  color: white;
+}
+
+.msg-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  font-size: 0.8em;
+}
+
+.msg-info-name {
+  font-weight: bold;
+}
+
+.msg-info-time {
+  opacity: 0.7;
+}
+
+.msg-text {
+  word-wrap: break-word;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 5px;
+  padding: 10px;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  animation: typing 1s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.msger-inputarea {
+  display: flex;
+  padding: 10px;
+  background: var(--message-bg);
+  border-top: 1px solid #ddd;
+}
+
+.msger-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  margin-right: 10px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.msger-input:focus {
+  border-color: var(--primary-color);
+}
+
+.msger-send-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.msger-send-btn:hover {
+  background: var(--secondary-color);
+}
+
+@media (max-width: 500px) {
+  .chatbox {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  
+  .chatbot-icon {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .chatbot-icon img {
+    width: 25px;
+    height: 25px;
+  }
+}
