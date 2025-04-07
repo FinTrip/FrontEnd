@@ -3,7 +3,7 @@
 import React from "react";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/app/page/components/ui/button";
 import { Input } from "@/app/page/components/ui/input";
 import {
@@ -48,9 +48,41 @@ import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 
 export function Navbar() {
-  const [isLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    // Kiểm tra trạng thái đăng nhập từ localStorage
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem("token");
+      const userData = localStorage.getItem("user");
+      if (token && userData) {
+        setIsLoggedIn(true);
+        setUser(JSON.parse(userData));
+      } else {
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+
+    checkLoginStatus();
+    // Thêm event listener để cập nhật khi localStorage thay đổi
+    window.addEventListener("storage", checkLoginStatus);
+    
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUser(null);
+    router.push("/page/auth/login");
+  };
 
   const handleCreatePost = () => {
     if (!isLoggedIn) {
@@ -167,11 +199,23 @@ export function Navbar() {
             Forum
           </Link>
           <Link
-            href="/"
+            href="/findFH"
             onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
-              pathname === "/"
+              pathname === "/findFH"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
+            )}
+          >
+            Flight & Hotel
+          </Link>
+          <Link
+            href="/homepage"
+            onClick={handleNavigation}
+            className={cn(
+              "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
+              pathname === "/homepage"
                 ? "text-foreground bg-accent"
                 : "text-muted-foreground"
             )}
@@ -235,10 +279,10 @@ export function Navbar() {
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-medium leading-none">
-                            username
+                            {user?.fullName || "User"}
                           </p>
                           <p className="text-xs leading-none text-muted-foreground">
-                            {user?.email}
+                            {user?.email || ""}
                           </p>
                         </div>
                       </DropdownMenuLabel>
