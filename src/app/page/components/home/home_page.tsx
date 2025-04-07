@@ -1,24 +1,24 @@
-"use client";
-import React, {
-  useState,
-  DragEvent,
-  useEffect,
-  useTransition,
-  useDeferredValue,
-  ElementType,
-} from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import "./home_page.css";
+"use client"
+import type React from "react"
+import { useState, type DragEvent, useEffect, useTransition, useDeferredValue, type ElementType } from "react"
+import Link from "next/link"
+import { useRouter, usePathname } from "next/navigation"
+import "./home_page.css"
 import {
   FaPlus,
-  FaChevronDown,
   FaMapMarkerAlt,
   FaSearch,
-} from "react-icons/fa";
-import { animated, useSpring } from "@react-spring/web";
-import { motion } from "framer-motion";
-import Image from "next/image";
+  FaHotel,
+  FaCompass,
+  FaGlobeAsia,
+  FaUmbrellaBeach,
+  FaMountain,
+  FaArrowRight,
+  FaRegClock,
+  FaQuestionCircle,
+} from "react-icons/fa"
+import { animated, useSpring } from "@react-spring/web"
+import { motion, AnimatePresence } from "framer-motion"
 
 const destinations = [
   {
@@ -57,128 +57,50 @@ const destinations = [
     description:
       "Phố đi bộ Đà Nẵng là nơi tụ hội nhiều hoạt động giải trí về đêm, với các quán cà phê, cửa hàng lưu niệm và nghệ sĩ đường phố. Đây là điểm dừng chân lý tưởng để tận hưởng không khí sôi động của thành phố biển.",
   },
-  // {
-  //   id: 5,
-  //   image: "/images/Lăng Chủ tịch Hồ Chí Minh.jpg",
-  //   title: "Lăng Chủ tịch Hồ Chí Minh",
-  //   rating: 4.6,
-  //   location: "Hà Nội",
-  //   description:
-  //     "Lăng Chủ tịch Hồ Chí Minh là nơi an nghỉ của vị lãnh tụ kính yêu, nằm trong quần thể quảng trường Ba Đình lịch sử. Du khách đến đây để bày tỏ lòng thành kính và tìm hiểu về lịch sử Việt Nam.",
-  // },
-];
+]
 
-// Thêm interface để chia sẻ kiểu dữ liệu giữa các component
-// export interface DestinationCard {
-//   id: number;
-//   image: string;
-//   title: string;
-//   rating: number;
-//   location: string;
-//   description: string;
-// }
 export interface DestinationCard {
-  // id: number; // Có thể bỏ nếu không cần
-  img: string;
-  title: string;
-  rating: number;
-  address: string;
-  description: string;
-  // link?: string; // Thêm link nếu cần sử dụng
+  img: string
+  title: string
+  rating: number
+  address: string
+  description: string
 }
 
-// Thêm interface cho props
 interface HomePageProps {
-  isInPlan?: boolean;
-  onAddToPlan?: (destination: DestinationCard) => void;
-  showAddButton?: boolean;
+  isInPlan?: boolean
+  onAddToPlan?: (destination: DestinationCard) => void
+  showAddButton?: boolean
 }
 
-// Thêm interface cho Hotel
 export interface HotelCard {
-  id: number;
-  name: string;
-  link: string;
-  description: string;
-  price: string;
-  name_nearby_place: string;
-  hotel_class: string;
-  img_origin: string;
-  location_rating: number;
-  amenities: string[];
+  id: number
+  name: string
+  link: string
+  description: string
+  price: string
+  name_nearby_place: string
+  hotel_class: string
+  img_origin: string
+  location_rating: number
+  amenities: string[]
 }
-//Thêm interface cho địa điểm
+
 interface Item {
-  title: string;
-  rating: number;
-  description: string;
-  address: string;
-  img?: string;
+  title: string
+  rating: number
+  description: string
+  address: string
+  img?: string
 }
-//Thêm interface cho món ăn
+
 interface SearchResult {
-  province: string;
-  food: Item[];
-  places: Item[];
+  province: string
+  food: Item[]
+  places: Item[]
 }
 
-// Thêm data hotels
-// const hotels = [
-//   {
-//     id: 1,
-//     name: "Melia Vinpearl Đà Nẵng",
-//     link: "https://example.com/hotel1",
-//     description:
-//       "Khách sạn 5 sao sang trọng với tầm nhìn ra biển, cung cấp dịch vụ spa cao cấp và nhiều tiện nghi giải trí.",
-//     price: "2,500,000 VND",
-//     name_nearby_place: "Bãi biển Mỹ Khê",
-//     hotel_class: "5 sao",
-//     img_origin: "/images/melia-vinpearl.jpg",
-//     location_rating: 4.8,
-//     amenities: ["Hồ bơi", "Spa", "Nhà hàng", "Phòng gym", "Bar"],
-//   },
-//   {
-//     id: 2,
-//     name: "Novotel Huế",
-//     link: "/images/NovotelHuế.jpg",
-//     description:
-//       "Tọa lạc bên sông Hương thơ mộng, khách sạn cung cấp không gian nghỉ dưỡng yên tĩnh và sang trọng.",
-//     price: "1,800,000 VND",
-//     name_nearby_place: "Cầu Trường Tiền",
-//     hotel_class: "4 sao",
-//     img_origin: "/images/NovotelHuế.jpg",
-//     location_rating: 4.6,
-//     amenities: ["Wifi miễn phí", "Nhà hàng", "Phòng họp", "Dịch vụ đưa đón"],
-//   },
-//   {
-//     id: 3,
-//     name: "Sheraton Grand Đà Nẵng",
-//     link: "https://example.com/hotel3",
-//     description:
-//       "Resort sang trọng với kiến trúc hiện đại, cung cấp dịch vụ đẳng cấp 5 sao và tầm nhìn tuyệt đẹp ra biển.",
-//     price: "3,200,000 VND",
-//     name_nearby_place: "Cầu Rồng",
-//     hotel_class: "5 sao",
-//     img_origin: "/images/sheraton-danang.jpg",
-//     location_rating: 4.9,
-//     amenities: ["Bãi biển riêng", "Spa", "Nhà hàng", "Bar", "Hồ bơi vô cực"],
-//   },
-//   {
-//     id: 4,
-//     name: "La Residence Huế",
-//     link: "https://example.com/hotel4",
-//     description:
-//       "Khách sạn boutique với phong cách Art Deco độc đáo, mang đến trải nghiệm lưu trú đẳng cấp tại cố đô.",
-//     price: "2,800,000 VND",
-//     name_nearby_place: "Đại Nội Huế",
-//     hotel_class: "5 sao",
-//     img_origin: "/images/la-residence-hue.jpg",
-//     location_rating: 4.7,
-//     amenities: ["Nhà hàng Pháp", "Spa", "Hồ bơi", "Bar", "Dịch vụ xe đạp"],
-//   },
-// ];
-
-// Thêm component mới để tạo text animation
+// Animated text component
 const AnimatedText = ({ text }: { text: string }) => {
   const springs = useSpring({
     from: { opacity: 0, y: 20 },
@@ -186,15 +108,15 @@ const AnimatedText = ({ text }: { text: string }) => {
     config: { tension: 300, friction: 10 },
     reset: true,
     loop: true,
-  });
+  })
 
-  const AnimatedDiv = animated.div as ElementType;
+  const AnimatedDiv = animated.div as ElementType
 
   return (
     <div className="search-btn-text">
       <AnimatedDiv
         style={{
-          transform: springs.y.to((y:any) => `translateY(${y}px)`),
+          transform: springs.y.to((y: any) => `translateY(${y}px)`),
           opacity: springs.opacity,
         }}
       >
@@ -205,17 +127,17 @@ const AnimatedText = ({ text }: { text: string }) => {
         ))}
       </AnimatedDiv>
     </div>
-  );
-};
+  )
+}
 
-// Add interface for SquishySearchCard props
+// Search card component
 interface SquishySearchCardProps {
-  showSearchCard: boolean;
-  onClose: () => void;
-  selectedLocation: string;
-  onLocationChange: (value: string) => void;
-  onConfirm: () => void;
-  vietnamProvinces: string[];
+  showSearchCard: boolean
+  onClose: () => void
+  selectedLocation: string
+  onLocationChange: (value: string) => void
+  onConfirm: () => void
+  vietnamProvinces: string[]
 }
 
 const SquishySearchCard = ({
@@ -239,6 +161,9 @@ const SquishySearchCard = ({
         ease: "easeOut",
       }}
     >
+      <div className="search-card-decoration decoration-1"></div>
+      <div className="search-card-decoration decoration-2"></div>
+      
       <div className="search-card-content">
         <motion.span
           initial={{ opacity: 0, y: -10 }}
@@ -246,7 +171,8 @@ const SquishySearchCard = ({
           transition={{ delay: 0.1 }}
           className="search-card-title"
         >
-          Tìm nơi bạn dự định sẽ đến
+          Bạn muốn đi đâu?
+          <span>Chọn điểm đến mơ ước của bạn</span>
         </motion.span>
 
         <motion.div
@@ -255,10 +181,7 @@ const SquishySearchCard = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <select
-            value={selectedLocation}
-            onChange={(e) => onLocationChange(e.target.value)}
-          >
+          <select value={selectedLocation} onChange={(e) => onLocationChange(e.target.value)}>
             <option value="">Chọn tỉnh thành</option>
             {vietnamProvinces.map((province: string, index: number) => (
               <option key={index} value={province}>
@@ -280,7 +203,7 @@ const SquishySearchCard = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            Hủy
+            <span>Hủy</span>
           </motion.button>
           <motion.button
             className="search-card-btn confirm"
@@ -289,14 +212,14 @@ const SquishySearchCard = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            OK
+            <FaSearch />
+            <span>Tìm kiếm</span>
           </motion.button>
         </motion.div>
       </div>
-      <Background />
     </motion.div>
-  );
-};
+  )
+}
 
 const Background = () => {
   return (
@@ -312,60 +235,75 @@ const Background = () => {
       transition={{ duration: 0.5 }}
     >
       <motion.circle cx="160.5" cy="114.5" r="101.5" fill="#262626" />
-      <motion.ellipse
-        cx="160.5"
-        cy="265.5"
-        rx="101.5"
-        ry="43.5"
-        fill="#262626"
-      />
+      <motion.ellipse cx="160.5" cy="265.5" rx="101.5" ry="43.5" fill="#262626" />
     </motion.svg>
-  );
-};
+  )
+}
 
-const HomePage = ({
-  isInPlan = false,
-  onAddToPlan,
-  showAddButton = false,
-}: HomePageProps) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const isHomePage = pathname === "/";
+// Add these interfaces near the top of the file, after existing interfaces
+interface Destination {
+  id: number;
+  img: string;
+  title: string;
+  rating: number;
+  address: string;
+  description: string;
+}
 
-  console.log("Is Home Page:", isHomePage);
+const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: HomePageProps) => {
+  const router = useRouter()
+  const pathname = usePathname()
+  const isHomePage = pathname === "/"
 
-  const [selectedDestination, setSelectedDestination] = useState<any>(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [selectedHotel, setSelectedHotel] = useState<HotelCard | null>(null);
-  const [showHotelDetail, setShowHotelDetail] = useState(false);
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("Tất cả địa điểm");
-  const [filteredDestinations, setFilteredDestinations] =
-    useState(destinations);
-  const [departureInput, setDepartureInput] = useState("");
-  const [destinationInput, setDestinationInput] = useState("");
-  const [showDepartureDropdown, setShowDepartureDropdown] = useState(false);
-  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
-  const [showSearchCard, setShowSearchCard] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState("");
-  //Tạo các state riêng biệt:
-  const [topDestinations, setTopDestinations] = useState([]);
-  const [favoriteDestinations, setFavoriteDestinations] = useState([]);
-  const [mustVisitCities, setMustVisitCities] = useState([]);
+  const [selectedDestination, setSelectedDestination] = useState<any>(null)
+  const [showDetail, setShowDetail] = useState(false)
+  const [selectedHotel, setSelectedHotel] = useState<HotelCard | null>(null)
+  const [showHotelDetail, setShowHotelDetail] = useState(false)
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState("Tất cả địa điểm")
+  const [filteredDestinations, setFilteredDestinations] = useState(destinations)
+  const [departureInput, setDepartureInput] = useState("")
+  const [destinationInput, setDestinationInput] = useState("")
+  const [showDepartureDropdown, setShowDepartureDropdown] = useState(false)
+  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false)
+  const [showSearchCard, setShowSearchCard] = useState(false)
+  const [selectedLocation, setSelectedLocation] = useState("")
+  const [topDestinations, setTopDestinations] = useState<Destination[]>([])
+  const [favoriteDestinations, setFavoriteDestinations] = useState<Destination[]>([])
+  const [mustVisitCities, setMustVisitCities] = useState<Destination[]>([])
+  const [activeSlide, setActiveSlide] = useState(0)
+  const [isPending, startTransition] = useTransition()
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Sử dụng useTransition cho animation
-  const [isPending, startTransition] = useTransition();
+  // Animation variants
+  const fadeIn = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.8 } },
+  }
 
-  // Tối ưu cho search và filter
-  const deferredLocation = useDeferredValue(selectedLocation);
+  const slideUp = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+  }
 
-  const categories = [
-    "Tất cả địa điểm",
-    "Đà Nẵng",
-    "Huế",
-    "Nha Trang",
-    "Hà Nội",
-  ];
+  const slideRight = {
+    hidden: { opacity: 0, x: -50 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.6 } },
+  }
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
+  const deferredLocation = useDeferredValue(selectedLocation)
+
+  const categories = ["Tất cả địa điểm", "Đà Nẵng", "Huế", "Nha Trang", "Hà Nội"]
 
   const vietnamProvinces = [
     "An Giang",
@@ -431,41 +369,59 @@ const HomePage = ({
     "Vĩnh Long",
     "Vĩnh Phúc",
     "Yên Bái",
-  ];
+  ]
+
+  const heroSlides = [
+    {
+      id: 1,
+      title: "Khám phá Việt Nam",
+      // subtitle: "Di sản thiên nhiên thế giới",
+      image: "https://i.pinimg.com/736x/a8/00/14/a80014131a8b5726a9e65df7cda9aee7.jpg",
+      code: "01",
+    },
+    {
+      id: 2,
+      title: "Khám phá Việt Nam",
+      // subtitle: "Thành phố đèn lồng cổ kính",
+      image: "https://i.pinimg.com/736x/11/90/c2/1190c224084a8c630a4f9d05d1281c60.jpg",
+      code: "02",
+    },
+    {
+      id: 3,
+      title: "Khám phá Việt Nam",
+      // subtitle: "Thiên đường trong sương",
+      image: "https://i.pinimg.com/736x/4d/01/59/4d01591cb3b8b83fa0a50c00fc151e76.jpg",
+      code: "03",
+    },
+  ]
 
   const toggleCategoryDropdown = () => {
-    setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
-  };
+    setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
+  }
 
   const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-    setIsCategoryDropdownOpen(false);
+    setSelectedCategory(category)
+    setIsCategoryDropdownOpen(false)
 
-    // Filter destinations based on selected category
     if (category === "Tất cả địa điểm") {
-      setFilteredDestinations(destinations);
+      setFilteredDestinations(destinations)
     } else {
-      const filtered = destinations.filter(
-        (dest) => dest.location === category
-      );
-      setFilteredDestinations(filtered);
+      const filtered = destinations.filter((dest) => dest.address === category)
+      setFilteredDestinations(filtered)
     }
-  };
+  }
 
   const handleCardClick = (dest: any) => {
-    setSelectedDestination(dest);
-    setShowDetail(true);
-  };
+    setSelectedDestination(dest)
+    setShowDetail(true)
+  }
 
   const handleCloseDetail = () => {
-    setShowDetail(false);
-    setSelectedDestination(null);
-  };
+    setShowDetail(false)
+    setSelectedDestination(null)
+  }
 
-  const handleDragStart = (
-    e: DragEvent<HTMLDivElement>,
-    destination: DestinationCard
-  ) => {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, destination: DestinationCard) => {
     e.dataTransfer.setData(
       "application/json",
       JSON.stringify({
@@ -474,237 +430,720 @@ const HomePage = ({
           type: "place",
           title: destination.title,
           description: destination.description,
-          image: destination.image,
-          location: destination.location,
+          image: destination.img,
+          location: destination.address,
           rating: destination.rating,
         },
       })
-    );
-    e.currentTarget.classList.add("dragging");
-  };
+    )
+    e.currentTarget.classList.add("dragging")
+  }
 
-  const handleDragEnd = (e: DragEvent<HTMLDivElement>) => {
-    e.currentTarget.classList.remove("dragging");
-  };
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.classList.remove("dragging")
+  }
 
   const handleAddToPlan = (dest: DestinationCard, e: React.MouseEvent) => {
-    e.stopPropagation(); // Ngăn việc mở detail modal
+    e.stopPropagation()
     if (onAddToPlan) {
-      onAddToPlan(dest);
+      onAddToPlan(dest)
     }
-  };
+  }
 
   const handleHotelClick = (hotel: HotelCard) => {
-    setSelectedHotel(hotel);
-    setShowHotelDetail(true);
-  };
+    setSelectedHotel(hotel)
+    setShowHotelDetail(true)
+  }
 
   const handleCloseHotelDetail = () => {
-    setShowHotelDetail(false);
-    setSelectedHotel(null);
-  };
+    setShowHotelDetail(false)
+    setSelectedHotel(null)
+  }
 
   const handleDepartureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDepartureInput(e.target.value);
-    setShowDepartureDropdown(true);
-  };
+    setDepartureInput(e.target.value)
+    setShowDepartureDropdown(true)
+  }
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDestinationInput(e.target.value);
-    setShowDestinationDropdown(true);
-  };
+    setDestinationInput(e.target.value)
+    setShowDestinationDropdown(true)
+  }
 
-  const handleProvinceSelect = (
-    province: string,
-    type: "departure" | "destination"
-  ) => {
+  const handleProvinceSelect = (province: string, type: "departure" | "destination") => {
     if (type === "departure") {
-      setDepartureInput(province);
-      setShowDepartureDropdown(false);
+      setDepartureInput(province)
+      setShowDepartureDropdown(false)
     } else {
-      setDestinationInput(province);
-      setShowDestinationDropdown(false);
+      setDestinationInput(province)
+      setShowDestinationDropdown(false)
     }
-  };
+  }
 
   const handleSearchButtonClick = () => {
-    setShowSearchCard(true);
-  };
+    setShowSearchCard(true)
+  }
 
   const handleCloseSearchCard = () => {
-    setShowSearchCard(false);
-    setSelectedLocation("");
-  };
+    setShowSearchCard(false)
+    setSelectedLocation("")
+  }
 
   const handleConfirmLocation = () => {
     if (selectedLocation) {
-      // Wrap trong startTransition để animation mượt hơn
       startTransition(() => {
-        handleCategorySelect(selectedLocation);
-        setShowSearchCard(false);
-      });
+        handleCategorySelect(selectedLocation)
+        setShowSearchCard(false)
+      })
     }
-  };
+  }
 
-  // Sử dụng deferredLocation để tối ưu hiệu suất
+  const nextSlide = () => {
+    setActiveSlide((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1))
+  }
+
+  const prevSlide = () => {
+    setActiveSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1))
+  }
+
+  const goToSlide = (index: number) => {
+    setActiveSlide(index)
+  }
+
+  // Simulate loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // // Auto slide change
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     nextSlide()
+  //   }, 5000)
+  //   return () => clearInterval(interval)
+  // }, [activeSlide])
+
   useEffect(() => {
     if (deferredLocation) {
-      const filtered = destinations.filter(
-        (dest) => dest.location === deferredLocation
-      );
-      setFilteredDestinations(filtered);
+      const filtered = destinations.filter((dest) => dest.address === deferredLocation)
+      setFilteredDestinations(filtered)
     }
-  }, [deferredLocation]);
+  }, [deferredLocation])
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const locationParam = searchParams.get("location");
+    const searchParams = new URLSearchParams(window.location.search)
+    const locationParam = searchParams.get("location")
 
     if (locationParam) {
-      handleCategorySelect(locationParam);
+      handleCategorySelect(locationParam)
     }
-  }, []);
-
-  //Thêm logic để fetch dữ liệu từ API
-  // useEffect(() => {
-  //   const fetchDestinations = async () => {
-  //     try {
-  //       const response = await fetch(
-  //         "http://127.0.0.1:8000/recommend/homepage-place/"
-  //       );
-  //       const data = await response.json();
-  //       setFilteredDestinations(data.places); // Cập nhật state với dữ liệu từ API
-  //     } catch (error) {
-  //       console.error("Error fetching destinations:", error);
-  //     }
-  //   };
-
-  //   fetchDestinations();
-  // }, []);
+  }, [])
 
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/recommend/homepage-place/"
-        );
-        const data = await response.json();
-        setTopDestinations(data.places.slice(0, 8)); // Chỉ lấy 3 địa điểm
-        setFavoriteDestinations(data.places.slice(10, 14)); // Toàn bộ dữ liệu
-        setMustVisitCities(data.places.slice(0, 4)); // Toàn bộ dữ liệu (hoặc lọc theo điều kiện khác)
+        const response = await fetch("http://127.0.0.1:8000/recommend/homepage-place/")
+        const data = await response.json()
+        setTopDestinations(data.places.slice(0, 8))
+        setFavoriteDestinations(data.places.slice(10, 14))
+        setMustVisitCities(data.places.slice(0, 4))
       } catch (error) {
-        console.error("Error fetching destinations:", error);
+        console.error("Error fetching destinations:", error)
+        // Use sample data if API fails
+        setTopDestinations(destinations)
+        setFavoriteDestinations(destinations)
+        setMustVisitCities(destinations)
       }
-    };
+    }
 
-    fetchDestinations();
-  }, []);
+    fetchDestinations()
+  }, [])
 
   const buttonSpring = useSpring({
     from: { scale: 1 },
     to: [{ scale: 1.1 }, { scale: 1 }],
     config: { tension: 300, friction: 10 },
     loop: true,
-  });
+  })
 
-  const AnimatedDiv = animated.div as ElementType;
+  const AnimatedDiv = animated.div as ElementType
+
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = event.target as HTMLImageElement;
+    if (!target.src.includes('placeholder.svg')) {
+      target.src = "/placeholder.svg";
+      target.onerror = null; // Prevent infinite loop if placeholder also fails
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="loading-screen">
+        <div className="loader">
+          <div className="loader-circle"></div>
+          <div className="loader-text">Khám Phá Việt Nam</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="home-container">
-      <header className="hero-section">
-        <h1>The whole world awaits.</h1>
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-overlay"></div>
 
-        <div className="search-section">
-          <div className="search-bar">
-            <FaSearch className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search destinations, hotels, activities..."
-              onChange={(e) => {
-                // Handle search input
-                console.log(e.target.value);
-              }}
-            />
+        <div className="hero-slider">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSlide}
+              className="hero-slide"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1 }}
+            >
+              <div 
+                className="hero-slide-bg" 
+                style={{ 
+                  backgroundImage: `url(${heroSlides[activeSlide].image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              ></div>
+
+              <div className="hero-content">
+                <motion.div
+                  className="hero-slide-code"
+                  initial={{ opacity: 0, y: -30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                >
+                  {heroSlides[activeSlide].code}
+                </motion.div>
+
+                <motion.h1
+                  className="hero-title"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
+                >
+                  {heroSlides[activeSlide].title}
+                </motion.h1>
+
+                <motion.p
+                  className="hero-subtitle"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
+                >
+                  {/* {heroSlides[activeSlide].subtitle} */}
+                </motion.p>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="hero-controls">
+            <button className="hero-arrow prev" onClick={prevSlide}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M15 18L9 12L15 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <div className="hero-dots">
+              {heroSlides.map((_, index) => (
+                <button
+                  key={index}
+                  className={`hero-dot ${activeSlide === index ? "active" : ""}`}
+                  onClick={() => goToSlide(index)}
+                ></button>
+              ))}
+            </div>
+            <button className="hero-arrow next" onClick={nextSlide}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M9 6L15 12L9 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
           </div>
         </div>
-      </header>
+      </section>
 
-      <div className="search-location-btn" onClick={handleSearchButtonClick}>
-        <FaMapMarkerAlt />
-      </div>
-      <div className="search-btn-text">Bạn chưa biết phải đi đâu?</div>
+      {/* Search Container */}
+      <motion.div
+        className="search-container"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.8 }}
+      >
+        <div className="search-bar">
+          <div className="search-icon-wrapper">
+            <FaSearch className="search-icon" />
+          </div>
+          <input
+            type="text"
+            placeholder="Tìm kiếm điểm đến, khách sạn, hoạt động..."
+            onChange={(e) => {
+              console.log(e.target.value)
+            }}
+          />
+          <button className="search-button">
+            <FaSearch />
+            Tìm kiếm
+          </button>
+        </div>
+      </motion.div>
 
-      <div
-        className={`overlay ${showSearchCard ? "active" : ""}`}
-        onClick={handleCloseSearchCard}
-      />
+      {/* Explore Section */}
+      {/* <motion.section
+        className="explore-section"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeIn}
+      >
+        <div className="section-header">
+          <motion.h2 variants={slideUp}>Khám Phá Việt Nam</motion.h2>
+          <motion.p variants={slideUp}>Những điểm đến tuyệt vời đang chờ đón bạn</motion.p>
+        </div>
 
-      <SquishySearchCard
-        showSearchCard={showSearchCard}
-        onClose={handleCloseSearchCard}
-        selectedLocation={selectedLocation}
-        onLocationChange={(value) => setSelectedLocation(value)}
-        onConfirm={handleConfirmLocation}
-        vietnamProvinces={vietnamProvinces}
-      />
+        <motion.div
+          className="explore-categories"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <motion.div className="explore-category" variants={slideUp}>
+            <div className="category-icon">
+              <FaMountain />
+            </div>
+            <h3>Núi</h3>
+          </motion.div>
+          <motion.div className="explore-category" variants={slideUp}>
+            <div className="category-icon">
+              <FaUmbrellaBeach />
+            </div>
+            <h3>Biển</h3>
+          </motion.div>
+          <motion.div className="explore-category" variants={slideUp}>
+            <div className="category-icon">
+              <FaHotel />
+            </div>
+            <h3>Khách sạn</h3>
+          </motion.div>
+          <motion.div className="explore-category" variants={slideUp}>
+            <div className="category-icon">
+              <FaCompass />
+            </div>
+            <h3>Khám phá</h3>
+          </motion.div>
+        </motion.div>
+      </motion.section> */}
+      
 
-      <section className="destinations-section">
-        <h2>Điểm Đến Được Yêu Thích Nhất</h2>
-        <div className="destinations-grid">
-          {favoriteDestinations.map((dest) => (
-            <div
-              key={dest.id}
-              className="destination-card"
-              draggable
-              onDragStart={(e) => handleDragStart(e, dest)}
-              onDragEnd={handleDragEnd}
+      {/* Add after explore-section and before destinations-section */}
+      <motion.section 
+        className="plan-assistance-section"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeIn}
+      >
+        <div className="plan-assistance-decoration decoration-1"></div>
+        <div className="plan-assistance-decoration decoration-2"></div>
+        
+        <motion.div 
+          className="plan-assistance-container"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <motion.div 
+            className="plan-assistance-content"
+            variants={slideUp}
+          >
+            <h2 className="plan-assistance-title">Sẵn sàng cho chuyến đi của bạn?</h2>
+            <p className="plan-assistance-text">
+              Hãy để chúng tôi giúp bạn lập kế hoạch cho một chuyến đi hoàn hảo. 
+              Từ việc chọn điểm đến, đặt chỗ ở đến lịch trình chi tiết - tất cả đều được cá nhân hóa theo sở thích của bạn.
+            </p>
+            <Link href="/Q&A">
+              <motion.div 
+                className="plan-assistance-button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <FaQuestionCircle className="plan-assistance-icon" />
+                <span>Bắt đầu lập kế hoạch ngay</span>
+              </motion.div>
+            </Link>
+          </motion.div>
+          
+          <motion.div 
+            className="plan-assistance-image"
+            variants={slideRight}
+          >
+            <img 
+              src="https://i.pinimg.com/736x/33/df/4c/33df4cda6c650782b67d2e53d717cc05.jpg" 
+              alt="Plan your trip"
+              className="rounded-lg shadow-xl"
+              style={{ maxWidth: "400px", width: "100%" }}
+            />
+          </motion.div>
+        </motion.div>
+      </motion.section>
+
+      {/* Add after plan-assistance-section and before destinations-section */}
+      <motion.section 
+        className="search-banner"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeIn}
+      >
+        <div className="search-banner-pattern"></div>
+        <div className="search-banner-border"></div>
+        
+        <motion.div 
+          className="search-banner-container"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <motion.div 
+            className="search-banner-content"
+            variants={slideUp}
+          >
+            <h2 className="search-banner-title">Chưa biết đi đâu cho kỳ nghỉ sắp tới?</h2>
+            <p className="search-banner-text">
+              Khám phá vẻ đẹp Việt Nam với những điểm đến đầy mê hoặc. Từ những bãi biển xanh ngắt đến ruộng bậc thang mùa lúa chín, hay những phố cổ đậm chất lịch sử - chúng tôi sẽ giúp bạn tìm ra điểm đến hoàn hảo.
+            </p>
+            <motion.div 
+              className="search-banner-button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSearchButtonClick}
             >
-              <div className="relative">
-                <img src={dest.img} alt={dest.title} />
-                <button
-                  className="add-to-plan-btn"
-                  onClick={(e) => handleAddToPlan(dest, e)}
-                  aria-label="Add to plan"
-                >
+              <FaMapMarkerAlt className="search-banner-icon" />
+              <span>Khám phá điểm đến</span>
+            </motion.div>
+          </motion.div>
+          
+          <motion.div 
+            className="search-banner-image"
+            variants={slideRight}
+          >
+            <div className="lantern lantern-1"></div>
+            <div className="lantern lantern-2"></div>
+            <img 
+              src="https://i.pinimg.com/736x/97/b2/11/97b211143649cfadb5622e6e6db2a2d6.jpg" 
+              alt="Bản đồ Việt Nam"
+              className="floating-map"
+            />
+          </motion.div>
+        </motion.div>
+      </motion.section>
+
+      <div className={`overlay ${showSearchCard ? "active" : ""}`} onClick={handleCloseSearchCard} />
+
+      <motion.div
+        className={`search-card ${showSearchCard ? "active" : ""}`}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{
+          opacity: showSearchCard ? 1 : 0,
+          scale: showSearchCard ? 1 : 0.8,
+        }}
+        transition={{
+          duration: 0.3,
+          ease: "easeOut",
+        }}
+      >
+        <div className="search-card-decoration decoration-1"></div>
+        <div className="search-card-decoration decoration-2"></div>
+        
+        <div className="search-card-content">
+          <motion.span
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="search-card-title"
+          >
+            Bạn muốn đi đâu?
+            <span>Chọn điểm đến mơ ước của bạn</span>
+          </motion.span>
+
+          <motion.div
+            className="location-dropdown"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)}>
+              <option value="">Chọn tỉnh thành</option>
+              {vietnamProvinces.map((province: string, index: number) => (
+                <option key={index} value={province}>
+                  {province}
+                </option>
+              ))}
+            </select>
+          </motion.div>
+
+          <motion.div
+            className="search-card-buttons"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <motion.button
+              className="search-card-btn cancel"
+              onClick={handleCloseSearchCard}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span>Hủy</span>
+            </motion.button>
+            <motion.button
+              className="search-card-btn confirm"
+              onClick={handleConfirmLocation}
+              disabled={!selectedLocation}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <FaSearch />
+              <span>Tìm kiếm</span>
+            </motion.button>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* Featured Destinations */}
+      <motion.section
+        className="destinations-section"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeIn}
+      >
+        <div className="section-header">
+          <motion.h2 variants={slideUp}>Điểm Đến Được Yêu Thích Nhất</motion.h2>
+          <motion.p variants={slideUp}>Những địa điểm du lịch hàng đầu tại Việt Nam</motion.p>
+        </div>
+
+        <motion.div
+          className="destinations-grid"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          {favoriteDestinations.map((dest: any, index) => (
+            <motion.div
+              key={dest.id || index}
+              className="destination-card-wrapper"
+              variants={slideUp}
+            >
+              <div
+                className="destination-card"
+                draggable
+                onDragStart={(e: React.DragEvent<HTMLDivElement>) => handleDragStart(e, dest)}
+                onDragEnd={(e: React.DragEvent<HTMLDivElement>) => handleDragEnd(e)}
+              >
+                <div className="card-image-container">
+                  <img 
+                    src={dest.img || "/placeholder.svg"} 
+                    alt={dest.title} 
+                    onError={handleImageError}
+                    className="card-image"
+                  />
+                  <div className="card-overlay"></div>
+                  <div className="card-rating">
+                    <span className="star">★</span> {dest.rating}
+                  </div>
+                  <button className="add-to-plan-btn" onClick={(e) => handleAddToPlan(dest, e)} aria-label="Add to plan">
+                    <FaPlus />
+                  </button>
+                </div>
+                <div className="card-content" onClick={() => handleCardClick(dest)}>
+                  <h3>{dest.title}</h3>
+                  <div className="card-details">
+                    <div className="card-location">
+                      <FaMapMarkerAlt className="location-icon" />
+                      <span>{dest.address}</span>
+                    </div>
+                    <p className="card-description">
+                      {dest.description.length > 100 ? dest.description.substring(0, 100) + "..." : dest.description}
+                    </p>
+                    <div className="card-footer">
+                      <span className="explore-link">
+                        Khám phá <FaArrowRight className="arrow-icon" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* Top Destinations */}
+      <motion.section
+        className="recently-viewed"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeIn}
+      >
+        <div className="section-header">
+          <motion.h2 variants={slideUp}>Top Địa Điểm Du Lịch Hấp Dẫn</motion.h2>
+          <motion.p variants={slideUp}>Những điểm đến không thể bỏ lỡ trong hành trình khám phá Việt Nam</motion.p>
+        </div>
+
+        <motion.div
+          className="destinations-grid"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          {topDestinations.map((dest: any, index) => (
+            <motion.div key={dest.id || index} className="destination-card" variants={slideUp}>
+              <div className="card-image-container">
+                <img 
+                  src={dest.img || "/placeholder.svg"} 
+                  alt={dest.title} 
+                  onError={handleImageError}
+                  className="card-image"
+                />
+                <div className="card-overlay"></div>
+                <div className="card-rating">
+                  <span className="star">★</span> {dest.rating}
+                </div>
+                <button className="add-to-plan-btn" onClick={(e) => handleAddToPlan(dest, e)} aria-label="Add to plan">
                   <FaPlus />
                 </button>
               </div>
-              <div
-                className="card-content"
-                onClick={() => handleCardClick(dest)}
-              >
+              <div className="card-content" onClick={() => handleCardClick(dest)}>
                 <h3>{dest.title}</h3>
                 <div className="card-details">
-                  <span className="rating">★ {dest.rating}</span>
-                  <div className="trip-info">
-                    <h1>{dest.location}</h1>
-                    <span>
-                      Mô tả:{" "}
-                      {dest.description.length > 100
-                        ? dest.description.substring(0, 100) + "..."
-                        : dest.description}
+                  <div className="card-location">
+                    <FaMapMarkerAlt className="location-icon" />
+                    <span>{dest.address}</span>
+                  </div>
+                  <p className="card-description">
+                    {dest.description.length > 100 ? dest.description.substring(0, 100) + "..." : dest.description}
+                  </p>
+                  <div className="card-footer">
+                    <span className="explore-link">
+                      Khám phá <FaArrowRight className="arrow-icon" />
                     </span>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
+      {/* Must Visit Cities */}
+      <motion.section
+        className="packages-section"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeIn}
+      >
+        <div className="section-header">
+          <motion.h2 variants={slideUp}>Những Thành Phố Không Thể Bỏ Lỡ!</motion.h2>
+          <motion.p variants={slideUp}>Khám phá vẻ đẹp độc đáo của các thành phố nổi tiếng</motion.p>
+        </div>
+
+        <motion.div
+          className="destinations-grid"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          {mustVisitCities.map((dest: any, index) => (
+            <motion.div key={dest.id || index} className="destination-card featured-card" variants={slideUp}>
+              <div className="card-image-container">
+                <img 
+                  src={dest.img || "/placeholder.svg"} 
+                  alt={dest.title} 
+                  onError={handleImageError}
+                  className="card-image"
+                />
+                <div className="card-overlay gradient-overlay"></div>
+                <div className="card-rating">
+                  <span className="star">★</span> {dest.rating}
+                </div>
+                <button className="add-to-plan-btn" onClick={(e) => handleAddToPlan(dest, e)} aria-label="Add to plan">
+                  <FaPlus />
+                </button>
+                <div className="featured-badge">
+                  <FaRegClock /> Xu hướng
+                </div>
+              </div>
+              <div className="card-content" onClick={() => handleCardClick(dest)}>
+                <h3>{dest.title}</h3>
+                <div className="card-details">
+                  <div className="card-location">
+                    <FaMapMarkerAlt className="location-icon" />
+                    <span>{dest.address || dest.location}</span>
+                  </div>
+                  <p className="card-description">
+                    {dest.description.length > 100 ? dest.description.substring(0, 100) + "..." : dest.description}
+                  </p>
+                  <div className="card-footer">
+                    <span className="explore-link">
+                      Khám phá <FaArrowRight className="arrow-icon" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* Destination Detail Modal */}
       {showDetail && selectedDestination && (
-        <div
+        <motion.div
           className="destination-detail-overlay active"
           onClick={handleCloseDetail}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
         >
-          <div
+          <motion.div
             className="destination-detail-box"
             onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", damping: 25 }}
           >
             <div className="detail-image-container">
-              <img
-                src={selectedDestination.image}
+              <img 
+                src={selectedDestination.img || selectedDestination.image} 
                 alt={selectedDestination.title}
+                onError={handleImageError}
               />
               <button className="detail-close-btn" onClick={handleCloseDetail}>
                 ×
@@ -718,199 +1157,46 @@ const HomePage = ({
                 </div>
               </div>
               <div className="detail-location">
-                <span>📍</span> {selectedDestination.location}
+                <FaMapMarkerAlt />
+                <span>{selectedDestination.address || selectedDestination.location}</span>
               </div>
-              <div className="detail-description">
-                {selectedDestination.description}
+              <div className="detail-description">{selectedDestination.description}</div>
+              <div className="detail-actions">
+                <button className="detail-action-btn primary">
+                  <FaPlus className="btn-icon" /> Thêm vào kế hoạch
+                </button>
+                {/* <button className="detail-action-btn secondary">
+                  <FaGlobeAsia className="btn-icon" /> Xem trên bản đồ
+                </button> */}
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
-      <section className="recently-viewed">
-        <h2>Top Địa Điểm Du Lịch Hấp Dẫn</h2>
-        <div className="destinations-grid">
-          {topDestinations.map((dest) => (
-            <div className="destination-card" key={dest.title}>
-              <div className="relative">
-                <img src={dest.img} alt={dest.title} />
-                {/* <Image
-                  src={dest.img}
-                  alt={dest.title}
-                  width={300} // Chiều rộng cố định
-                  height={200} // Chiều cao cố định
-                  style={{ objectFit: "cover" }} // Thay thế objectFit
-                /> */}
-                <button
-                  className="add-to-plan-btn"
-                  onClick={(e) => handleAddToPlan(dest, e)}
-                  aria-label="Add to plan"
-                >
-                  <FaPlus />
-                </button>
-              </div>
-              <div
-                className="card-content"
-                onClick={() => handleCardClick(dest)}
-              >
-                <h3>{dest.title}</h3>
-                <div className="card-details">
-                  <span className="rating">★ {dest.rating}</span>
-                  <div className="trip-info">
-                    <h1>{dest.address}</h1>
-                    <span>
-                      Mô tả:{" "}
-                      {dest.description.length > 100
-                        ? dest.description.substring(0, 100) + "..."
-                        : dest.description}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="packages-section">
-        <h2>Những Thành Phố Không Thể Bỏ Lỡ!</h2>
-        <div className="destinations-grid">
-          {mustVisitCities.map((dest) => (
-            <div key={dest.id} className="destination-card">
-              <div className="relative">
-                <img src={dest.img} alt={dest.title} />
-                <button
-                  className="add-to-plan-btn"
-                  onClick={(e) => handleAddToPlan(dest, e)}
-                  aria-label="Add to plan"
-                >
-                  <FaPlus />
-                </button>
-              </div>
-              <div
-                className="card-content"
-                onClick={() => handleCardClick(dest)}
-              >
-                <h3>{dest.title}</h3>
-                <div className="card-details">
-                  <span className="rating">★ {dest.rating}</span>
-                  <div className="trip-info">
-                    <h1>{dest.location}</h1>
-                    <span>
-                      Mô tả:{" "}
-                      {dest.description.length > 100
-                        ? dest.description.substring(0, 100) + "..."
-                        : dest.description}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* <section className="honeymoon-section">
-          <h2>Honeymoon Packages Special!</h2>
-          <div className="destinations-grid">
-            {filteredDestinations.map((dest) => (
-              <div key={dest.id} className="destination-card">
-                <div className="relative">
-                  <img src={dest.image} alt={dest.title} />
-                  <button
-                    className="add-to-plan-btn"
-                    onClick={(e) => handleAddToPlan(dest, e)}
-                    aria-label="Add to plan"
-                  >
-                    <FaPlus />
-                  </button>
-                </div>
-                <div
-                  className="card-content"
-                  onClick={() => handleCardClick(dest)}
-                >
-                  <h3>{dest.title}</h3>
-                  <div className="card-details">
-                    <span className="rating">★ {dest.rating}</span>
-                    <div className="trip-info">
-                      <h1>{dest.location}</h1>
-                      <span>
-                        Mô tả:{" "}
-                        {dest.description.length > 100
-                          ? dest.description.substring(0, 100) + "..."
-                          : dest.description}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section> */}
-
-      {/* <section className="hotels-section">
-          <h2>Recommended Hotels</h2>
-          <div className="destinations-grid">
-            {hotels.map((hotel) => (
-              <div
-                key={hotel.id}
-                className="destination-card hotel-card"
-                onClick={() => handleHotelClick(hotel)}
-              >
-                <div className="relative">
-                  <img src={hotel.img_origin} alt={hotel.name} />
-                  {isInPlan && (
-                    <button
-                      className="add-to-plan-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle adding hotel to plan
-                      }}
-                      aria-label="Add to plan"
-                    >
-                      <FaPlus />
-                    </button>
-                  )}
-                </div>
-                <div className="card-content">
-                  <h3>{hotel.name}</h3>
-                  <div className="card-details">
-                    <div className="hotel-info">
-                      <span className="hotel-class">{hotel.hotel_class}</span>
-                      <span className="rating">★ {hotel.location_rating}</span>
-                    </div>
-                    <div className="trip-info">
-                      <h1>{hotel.name_nearby_place}</h1>
-                      <span className="price">{hotel.price}/đêm</span>
-                      <span className="description">
-                        {hotel.description.length > 100
-                          ? hotel.description.substring(0, 100) + "..."
-                          : hotel.description}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section> */}
-
+      {/* Hotel Detail Modal */}
       {showHotelDetail && selectedHotel && (
-        <div
+        <motion.div
           className="destination-detail-overlay active"
           onClick={handleCloseHotelDetail}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
         >
-          <div
+          <motion.div
             className="destination-detail-box"
             onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", damping: 25 }}
           >
             <div className="detail-image-container">
-              <img src={selectedHotel.img_origin} alt={selectedHotel.name} />
-              <button
-                className="detail-close-btn"
-                onClick={handleCloseHotelDetail}
-              >
+              <img 
+                src={selectedHotel.img_origin || "/placeholder.svg"} 
+                alt={selectedHotel.name}
+                onError={handleImageError}
+              />
+              <button className="detail-close-btn" onClick={handleCloseHotelDetail}>
                 ×
               </button>
             </div>
@@ -927,20 +1213,16 @@ const HomePage = ({
                 <div className="hotel-info-grid">
                   <div className="hotel-info-item">
                     <span className="hotel-info-label">Hạng khách sạn</span>
-                    <span className="hotel-info-value hotel-class-badge">
-                      {selectedHotel.hotel_class}
-                    </span>
+                    <span className="hotel-info-value hotel-class-badge">{selectedHotel.hotel_class}</span>
                   </div>
                   <div className="hotel-info-item">
                     <span className="hotel-info-label">Giá phòng</span>
-                    <span className="hotel-info-value hotel-price">
-                      {selectedHotel.price}/đêm
-                    </span>
+                    <span className="hotel-info-value hotel-price">{selectedHotel.price}/đêm</span>
                   </div>
                   <div className="hotel-info-item">
                     <span className="hotel-info-label">Địa điểm lân cận</span>
                     <span className="hotel-info-value">
-                      <span>📍</span> {selectedHotel.name_nearby_place}
+                      <FaMapMarkerAlt /> {selectedHotel.name_nearby_place}
                     </span>
                   </div>
                   <div className="hotel-info-item">
@@ -954,9 +1236,7 @@ const HomePage = ({
 
               <div className="hotel-info-section">
                 <h3>Mô tả</h3>
-                <div className="detail-description">
-                  {selectedHotel.description}
-                </div>
+                <div className="detail-description">{selectedHotel.description}</div>
               </div>
 
               <div className="hotel-info-section">
@@ -973,37 +1253,63 @@ const HomePage = ({
               <div className="hotel-info-section">
                 <h3>Đặt phòng</h3>
                 <div className="hotel-booking">
-                  <a
-                    href={selectedHotel.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="booking-link"
-                  >
+                  <a href={selectedHotel.link} target="_blank" rel="noopener noreferrer" className="booking-link">
                     Xem chi tiết và đặt phòng
                   </a>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
+      {/* Newsletter Section */}
+      <motion.section
+        className="newsletter-section"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeIn}
+      >
+        <div className="newsletter-container">
+          <motion.div className="newsletter-content" variants={slideRight}>
+            <h3>Đăng ký nhận thông tin</h3>
+            <h2>Nhận thông báo về các ưu đãi đặc biệt</h2>
+            <p>Đăng ký để nhận thông tin về các điểm đến hấp dẫn và ưu đãi du lịch mới nhất</p>
+
+            <div className="newsletter-form">
+              <input type="email" placeholder="Địa chỉ email của bạn" />
+              <button>Đăng ký</button>
+            </div>
+          </motion.div>
+
+          <motion.div className="newsletter-image" variants={slideUp}>
+            <img 
+              src="/images/Đảo Bình Ba.jpg" 
+              alt="Newsletter"
+              onError={handleImageError}
+            />
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Footer */}
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-section">
-            <h3>Travel</h3>
-            <p>About Us</p>
-            <p>Contact Us</p>
-            <p>Terms & Conditions</p>
+            <h3>Khám Phá</h3>
+            <p>Về Chúng Tôi</p>
+            <p>Liên Hệ</p>
+            <p>Điều Khoản & Điều Kiện</p>
           </div>
           <div className="footer-section">
-            <h3>Support</h3>
-            <p>Customer Support</p>
-            <p>Privacy Policy</p>
-            <p>FAQ</p>
+            <h3>Hỗ Trợ</h3>
+            <p>Hỗ Trợ Khách Hàng</p>
+            <p>Chính Sách Bảo Mật</p>
+            <p>Câu Hỏi Thường Gặp</p>
           </div>
           <div className="footer-section">
-            <h3>Social</h3>
+            <h3>Kết Nối</h3>
             <div className="social-links">
               <Link href="#">Facebook</Link>
               <Link href="#">Twitter</Link>
@@ -1011,17 +1317,31 @@ const HomePage = ({
             </div>
           </div>
         </div>
+        <div className="footer-bottom">
+          <p>© 2023 Khám Phá Việt Nam. Tất cả quyền được bảo lưu.</p>
+        </div>
       </footer>
 
-      {/* {isHomePage && (
-        )} */}
-      <Link href="/Q&A">
-        <div className="fixed-logo">
-          <img src="/images/LOGO.png" alt="Website Logo" />
-        </div>
-      </Link>
+      <AnimatePresence>
+        {(pathname === "/" || pathname === "/flight_hotel") && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, x: 100 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, x: 100 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            {/* <Link href="/Q&A">
+              <div className="qa-navigation-button">
+                <FaQuestionCircle className="qa-icon" />
+                <span className="qa-text">Hỗ trợ lập kế hoạch</span>
+              </div>
+            </Link> */}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
-  );
-};
+  )
+}
 
-export default HomePage;
+export default HomePage
+
