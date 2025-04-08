@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { checkAuth } = useAuth();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,31 +36,17 @@ export default function LoginPage() {
       );
 
       const data = await response.json();
-      console.log("API Response:", data); // Log để debug
+      console.log("API Response:", data);
 
       if (response.ok && data.code === 200) {
-        // Lưu token
-        localStorage.setItem("token", data.result.token);
+        // Lưu token và thông tin user
+        const userData = {
+          fullName: data.result.user?.fullName || email.split('@')[0],
+          email: data.result.user?.email || email,
+        };
         
-        // Kiểm tra và lưu thông tin user
-        if (data.result && data.result.user) {
-          const userData = {
-            fullName: data.result.user.fullName || email.split('@')[0], // Fallback nếu không có fullName
-            email: data.result.user.email || email,
-          };
-          localStorage.setItem("user", JSON.stringify(userData));
-          console.log("Stored user data:", userData);
-        } else {
-          // Fallback nếu không có thông tin user
-          const userData = {
-            fullName: email.split('@')[0],
-            email: email,
-          };
-          localStorage.setItem("user", JSON.stringify(userData));
-          console.log("Stored fallback user data:", userData);
-        }
-        
-        checkAuth();
+        // Sử dụng hàm login từ useAuth hook
+        login(data.result.token, userData);
         router.push("/homepage");
       } else {
         setError(
