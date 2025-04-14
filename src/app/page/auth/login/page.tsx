@@ -47,6 +47,10 @@ export default function LoginPage() {
         
         // Sử dụng hàm login từ useAuth hook
         login(data.result.token, userData);
+        
+        // Kích hoạt sự kiện authStateChanged để cập nhật UI ngay lập tức
+        window.dispatchEvent(new Event('authStateChanged'));
+        
         router.push("/homepage");
       } else {
         setError(
