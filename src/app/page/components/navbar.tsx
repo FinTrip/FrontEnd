@@ -278,18 +278,8 @@ export function Navbar() {
                         className="relative h-8 w-8 rounded-full"
                       >
                         <Avatar className="h-8 w-8">
-<<<<<<< HEAD
-                          <AvatarImage
-                            src="/avatars/01.png"
-                            alt={user?.fullName || "User"}
-                          />
-                          <AvatarFallback>
-                            {user?.fullName?.charAt(0) || "U"}
-                          </AvatarFallback>
-=======
                           <AvatarImage src="/avatars/01.png" alt={user?.fullName || ""} />
                           <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
->>>>>>> main
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
