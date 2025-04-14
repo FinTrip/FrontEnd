@@ -234,6 +234,18 @@ export function Navbar() {
           >
             Plan
           </Link>
+          <Link
+            href="/weather"
+            onClick={handleNavigation}
+            className={cn(
+              "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
+              pathname === "/weather"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
+            )}
+          >
+            Weather
+          </Link>
         </div>
 
         {/* Right Section */}
