@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Cookies from 'js-cookie'
 
 interface User {
   fullName: string;
@@ -43,6 +44,9 @@ export function useAuth() {
         setIsAuthenticated(true)
         setUser(userData)
         setToken(storedToken)
+        
+        // Đồng bộ token vào cookie
+        Cookies.set('token', storedToken, { expires: 7 });
       } catch (error) {
         console.error('Error parsing user data:', error)
         setIsAuthenticated(false)
@@ -59,6 +63,10 @@ export function useAuth() {
   const login = (token: string, userData: User) => {
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(userData))
+    
+    // Đồng bộ token vào cookie khi đăng nhập
+    Cookies.set('token', token, { expires: 7 });
+    
     setIsAuthenticated(true)
     setUser(userData)
     setToken(token)
@@ -69,6 +77,10 @@ export function useAuth() {
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    
+    // Xóa cookie khi đăng xuất
+    Cookies.remove('token');
+    
     setIsAuthenticated(false)
     setUser(null)
     setToken(null)
