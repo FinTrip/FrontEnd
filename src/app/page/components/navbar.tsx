@@ -202,6 +202,18 @@ export function Navbar() {
           >
             Plan
           </Link>
+          <Link
+            href="/weather"
+            onClick={handleNavigation}
+            className={cn(
+              "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
+              pathname === "/weather"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
+            )}
+          >
+            Weather
+          </Link>
         </div>
 
         {/* Right Section */}
@@ -230,8 +242,13 @@ export function Navbar() {
                         className="relative h-8 w-8 rounded-full"
                       >
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/avatars/01.png" alt={user?.fullName || "User"} />
-                          <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
+                          <AvatarImage
+                            src="/avatars/01.png"
+                            alt={user?.fullName || "User"}
+                          />
+                          <AvatarFallback>
+                            {user?.fullName?.charAt(0) || "U"}
+                          </AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
