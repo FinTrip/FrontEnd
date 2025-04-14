@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback } from "@/app/page/components/ui/avatar"
 import { Separator } from "@/app/page/components/ui/separator"
 import { Textarea } from "@/app/page/components/ui/textarea"
-import { MapPin, Calendar, User, ThumbsUp, MessageSquare, Share2, Bookmark, ArrowLeft } from "lucide-react"
-import { useEffect, useState } from "react"
+import { MapPin, Calendar, User, ThumbsUp, MessageSquare, Share2, Bookmark, ArrowLeft, Eye, Loader2, X } from "lucide-react"
+import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/hooks/useAuth"
 
 interface Post {
@@ -16,6 +16,9 @@ interface Post {
   content: string
   authorName: string
   createdAt: string
+  views: number | null
+  likes: number | null
+  images?: string[]
 }
 
 interface Comment {
@@ -44,7 +47,16 @@ export default function PostPage({ params }: { params: { id: string } }) {
   const [replyingToReply, setReplyingToReply] = useState<{ commentId: number, replyId: number } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
-  const { token } = useAuth()
+  const { token, user } = useAuth()
+
+  const [isLiked, setIsLiked] = useState<boolean | null>(null)
+  const [likeCount, setLikeCount] = useState<number>(0)
+  const [isLoadingLikeStatus, setIsLoadingLikeStatus] = useState<boolean>(false)
+  const [isProcessingLike, setIsProcessingLike] = useState<boolean>(false)
+
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const commentSectionRef = useRef<HTMLDivElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const fetchComments = async () => {
     try {
@@ -88,30 +100,75 @@ export default function PostPage({ params }: { params: { id: string } }) {
     }
   }
 
+  const fetchLikeStatus = async () => {
+    if (!token) {
+      setIsLiked(false)
+      return
+    }
+    setIsLoadingLikeStatus(true)
+    try {
+      const response = await fetch(`http://localhost:8081/indentity/api/blog/${params.id}/like-status`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          setIsLiked(false);
+        } else {
+          console.error('Failed to fetch like status with status:', response.status);
+          setIsLiked(false); 
+        }
+      } else {
+        const data = await response.json();
+        if (data.code === 200 && typeof data.result?.isLiked === 'boolean') {
+          setIsLiked(data.result.isLiked);
+        } else {
+          console.error('Invalid response format for like status:', data);
+          setIsLiked(false);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching like status:", err)
+      setIsLiked(false)
+    } finally {
+      setIsLoadingLikeStatus(false)
+    }
+  }
+
   useEffect(() => {
     const fetchPost = async () => {
+      let postData: Post | null = null;
       try {
         setIsLoading(true)
+        setError(""); 
         const response = await fetch(`http://localhost:8081/indentity/api/blog/post/${params.id}`)
         const data = await response.json()
         
-        if (data.code === 200) {
-          setPost(data.result)
-          // Fetch comments after getting post
+        if (data.code === 200 && data.result) {
+          postData = data.result;
+          setPost(postData)
+          setLikeCount(postData?.likes || 0)
           await fetchComments()
         } else {
           setError(data.message || "Không thể tải bài viết")
+          setPost(null);
         }
       } catch (err) {
         setError("Có lỗi xảy ra khi tải bài viết")
         console.error("Error fetching post:", err)
+        setPost(null);
       } finally {
         setIsLoading(false)
+        if (postData) {
+          await fetchLikeStatus();
+        }
       }
     }
 
     fetchPost()
-  }, [params.id])
+  }, [params.id, token])
 
   const handleCommentSubmit = async () => {
     if (!token) {
@@ -141,7 +198,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
       if (data.code === 200) {
         setNewComment("")
         setError("")
-        // Refresh comments list
         await fetchComments()
       } else {
         setError(data.message || "Không thể đăng bình luận")
@@ -182,7 +238,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
         setNewReply({ ...newReply, [commentId]: "" })
         setReplyingTo(null)
         setError("")
-        // Refresh comments to get updated replies
         await fetchComments()
       } else {
         setError(data.message || "Không thể đăng trả lời")
@@ -224,7 +279,6 @@ export default function PostPage({ params }: { params: { id: string } }) {
         setNewNestedReply({ ...newNestedReply, [replyId]: "" })
         setReplyingToReply(null)
         setError("")
-        // Refresh comments to get updated replies
         await fetchComments()
       } else {
         setError(data.message || "Không thể đăng trả lời")
@@ -234,6 +288,75 @@ export default function PostPage({ params }: { params: { id: string } }) {
       console.error("Error posting nested reply:", err)
     }
   }
+
+  const handleLikeToggle = async () => {
+    if (!token) {
+      setError("Bạn cần đăng nhập để thích bài viết")
+      return
+    }
+    console.log("Token being used for like request:", token);
+    
+    console.log("Current isLiked state before toggle:", isLiked);
+
+    if (isProcessingLike || isLoadingLikeStatus || isLiked === null) {
+      console.log("Like toggle prevented. States:", { isProcessingLike, isLoadingLikeStatus, isLiked });
+      return;
+    }
+
+    setIsProcessingLike(true)
+    const originalLikedState = isLiked;
+    const originalLikeCount = likeCount;
+
+    const newOptimisticLikedState = !isLiked;
+    setIsLiked(newOptimisticLikedState);
+    setLikeCount(prev => newOptimisticLikedState ? prev + 1 : prev - 1);
+    setError("")
+
+    try {
+      const response = await fetch(`http://localhost:8081/indentity/api/blog/${params.id}/like`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      })
+
+      if (!response.ok) {
+         let errorMessage = "Thao tác thất bại";
+         try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+         } catch { /* Ignore if response is not JSON */ }
+         throw new Error(errorMessage);
+      }
+
+      const data = await response.json()
+      if (data.code === 200 && typeof data.result?.liked === 'boolean') {
+         const actualLikedState = data.result.liked;
+         if (actualLikedState !== newOptimisticLikedState) {
+             setIsLiked(actualLikedState);
+             setLikeCount(originalLikedState === actualLikedState 
+                           ? originalLikeCount 
+                           : actualLikedState ? originalLikeCount + 1 : originalLikeCount - 1);
+         }
+      } else {
+         throw new Error(data.message || "Phản hồi không hợp lệ từ máy chủ")
+      }
+    } catch (err) {
+      setIsLiked(originalLikedState);
+      setLikeCount(originalLikeCount);
+      const errorMessage = err instanceof Error ? err.message : "Có lỗi xảy ra khi thích bài viết";
+      setError(errorMessage);
+      console.error("Error toggling like:", err);
+    } finally {
+      setIsProcessingLike(false)
+    }
+  }
+
+  const handleFocusCommentTextarea = () => {
+    commentTextareaRef.current?.focus();
+    commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   if (isLoading) {
     return (
@@ -278,16 +401,31 @@ export default function PostPage({ params }: { params: { id: string } }) {
                   <User className="h-4 w-4" />
                   <span>{post.authorName}</span>
                 </div>
+                <div className="flex items-center gap-1">
+                  <Eye className="h-4 w-4" />
+                  <span>{post.views || 0} Lượt xem</span>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center mb-4">
-                <div className="flex gap-4">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                    <ThumbsUp className="h-4 w-4" />
-                    <span>Thích (0)</span>
+                <div className="flex gap-1 sm:gap-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`flex items-center gap-1 transition-colors ${isLiked ? 'text-blue-600 hover:text-blue-700' : 'text-muted-foreground hover:text-foreground'}`}
+                    onClick={handleLikeToggle}
+                    disabled={isProcessingLike || isLoadingLikeStatus || isLiked === null}
+                    title={isLiked === null ? "Đang tải trạng thái..." : isLiked ? "Bỏ thích" : "Thích"}
+                  >
+                    {isProcessingLike ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ThumbsUp className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                    )}
+                    <span>Thích ({likeCount})</span>
                   </Button>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground hover:text-foreground" onClick={handleFocusCommentTextarea}>
                     <MessageSquare className="h-4 w-4" />
                     <span>Bình luận ({comments.length})</span>
                   </Button>
@@ -307,7 +445,76 @@ export default function PostPage({ params }: { params: { id: string } }) {
               <Separator className="my-4" />
 
               <div className="space-y-4">
+                {post.images && post.images.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {post.images.map((imageUrl, index) => (
+                      <div 
+                        key={index} 
+                        className="relative aspect-video cursor-pointer group"
+                        onClick={() => setSelectedImage(imageUrl)}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`Ảnh ${index + 1} của bài viết`}
+                          className="rounded-lg object-cover w-full h-full transition-transform duration-200 group-hover:scale-[1.02]"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                          <Eye className="w-6 h-6 text-white" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <p>{post.content}</p>
+              </div>
+
+              {/* Lightbox */}
+              {selectedImage && (
+                <div 
+                  className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <div className="relative max-w-5xl w-full">
+                    <button
+                      className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(null);
+                      }}
+                    >
+                      <X className="w-8 h-8" />
+                    </button>
+                    <img
+                      src={selectedImage}
+                      alt="Ảnh chi tiết"
+                      className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Author Section */}
+              <div className="mt-8 p-6 bg-muted rounded-lg">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="text-lg">
+                      {post.authorName[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold">{post.authorName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Đăng vào {new Date(post.createdAt).toLocaleDateString('vi-VN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -317,12 +524,13 @@ export default function PostPage({ params }: { params: { id: string } }) {
               <CardTitle>Bình luận ({comments.length})</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex gap-4">
+              <div ref={commentSectionRef} className="flex gap-4 pt-4">
                 <Avatar>
-                  <AvatarFallback>TH</AvatarFallback>
+                  <AvatarFallback>{user?.fullName ? user.fullName[0].toUpperCase() : '?'}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <Textarea 
+                    ref={commentTextareaRef}
                     placeholder="Viết bình luận của bạn..." 
                     className="mb-2"
                     value={newComment}

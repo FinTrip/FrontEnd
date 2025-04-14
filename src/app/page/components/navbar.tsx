@@ -3,7 +3,7 @@
 import React from "react";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/app/page/components/ui/button";
 import { Input } from "@/app/page/components/ui/input";
 import {
@@ -45,15 +45,47 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Navbar() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, user, logout } = useAuth();
+
+  useEffect(() => {
+    // Kiểm tra trạng thái đăng nhập từ localStorage
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem("token");
+      const userData = localStorage.getItem("user");
+      if (token && userData) {
+        setIsLoggedIn(true);
+        setUser(JSON.parse(userData));
+      } else {
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+
+    checkLoginStatus();
+    // Thêm event listener để cập nhật khi localStorage thay đổi
+    window.addEventListener("storage", checkLoginStatus);
+    
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUser(null);
+    router.push("/page/auth/login");
+  };
 
   const handleCreatePost = () => {
-    if (!isAuthenticated) {
+    if (!isLoggedIn) {
       alert("Vui lòng đăng nhập để tạo bài viết!");
       router.push("/page/auth/login");
       return;
@@ -62,7 +94,7 @@ export function Navbar() {
   };
 
   const handleNavigation = (e: React.MouseEvent) => {
-    if (!isAuthenticated) {
+    if (!isLoggedIn) {
       e.preventDefault();
       alert("Vui lòng đăng nhập để truy cập tính năng này!");
       router.push("/page/auth/login");
@@ -78,7 +110,7 @@ export function Navbar() {
             FinTrip
           </Link>
 
-          {isAuthenticated && (
+          {isLoggedIn && (
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
@@ -213,11 +245,15 @@ export function Navbar() {
                 <Input placeholder="Tìm kiếm..." className="pl-8" />
               </div>
 
-              {isAuthenticated ? (
+              {isLoggedIn ? (
                 <>
-                  <Button variant="ghost" size="sm" onClick={handleCreatePost}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Tạo bài viết
+                  <Button
+                    size="sm"
+                    className="gap-1"
+                    onClick={handleCreatePost}
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    <span>Tạo bài viết</span>
                   </Button>
                   <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
@@ -230,7 +266,7 @@ export function Navbar() {
                         className="relative h-8 w-8 rounded-full"
                       >
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/avatars/01.png" alt={user?.fullName || "User"} />
+                          <AvatarImage src="/avatars/01.png" alt={user?.fullName || ""} />
                           <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                       </Button>
@@ -243,10 +279,10 @@ export function Navbar() {
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-medium leading-none">
-                            {user?.fullName}
+                            {user?.fullName || "User"}
                           </p>
                           <p className="text-xs leading-none text-muted-foreground">
-                            {user?.email}
+                            {user?.email || ""}
                           </p>
                         </div>
                       </DropdownMenuLabel>
@@ -266,7 +302,7 @@ export function Navbar() {
                         </Link>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={logout}>
+                      <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>
                       </DropdownMenuItem>
@@ -306,6 +342,7 @@ export function Navbar() {
                         Trang chủ
                       </Button>
                     </Link>
+                    
                     <Link href="/destinations">
                       <Button variant="ghost" className="w-full justify-start">
                         Điểm đến
@@ -317,7 +354,7 @@ export function Navbar() {
                       </Button>
                     </Link>
 
-                    {isAuthenticated ? (
+                    {isLoggedIn ? (
                       <>
                         <Link href="/create-post">
                           <Button className="w-full mt-2">
