@@ -386,7 +386,7 @@ export function Navbar() {
                             Đã lưu
                           </Button>
                         </Link>
-                        <Link href="/video-call">
+                        <Link href="/callvideo">
                           <Button
                             variant="ghost"
                             className="w-full justify-start"
