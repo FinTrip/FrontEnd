@@ -1,10 +1,16 @@
-"use client"
+// src/app/page/components/home/plan.tsx
+"use client";
 
-import React, { useRef, useState, useEffect } from "react"
-import type { MouseEvent, TouchEvent } from "react"
-import { motion, useMotionTemplate, useMotionValue, useSpring } from "framer-motion"
-import "./plan.css"
-import { IoArrowBackOutline, IoClose } from "react-icons/io5"
+import React, { useRef, useState, useEffect } from "react";
+import type { MouseEvent, TouchEvent } from "react";
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useSpring,
+} from "framer-motion";
+import "./plan.css";
+import { IoArrowBackOutline, IoClose } from "react-icons/io5";
 import {
   FaPlus,
   FaPlane,
@@ -31,74 +37,117 @@ import {
   FaRoute,
   FaChevronLeft,
   FaChevronRight,
-} from "react-icons/fa"
-import Image from "next/image"
-import Link from "next/link"
-import HomePage, { type DestinationCard } from "./home_page"
-import Screenshot from "../screenshot"
+} from "react-icons/fa";
+import Image from "next/image";
+import Link from "next/link";
+import HomePage, { type DestinationCard } from "./home_page";
+import Screenshot from "../screenshot";
+import {
+  WeatherData,
+  getCoordinates,
+  getWeatherForDate,
+  getVietnameseDescription,
+} from "../../utils/weatherService";
 
 // Định nghĩa interface cho Activity
 interface Activity {
-  type: string
-  title: string
-  description: string
-  icon?: string | React.ReactNode
-  image?: string
-  location?: string
-  rating?: number
-  startTime?: string
-  endTime?: string
+  type: string;
+  title: string;
+  description: string;
+  icon?: string | React.ReactNode;
+  image?: string;
+  location?: string;
+  rating?: number;
+  startTime?: string;
+  endTime?: string;
 }
 
 // Định nghĩa interface cho Day
 interface DayPlan {
-  day: number
-  date: string
-  activities: Activity[]
+  day: number;
+  date: string;
+  activities: Activity[];
 }
 
 interface TiltActivityCardProps {
-  children: React.ReactNode
-  onMouseMove?: (e: React.MouseEvent) => void
-  onMouseLeave?: (e: React.MouseEvent) => void
+  children: React.ReactNode;
+  onMouseMove?: (e: React.MouseEvent) => void;
+  onMouseLeave?: (e: React.MouseEvent) => void;
 }
 
-const ROTATION_RANGE = 12.5
-const HALF_ROTATION_RANGE = 12.5 / 2
+const ROTATION_RANGE = 12.5;
+const HALF_ROTATION_RANGE = 12.5 / 2;
 
-const TiltActivityCard: React.FC<TiltActivityCardProps> = ({ children, onMouseMove, onMouseLeave }) => {
-  const ref = useRef<HTMLDivElement>(null)
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
+// Weather icon mapping
+const getWeatherIcon = (iconCode: string) => {
+  switch (iconCode) {
+    case "01d":
+    case "01n":
+      return FaSun;
+    case "02d":
+    case "02n":
+      return FaCloudSun;
+    case "03d":
+    case "03n":
+    case "04d":
+    case "04n":
+      return FaCloud;
+    case "09d":
+    case "09n":
+    case "10d":
+    case "10n":
+      return FaCloudRain;
+    case "11d":
+    case "11n":
+      return FaCloudRain;
+    case "13d":
+    case "13n":
+      return FaSnowflake;
+    case "50d":
+    case "50n":
+      return FaWind;
+    default:
+      return FaCloud;
+  }
+};
 
-  const xSpring = useSpring(x)
-  const ySpring = useSpring(y)
+const TiltActivityCard: React.FC<TiltActivityCardProps> = ({
+  children,
+  onMouseMove,
+  onMouseLeave,
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
 
-  const transform = useMotionTemplate`rotateX(${xSpring}deg) rotateY(${ySpring}deg)`
+  const xSpring = useSpring(x);
+  const ySpring = useSpring(y);
+
+  const transform = useMotionTemplate`rotateX(${xSpring}deg) rotateY(${ySpring}deg)`;
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return
+    if (!ref.current) return;
 
-    const rect = ref.current.getBoundingClientRect()
-    const width = rect.width
-    const height = rect.height
+    const rect = ref.current.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
 
-    const mouseX = (e.clientX - rect.left) * ROTATION_RANGE
-    const mouseY = (e.clientY - rect.top) * ROTATION_RANGE
+    const mouseX = (e.clientX - rect.left) * ROTATION_RANGE;
+    const mouseY = (e.clientY - rect.top) * ROTATION_RANGE;
 
-    const rX = (mouseY / height - HALF_ROTATION_RANGE) * -1
-    const rY = mouseX / width - HALF_ROTATION_RANGE
+    const rX = (mouseY / height - HALF_ROTATION_RANGE) * -1;
+    const rY = mouseX / width - HALF_ROTATION_RANGE;
 
-    x.set(rX)
-    y.set(rY)
-    onMouseMove?.(e)
-  }
+    x.set(rX);
+    y.set(rY);
+    onMouseMove?.(e);
+  };
 
   const handleMouseLeave = (e: React.MouseEvent) => {
-    x.set(0)
-    y.set(0)
-    onMouseLeave?.(e)
-  }
+    x.set(0);
+    y.set(0);
+    onMouseLeave?.(e);
+  };
 
   return (
     <motion.div
@@ -121,20 +170,33 @@ const TiltActivityCard: React.FC<TiltActivityCardProps> = ({ children, onMouseMo
         {children}
       </div>
     </motion.div>
-  )
-}
+  );
+};
 
 interface DraggableActivityProps {
-  activity: Activity
-  onDelete: (dayIndex: number, activityIndex: number) => void
-  dayIndex: number
-  activityIndex: number
-  onDragStart: (e: React.DragEvent, dayIndex: number, activityIndex: number) => void
-  onDragEnd: (e: React.DragEvent) => void
-  onDragOver: (e: React.DragEvent, dayIndex: number, activityIndex: number) => void
-  onActivityClick: (activity: Activity) => void
-  onTimeChange?: (dayIndex: number, activityIndex: number, startTime: string, endTime: string) => void
-  children?: React.ReactNode
+  activity: Activity;
+  onDelete: (dayIndex: number, activityIndex: number) => void;
+  dayIndex: number;
+  activityIndex: number;
+  onDragStart: (
+    e: React.DragEvent,
+    dayIndex: number,
+    activityIndex: number
+  ) => void;
+  onDragEnd: (e: React.DragEvent) => void;
+  onDragOver: (
+    e: React.DragEvent,
+    dayIndex: number,
+    activityIndex: number
+  ) => void;
+  onActivityClick: (activity: Activity) => void;
+  onTimeChange?: (
+    dayIndex: number,
+    activityIndex: number,
+    startTime: string,
+    endTime: string
+  ) => void;
+  children?: React.ReactNode;
 }
 
 const DraggableActivity: React.FC<DraggableActivityProps> = ({
@@ -149,56 +211,58 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({
   onTimeChange,
   children,
 }) => {
-  const [isHovered, setIsHovered] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
-  const [localStartTime, setLocalStartTime] = useState(activity.startTime || "")
-  const [localEndTime, setLocalEndTime] = useState(activity.endTime || "")
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [localStartTime, setLocalStartTime] = useState(
+    activity.startTime || ""
+  );
+  const [localEndTime, setLocalEndTime] = useState(activity.endTime || "");
 
   useEffect(() => {
-    setLocalStartTime(activity.startTime || "")
-    setLocalEndTime(activity.endTime || "")
-  }, [activity.startTime, activity.endTime])
+    setLocalStartTime(activity.startTime || "");
+    setLocalEndTime(activity.endTime || "");
+  }, [activity.startTime, activity.endTime]);
 
   const handleTimeChange = (newStartTime: string, newEndTime: string) => {
-    setLocalStartTime(newStartTime)
-    setLocalEndTime(newEndTime)
+    setLocalStartTime(newStartTime);
+    setLocalEndTime(newEndTime);
     if (onTimeChange) {
-      onTimeChange(dayIndex, activityIndex, newStartTime, newEndTime)
+      onTimeChange(dayIndex, activityIndex, newStartTime, newEndTime);
     }
-  }
+  };
 
   const handleDragStart = (e: React.DragEvent) => {
-    setIsDragging(true)
+    setIsDragging(true);
     const dragData = {
       dayIndex,
       activityIndex,
       startTime: localStartTime,
       endTime: localEndTime,
-    }
-    e.dataTransfer.setData("text/plain", JSON.stringify(dragData))
-    onDragStart(e, dayIndex, activityIndex)
-    e.currentTarget.classList.add("dragging")
-  }
+    };
+    e.dataTransfer.setData("text/plain", JSON.stringify(dragData));
+    onDragStart(e, dayIndex, activityIndex);
+    e.currentTarget.classList.add("dragging");
+  };
 
   const handleDragEnd = (e: React.DragEvent) => {
-    setIsDragging(false)
-    onDragEnd(e)
-    e.currentTarget.classList.remove("dragging")
-    e.currentTarget.classList.add("dropped")
+    setIsDragging(false);
+    onDragEnd(e);
+    e.currentTarget.classList.remove("dragging");
+    e.currentTarget.classList.add("dropped");
     setTimeout(() => {
-      e.currentTarget.classList.remove("dropped")
-    }, 300)
-  }
+      e.currentTarget.classList.remove("dropped");
+    }, 300);
+  };
 
   const handleDelete = (e: MouseEvent<Element>) => {
-    e.stopPropagation()
-    onDelete(dayIndex, activityIndex)
-  }
+    e.stopPropagation();
+    onDelete(dayIndex, activityIndex);
+  };
 
   const handleContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onActivityClick(activity)
-  }
+    e.stopPropagation();
+    onActivityClick(activity);
+  };
 
   return (
     <motion.div
@@ -206,7 +270,11 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({
       style={{ perspective: 2000 }}
       onDragOver={(e) => onDragOver(e, dayIndex, activityIndex)}
     >
-      <motion.div className="activity-card-inner" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+      <motion.div
+        className="activity-card-inner"
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+      >
         <div
           className={`draggable-activity ${isDragging ? "dragging" : ""}`}
           draggable
@@ -215,7 +283,11 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <TimePicker startTime={localStartTime} endTime={localEndTime} onChange={handleTimeChange} />
+          <TimePicker
+            startTime={localStartTime}
+            endTime={localEndTime}
+            onChange={handleTimeChange}
+          />
           <motion.button
             className="delete-btn"
             onClick={handleDelete}
@@ -231,16 +303,20 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({
         </div>
       </motion.div>
     </motion.div>
-  )
-}
+  );
+};
 
 interface TimePickerProps {
-  startTime: string
-  endTime: string
-  onChange: (startTime: string, endTime: string) => void
+  startTime: string;
+  endTime: string;
+  onChange: (startTime: string, endTime: string) => void;
 }
 
-const TimePicker: React.FC<TimePickerProps> = ({ startTime, endTime, onChange }) => {
+const TimePicker: React.FC<TimePickerProps> = ({
+  startTime,
+  endTime,
+  onChange,
+}) => {
   return (
     <div className="time-selector-container">
       <div className="time-picker">
@@ -254,7 +330,6 @@ const TimePicker: React.FC<TimePickerProps> = ({ startTime, endTime, onChange })
           onChange={(e) => onChange(e.target.value, endTime)}
           className="time-input"
         />
-        {/* <span className="time-separator">to</span> */}
         <div className="time-label">
           <FaClock className="time-icon" size={14} />
           <span>End</span>
@@ -267,230 +342,278 @@ const TimePicker: React.FC<TimePickerProps> = ({ startTime, endTime, onChange })
         />
       </div>
     </div>
-  )
-}
-
-// Hàm lấy biểu tượng thời tiết ngẫu nhiên
-const getRandomWeatherIcon = () => {
-  const weatherIcons = [FaSun, FaCloudSun, FaCloud, FaCloudRain, FaSnowflake, FaWind]
-  const randomIndex = Math.floor(Math.random() * weatherIcons.length)
-  return weatherIcons[randomIndex]
-}
-
-// Hàm lấy nhiệt độ ngẫu nhiên
-const getRandomTemperature = () => {
-  return Math.floor(Math.random() * 15) + 20 // 20-35°C
-}
+  );
+};
 
 const Plan = () => {
-  const [showHomePage, setShowHomePage] = useState(false)
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0)
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
-  const [showModal, setShowModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showHomePage, setShowHomePage] = useState(false);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
+    null
+  );
+  const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activityToDelete, setActivityToDelete] = useState<{
-    dayIndex: number
-    activityIndex: number
-  } | null>(null)
+    dayIndex: number;
+    activityIndex: number;
+  } | null>(null);
 
-  const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeftOffset, setScrollLeftOffset] = useState(0)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftOffset, setScrollLeftOffset] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [dragOverIndex, setDragOverIndex] = useState<{
-    day: number
-    index: number
-  } | null>(null)
-  const [activities, setActivities] = useState<DayPlan[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [weatherData, setWeatherData] = useState<Array<{ icon: React.ElementType; temp: number }>>([])
+    day: number;
+    index: number;
+  } | null>(null);
+  const [activities, setActivities] = useState<DayPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
   // Animation variants
   const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.6 } },
-  }
+  };
 
   const slideUp = {
     hidden: { y: 50, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { duration: 0.5 } },
-  }
+  };
 
   const slideRight = {
     hidden: { x: -50, opacity: 0 },
     visible: { x: 0, opacity: 1, transition: { duration: 0.5 } },
-  }
+  };
 
-  // Lấy dữ liệu từ localStorage khi component mount
+  // Lấy dữ liệu từ localStorage và gọi API thời tiết
   useEffect(() => {
-    const scheduleData = localStorage.getItem("travelSchedule")
-    if (scheduleData) {
+    const fetchData = async () => {
       try {
-        const parsedData = JSON.parse(scheduleData)
+        setLoading(true);
+        setError(null);
 
-        // Kiểm tra cấu trúc dữ liệu
-        if (!parsedData || !Array.isArray(parsedData.schedule.schedule)) {
-          throw new Error("Dữ liệu không hợp lệ: 'schedule' không phải là mảng hoặc không tồn tại.")
+        const scheduleData = localStorage.getItem("travelSchedule");
+        if (!scheduleData) {
+          throw new Error(
+            "Không tìm thấy dữ liệu kế hoạch trong localStorage."
+          );
         }
 
-        const formattedActivities = parsedData.schedule.schedule.map((dayItem: any, index: number) => {
-          const dateMatch = dayItem.day.match(/$$(.*?)$$/) // Trích xuất ngày từ "Day X (YYYY-MM-DD)"
-          const date = dateMatch ? dateMatch[1] : dayItem.day
+        const parsedData = JSON.parse(scheduleData);
+        if (
+          !parsedData ||
+          !parsedData.schedule ||
+          !Array.isArray(parsedData.schedule.schedule)
+        ) {
+          throw new Error(
+            "Dữ liệu không hợp lệ: 'schedule' không phải là mảng hoặc không tồn tại."
+          );
+        }
 
-          const dayActivities = dayItem.itinerary.flatMap((slot: any) => {
-            const activities: Activity[] = []
+        // Lấy province từ đúng vị trí trong cấu trúc dữ liệu
+        const province = parsedData.schedule.province;
 
-            if (slot.food) {
-              activities.push({
-                type: "food",
-                title: slot.food.title || "Không có tiêu đề",
-                description: slot.food.description || "",
-                location: slot.food.address || "Không có địa chỉ",
-                rating: slot.food.rating || 0,
-                image: slot.food.img || "",
-              })
-            }
+        const formattedActivities = parsedData.schedule.schedule.map(
+          (dayItem: any, index: number) => {
+            const dateMatch = dayItem.day.match(/\((.*?)\)/);
+            const date = dateMatch ? dateMatch[1] : dayItem.day;
 
-            if (slot.place) {
-              activities.push({
-                type: "place",
-                title: slot.place.title || "Không có tiêu đề",
-                description: slot.place.description || "",
-                location: slot.place.address || "Không có địa chỉ",
-                rating: slot.place.rating || 0,
-                image: slot.place.img || "",
-              })
-            }
+            const dayActivities = dayItem.itinerary.flatMap((slot: any) => {
+              const activities: Activity[] = [];
 
-            return activities
-          })
+              if (slot.food) {
+                activities.push({
+                  type: "food",
+                  title: slot.food.title || "Không có tiêu đề",
+                  description: slot.food.description || "",
+                  location: slot.food.address || "Không có địa chỉ",
+                  rating: slot.food.rating || 0,
+                  image: slot.food.img || "",
+                });
+              }
 
-          return {
-            day: index + 1,
-            date: date,
-            activities: dayActivities,
+              if (slot.place) {
+                activities.push({
+                  type: "place",
+                  title: slot.place.title || "Không có tiêu đề",
+                  description: slot.place.description || "",
+                  location: slot.place.address || "Không có địa chỉ",
+                  rating: slot.place.rating || 0,
+                  image: slot.place.img || "",
+                });
+              }
+
+              return activities;
+            });
+
+            return {
+              day: index + 1,
+              date: date,
+              activities: dayActivities,
+            };
           }
-        })
+        );
 
-        setActivities(formattedActivities)
+        setActivities(formattedActivities);
 
-        // Tạo dữ liệu thời tiết ngẫu nhiên cho mỗi ngày
-        const weatherArray = formattedActivities.map(() => ({
-          icon: getRandomWeatherIcon(),
-          temp: getRandomTemperature(),
-        }))
-        setWeatherData(weatherArray)
+        // Lấy dữ liệu thời tiết
+        setIsLoadingWeather(true);
+        setWeatherError(null);
 
-        setLoading(false)
-      } catch (err) {
-        setError("Dữ liệu không hợp lệ hoặc không đúng định dạng. Vui lòng kiểm tra lại.")
-        setLoading(false)
-        console.error("Lỗi khi phân tích dữ liệu:", err)
+        try {
+          const coordinates = await getCoordinates(province);
+          console.log("Coordinates for", province, ":", coordinates);
+
+          const weatherPromises = formattedActivities.map(
+            async (day: DayPlan) => {
+              return await getWeatherForDate(
+                coordinates.lat,
+                coordinates.lon,
+                day.date
+              );
+            }
+          );
+
+          const weatherResults = await Promise.all(weatherPromises);
+          setWeatherData(weatherResults.filter(Boolean));
+        } catch (weatherError: any) {
+          console.error("Error fetching weather:", weatherError);
+          setWeatherError("Không thể tải dữ liệu thời tiết");
+        } finally {
+          setIsLoadingWeather(false);
+        }
+
+        setLoading(false);
+      } catch (err: any) {
+        setError(err.message || "Đã xảy ra lỗi khi tải dữ liệu.");
+        setLoading(false);
+        console.error("Lỗi:", err);
       }
-    } else {
-      setError("Không tìm thấy dữ liệu kế hoạch trong localStorage.")
-      setLoading(false)
-    }
-  }, [])
+    };
+
+    fetchData();
+  }, []);
 
   const startDragging = (e: React.MouseEvent | TouchEvent) => {
-    if (!scrollContainerRef.current) return
-    setIsDragging(true)
-    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX
-    setStartX(clientX - scrollContainerRef.current.offsetLeft)
-    setScrollLeftOffset(scrollContainerRef.current.scrollLeft)
-  }
+    if (!scrollContainerRef.current) return;
+    setIsDragging(true);
+    const clientX =
+      "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    setStartX(clientX - scrollContainerRef.current.offsetLeft);
+    setScrollLeftOffset(scrollContainerRef.current.scrollLeft);
+  };
 
   const stopDragging = () => {
-    setIsDragging(false)
-  }
+    setIsDragging(false);
+  };
 
   const move = (clientX: number) => {
-    if (!isDragging || !scrollContainerRef.current) return
-    const x = clientX - scrollContainerRef.current.offsetLeft
-    const walk = (x - startX) * 2
-    scrollContainerRef.current.scrollLeft = scrollLeftOffset - walk
-  }
+    if (!isDragging || !scrollContainerRef.current) return;
+    const x = clientX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    scrollContainerRef.current.scrollLeft = scrollLeftOffset - walk;
+  };
 
   const handleMouseDown = (e: MouseEvent) => {
-    startDragging(e)
-  }
+    startDragging(e);
+  };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return
-    e.preventDefault()
-    move(e.pageX)
-  }
+    if (!isDragging) return;
+    e.preventDefault();
+    move(e.pageX);
+  };
 
   const handleMouseUp = () => {
-    stopDragging()
-  }
+    stopDragging();
+  };
 
   const handleTouchStart = (e: TouchEvent) => {
-    startDragging(e)
-  }
+    startDragging(e);
+  };
 
   const handleTouchMove = (e: TouchEvent) => {
-    if (!isDragging) return
-    move(e.touches[0].clientX)
-  }
+    if (!isDragging) return;
+    move(e.touches[0].clientX);
+  };
 
   const handleTouchEnd = () => {
-    stopDragging()
-  }
+    stopDragging();
+  };
 
-  const handleDragStart = (e: React.DragEvent, dayIndex: number, activityIndex: number) => {
-    e.dataTransfer.setData("text/plain", `${dayIndex}-${activityIndex}`)
-    e.currentTarget.classList.add("dragging")
-  }
+  const handleDragStart = (
+    e: React.DragEvent,
+    dayIndex: number,
+    activityIndex: number
+  ) => {
+    e.dataTransfer.setData("text/plain", `${dayIndex}-${activityIndex}`);
+    e.currentTarget.classList.add("dragging");
+  };
 
   const handleDragEnd = (e: React.DragEvent) => {
-    e.currentTarget.classList.remove("dragging")
-    setDragOverIndex(null)
-  }
+    e.currentTarget.classList.remove("dragging");
+    setDragOverIndex(null);
+  };
 
-  const handleDragOver = (e: React.DragEvent, dayIndex: number, activityIndex: number) => {
-    e.preventDefault()
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const midPoint = rect.top + rect.height / 2
-    const isBefore = e.clientY < midPoint
+  const handleDragOver = (
+    e: React.DragEvent,
+    dayIndex: number,
+    activityIndex: number
+  ) => {
+    e.preventDefault();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midPoint = rect.top + rect.height / 2;
+    const isBefore = e.clientY < midPoint;
 
-    const newIndex = isBefore ? activityIndex : activityIndex + 1
-    setDragOverIndex({ day: dayIndex, index: newIndex })
-  }
+    const newIndex = isBefore ? activityIndex : activityIndex + 1;
+    setDragOverIndex({ day: dayIndex, index: newIndex });
+  };
 
   const handleDrop = (e: React.DragEvent, targetDayIndex: number) => {
-    e.preventDefault()
-    const [sourceDayIndex, sourceActivityIndex] = e.dataTransfer.getData("text/plain").split("-").map(Number)
+    e.preventDefault();
+    const [sourceDayIndex, sourceActivityIndex] = e.dataTransfer
+      .getData("text/plain")
+      .split("-")
+      .map(Number);
 
-    if (!dragOverIndex) return
+    if (!dragOverIndex) return;
 
     const targetIndex =
-      dragOverIndex.day === targetDayIndex ? dragOverIndex.index : activities[targetDayIndex].activities.length
+      dragOverIndex.day === targetDayIndex
+        ? dragOverIndex.index
+        : activities[targetDayIndex].activities.length;
 
-    if (sourceDayIndex === targetDayIndex && sourceActivityIndex === targetIndex) return
+    if (
+      sourceDayIndex === targetDayIndex &&
+      sourceActivityIndex === targetIndex
+    )
+      return;
 
-    const newActivities = [...activities]
-    const sourceDay = newActivities[sourceDayIndex]
-    const targetDay = newActivities[targetDayIndex]
+    const newActivities = [...activities];
+    const sourceDay = newActivities[sourceDayIndex];
+    const targetDay = newActivities[targetDayIndex];
 
-    const [movedActivity] = sourceDay.activities.splice(sourceActivityIndex, 1)
-    targetDay.activities.splice(targetIndex, 0, movedActivity)
+    const [movedActivity] = sourceDay.activities.splice(sourceActivityIndex, 1);
+    targetDay.activities.splice(targetIndex, 0, movedActivity);
 
-    setActivities(newActivities)
-    setDragOverIndex(null)
+    setActivities(newActivities);
+    setDragOverIndex(null);
 
-    // Hiển thị thông báo thành công khi kéo thả
-    showSuccessNotification(`Đã di chuyển hoạt động sang Ngày ${targetDayIndex + 1}`)
-  }
+    showSuccessNotification(
+      `Đã di chuyển hoạt động sang Ngày ${targetDayIndex + 1}`
+    );
+  };
 
   const toggleHomePage = (dayIndex?: number) => {
     if (dayIndex !== undefined) {
-      setSelectedDayIndex(dayIndex)
+      setSelectedDayIndex(dayIndex);
     }
-    setShowHomePage(!showHomePage)
-  }
+    setShowHomePage(!showHomePage);
+  };
 
   const handleAddDestination = (destination: DestinationCard) => {
     const newActivity: Activity = {
@@ -500,59 +623,61 @@ const Plan = () => {
       image: destination.img,
       location: destination.address,
       rating: destination.rating,
-    }
+    };
 
-    const newActivities = [...activities]
-    newActivities[selectedDayIndex].activities.push(newActivity)
-    setActivities(newActivities)
+    const newActivities = [...activities];
+    newActivities[selectedDayIndex].activities.push(newActivity);
+    setActivities(newActivities);
 
-    showSuccessNotification(`Đã thêm vào Ngày ${selectedDayIndex + 1} thành công!`)
-  }
+    showSuccessNotification(
+      `Đã thêm vào Ngày ${selectedDayIndex + 1} thành công!`
+    );
+  };
 
   const showSuccessNotification = (message: string) => {
-    const notification = document.createElement("div")
-    notification.className = "success-notification"
-    notification.textContent = message
-    document.body.appendChild(notification)
+    const notification = document.createElement("div");
+    notification.className = "success-notification";
+    notification.textContent = message;
+    document.body.appendChild(notification);
 
     setTimeout(() => {
-      notification.remove()
-    }, 2000)
-  }
+      notification.remove();
+    }, 2000);
+  };
 
   const handleActivityClick = (activity: Activity) => {
-    setSelectedActivity(activity)
-    setShowModal(true)
-  }
+    setSelectedActivity(activity);
+    setShowModal(true);
+  };
 
   const handleCloseModal = () => {
-    setShowModal(false)
-    setSelectedActivity(null)
-  }
+    setShowModal(false);
+    setSelectedActivity(null);
+  };
 
   const handleDeleteActivity = (dayIndex: number, activityIndex: number) => {
-    setActivityToDelete({ dayIndex, activityIndex })
-    setShowDeleteModal(true)
-  }
+    setActivityToDelete({ dayIndex, activityIndex });
+    setShowDeleteModal(true);
+  };
 
   const handleConfirmDelete = () => {
     if (activityToDelete) {
-      const { dayIndex, activityIndex } = activityToDelete
-      const newActivities = [...activities]
-      newActivities[dayIndex].activities.splice(activityIndex, 1)
-      setActivities(newActivities)
+      const { dayIndex, activityIndex } = activityToDelete;
+      const newActivities = [...activities];
+      newActivities[dayIndex].activities.splice(activityIndex, 1);
+      setActivities(newActivities);
 
-      showSuccessNotification("Đã xóa hoạt động thành công!")
+      showSuccessNotification("Đã xóa hoạt động thành công!");
 
-      setShowDeleteModal(false)
-      setActivityToDelete(null)
+      setShowDeleteModal(false);
+      setActivityToDelete(null);
     }
-  }
+  };
 
   const handleCancelDelete = () => {
-    setShowDeleteModal(false)
-    setActivityToDelete(null)
-  }
+    setShowDeleteModal(false);
+    setActivityToDelete(null);
+  };
 
   const getActivityIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -560,56 +685,108 @@ const Plan = () => {
         return {
           icon: <FaPlane size={16} />,
           className: "icon-transport",
-        }
+        };
       case "food":
         return {
           icon: <FaUtensils size={16} />,
           className: "icon-food",
-        }
+        };
       case "place":
         return {
           icon: <FaMapMarkerAlt size={16} />,
           className: "icon-place",
-        }
+        };
       case "service":
         return {
           icon: <FaCamera size={16} />,
           className: "icon-service",
-        }
+        };
       case "walking":
         return {
           icon: <FaWalking size={16} />,
           className: "icon-place",
-        }
+        };
       case "hotel":
         return {
           icon: <FaHotel size={16} />,
           className: "icon-service",
-        }
+        };
       case "ticket":
         return {
           icon: <FaTicketAlt size={16} />,
           className: "icon-service",
-        }
+        };
       case "attraction":
         return {
           icon: <FaLandmark size={16} />,
           className: "icon-place",
-        }
+        };
       default:
         return {
           icon: <FaMapMarkerAlt size={16} />,
           className: "icon-place",
-        }
+        };
     }
-  }
+  };
 
-  const handleTimeChange = (dayIndex: number, activityIndex: number, startTime: string, endTime: string) => {
-    const newActivities = [...activities]
-    newActivities[dayIndex].activities[activityIndex].startTime = startTime
-    newActivities[dayIndex].activities[activityIndex].endTime = endTime
-    setActivities(newActivities)
-  }
+  const handleTimeChange = (
+    dayIndex: number,
+    activityIndex: number,
+    startTime: string,
+    endTime: string
+  ) => {
+    const newActivities = [...activities];
+    newActivities[dayIndex].activities[activityIndex].startTime = startTime;
+    newActivities[dayIndex].activities[activityIndex].endTime = endTime;
+    setActivities(newActivities);
+  };
+
+  const fetchWeatherData = async () => {
+    try {
+      setIsLoadingWeather(true);
+      setWeatherError(null);
+
+      const travelScheduleStr = localStorage.getItem("travelSchedule");
+      if (!travelScheduleStr) {
+        throw new Error("Không tìm thấy dữ liệu kế hoạch trong localStorage");
+      }
+
+      const travelSchedule = JSON.parse(travelScheduleStr);
+      if (!travelSchedule.province || !travelSchedule.schedule?.schedule) {
+        throw new Error("Dữ liệu kế hoạch không hợp lệ");
+      }
+
+      console.log("Fetching weather for province:", travelSchedule.province);
+      const coordinates = await getCoordinates(travelSchedule.province);
+      console.log("Coordinates:", coordinates);
+
+      const weatherPromises = travelSchedule.schedule.schedule.map(
+        async (day: any) => {
+          const dateMatch = day.day.match(/\((.*?)\)/);
+          if (!dateMatch) {
+            console.warn("Invalid date format in day:", day.day);
+            return null;
+          }
+
+          const date = dateMatch[1];
+          console.log("Fetching weather for date:", date);
+          return await getWeatherForDate(
+            coordinates.lat,
+            coordinates.lon,
+            date
+          );
+        }
+      );
+
+      const weatherResults = await Promise.all(weatherPromises);
+      setWeatherData(weatherResults.filter(Boolean));
+    } catch (error: any) {
+      console.error("Error fetching weather:", error);
+      setWeatherError(error.message || "Không thể tải dữ liệu thời tiết");
+    } finally {
+      setIsLoadingWeather(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -621,7 +798,7 @@ const Plan = () => {
           <div className="loader-text">Đang tải kế hoạch du lịch...</div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -636,7 +813,7 @@ const Plan = () => {
           Quay lại trang chủ
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -730,10 +907,19 @@ const Plan = () => {
         >
           <IoClose size={24} />
         </button>
-        <HomePage isInPlan={true} onAddToPlan={handleAddDestination} showAddButton={true} />
+        <HomePage
+          isInPlan={true}
+          onAddToPlan={handleAddDestination}
+          showAddButton={true}
+        />
       </div>
 
-      {showHomePage && <div className="panel-overlay" onClick={() => toggleHomePage(selectedDayIndex)}></div>}
+      {showHomePage && (
+        <div
+          className="panel-overlay"
+          onClick={() => toggleHomePage(selectedDayIndex)}
+        ></div>
+      )}
 
       <div className={`plan-container ${showHomePage ? "shifted" : ""}`}>
         <Screenshot className="min-h-screen">
@@ -775,7 +961,9 @@ const Plan = () => {
                       <FaCalendarAlt />
                       <span>
                         {activities.length > 0
-                          ? `${activities[0].date} - ${activities[activities.length - 1].date}`
+                          ? `${activities[0].date} - ${
+                              activities[activities.length - 1].date
+                            }`
                           : "No dates available"}
                       </span>
                     </div>
@@ -783,7 +971,8 @@ const Plan = () => {
                       <FaMapMarkerAlt />
                       <span>
                         {localStorage.getItem("travelSchedule")
-                          ? JSON.parse(localStorage.getItem("travelSchedule")!).province
+                          ? JSON.parse(localStorage.getItem("travelSchedule")!)
+                              .province
                           : "Unknown"}
                       </span>
                     </div>
@@ -814,7 +1003,10 @@ const Plan = () => {
                   </div>
                   <div className="stat-content">
                     <span className="stat-value">
-                      {activities.reduce((total, day) => total + day.activities.length, 0)}
+                      {activities.reduce(
+                        (total, day) => total + day.activities.length,
+                        0
+                      )}
                     </span>
                     <span className="stat-label">Hoạt động</span>
                   </div>
@@ -827,8 +1019,11 @@ const Plan = () => {
                   <div className="stat-content">
                     <span className="stat-value">
                       {activities.reduce(
-                        (total, day) => total + day.activities.filter((a) => a.type === "food").length,
-                        0,
+                        (total, day) =>
+                          total +
+                          day.activities.filter((a) => a.type === "food")
+                            .length,
+                        0
                       )}
                     </span>
                     <span className="stat-label">Bữa ăn</span>
@@ -842,8 +1037,11 @@ const Plan = () => {
                   <div className="stat-content">
                     <span className="stat-value">
                       {activities.reduce(
-                        (total, day) => total + day.activities.filter((a) => a.type === "place").length,
-                        0,
+                        (total, day) =>
+                          total +
+                          day.activities.filter((a) => a.type === "place")
+                            .length,
+                        0
                       )}
                     </span>
                     <span className="stat-label">Địa điểm</span>
@@ -876,24 +1074,40 @@ const Plan = () => {
                       <h2>
                         Ngày {day.day} - {day.date}
                       </h2>
-                      {weatherData[dayIndex] && (
+                      {weatherData[dayIndex] ? (
                         <div className="day-weather">
-                          <div className="weather-icon">{React.createElement(weatherData[dayIndex].icon)}</div>
-                          <div className="weather-info">
-                            <span className="weather-temp">{weatherData[dayIndex].temp}°C</span>
-                            <span className="weather-desc">
-                              {weatherData[dayIndex].icon === FaSun
-                                ? "Nắng"
-                                : weatherData[dayIndex].icon === FaCloudSun
-                                  ? "Nắng nhẹ"
-                                  : weatherData[dayIndex].icon === FaCloud
-                                    ? "Nhiều mây"
-                                    : weatherData[dayIndex].icon === FaCloudRain
-                                      ? "Mưa"
-                                      : weatherData[dayIndex].icon === FaSnowflake
-                                        ? "Tuyết"
-                                        : "Gió"}
+                          {isLoadingWeather ? (
+                            <div className="weather-loading">
+                              Đang tải thời tiết...
+                            </div>
+                          ) : weatherError ? (
+                            <span className="weather-error">
+                              {weatherError}
                             </span>
+                          ) : (
+                            <>
+                              <div className="weather-icon">
+                                {React.createElement(
+                                  getWeatherIcon(weatherData[dayIndex].icon)
+                                )}
+                              </div>
+                              <div className="weather-info">
+                                <span className="weather-temp">
+                                  {weatherData[dayIndex].temp}°C
+                                </span>
+                                <span className="weather-desc">
+                                  {getVietnameseDescription(
+                                    weatherData[dayIndex].description
+                                  )}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="day-weather">
+                          <div className="weather-loading">
+                            Đang tải thời tiết...
                           </div>
                         </div>
                       )}
@@ -907,20 +1121,21 @@ const Plan = () => {
                       className="activities-list"
                       onDrop={(e) => handleDrop(e, dayIndex)}
                       onDragOver={(e) => {
-                        e.preventDefault()
+                        e.preventDefault();
                         if (!dragOverIndex || dragOverIndex.day !== dayIndex) {
                           setDragOverIndex({
                             day: dayIndex,
                             index: day.activities.length,
-                          })
+                          });
                         }
                       }}
                     >
                       {day.activities.map((activity, actIndex) => (
                         <React.Fragment key={actIndex}>
-                          {dragOverIndex?.day === dayIndex && dragOverIndex?.index === actIndex && (
-                            <div className="drop-indicator active" />
-                          )}
+                          {dragOverIndex?.day === dayIndex &&
+                            dragOverIndex?.index === actIndex && (
+                              <div className="drop-indicator active" />
+                            )}
                           <DraggableActivity
                             activity={activity}
                             onDelete={handleDeleteActivity}
@@ -932,12 +1147,18 @@ const Plan = () => {
                             onActivityClick={handleActivityClick}
                             onTimeChange={handleTimeChange}
                           >
-                            <div className={`activity-icon-container ${getActivityIcon(activity.type).className}`}>
+                            <div
+                              className={`activity-icon-container ${
+                                getActivityIcon(activity.type).className
+                              }`}
+                            >
                               {getActivityIcon(activity.type).icon}
                             </div>
                             <div className="activity-content">
                               <div className="activity-header">
-                                <h3 className="activity-title">{activity.title}</h3>
+                                <h3 className="activity-title">
+                                  {activity.title}
+                                </h3>
                                 {activity.rating && (
                                   <div className="activity-rating">
                                     <span className="star">★</span>
@@ -957,7 +1178,9 @@ const Plan = () => {
                                 </div>
                               )}
 
-                              <p className="activity-description">{activity.description}</p>
+                              <p className="activity-description">
+                                {activity.description}
+                              </p>
 
                               {activity.location && (
                                 <div className="activity-location">
@@ -967,9 +1190,10 @@ const Plan = () => {
                               )}
                             </div>
                           </DraggableActivity>
-                          {dragOverIndex?.day === dayIndex && dragOverIndex?.index === actIndex + 1 && (
-                            <div className="drop-indicator active" />
-                          )}
+                          {dragOverIndex?.day === dayIndex &&
+                            dragOverIndex?.index === actIndex + 1 && (
+                              <div className="drop-indicator active" />
+                            )}
                         </React.Fragment>
                       ))}
 
@@ -979,14 +1203,19 @@ const Plan = () => {
                             <FaSuitcase />
                           </div>
                           <p>Chưa có hoạt động nào cho ngày này</p>
-                          <p className="empty-subtitle">Thêm hoạt động để bắt đầu lập kế hoạch</p>
+                          <p className="empty-subtitle">
+                            Thêm hoạt động để bắt đầu lập kế hoạch
+                          </p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   <div className="day-footer">
-                    <button className="add-activity-btn" onClick={() => toggleHomePage(dayIndex)}>
+                    <button
+                      className="add-activity-btn"
+                      onClick={() => toggleHomePage(dayIndex)}
+                    >
                       <FaPlus />
                       <span>Thêm hoạt động</span>
                     </button>
@@ -1006,7 +1235,10 @@ const Plan = () => {
                   </div>
                   <div className="tip-text">
                     <h4>Chuẩn bị hành lý</h4>
-                    <p>Đừng quên mang theo áo mưa và kem chống nắng cho chuyến đi của bạn!</p>
+                    <p>
+                      Đừng quên mang theo áo mưa và kem chống nắng cho chuyến đi
+                      của bạn!
+                    </p>
                   </div>
                 </div>
                 <div className="tip-card">
@@ -1015,7 +1247,10 @@ const Plan = () => {
                   </div>
                   <div className="tip-text">
                     <h4>Khám phá địa phương</h4>
-                    <p>Hãy thử các món ăn địa phương và tham gia các hoạt động văn hóa để trải nghiệm trọn vẹn.</p>
+                    <p>
+                      Hãy thử các món ăn địa phương và tham gia các hoạt động
+                      văn hóa để trải nghiệm trọn vẹn.
+                    </p>
                   </div>
                 </div>
                 <div className="tip-card">
@@ -1024,7 +1259,10 @@ const Plan = () => {
                   </div>
                   <div className="tip-text">
                     <h4>Lưu giữ kỷ niệm</h4>
-                    <p>Đừng quên chụp ảnh và ghi lại những khoảnh khắc đáng nhớ trong chuyến đi!</p>
+                    <p>
+                      Đừng quên chụp ảnh và ghi lại những khoảnh khắc đáng nhớ
+                      trong chuyến đi!
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1033,8 +1271,7 @@ const Plan = () => {
         </Screenshot>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Plan
-
+export default Plan;
