@@ -11,11 +11,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/page/auth/login', request.url))
   }
 
-  if (token && isAuthPage) {
-    return NextResponse.redirect(new URL('/page/dashboard', request.url))
-  }
+  // if (token && isAuthPage) {
+  //   return NextResponse.redirect(new URL('/page/dashboard', request.url))
+  // }
 
-  return NextResponse.next()
+  // return NextResponse.next()
 }
 
 export const config = {
