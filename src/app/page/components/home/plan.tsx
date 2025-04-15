@@ -1,16 +1,10 @@
-// src/app/page/components/home/plan.tsx
-"use client";
+"use client"
 
-import React, { useRef, useState, useEffect } from "react";
-import type { MouseEvent, TouchEvent } from "react";
-import {
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  useSpring,
-} from "framer-motion";
-import "./plan.css";
-import { IoArrowBackOutline, IoClose } from "react-icons/io5";
+import React, { useRef, useState, useEffect } from "react"
+import type { MouseEvent, TouchEvent } from "react"
+import { motion, useMotionTemplate, useMotionValue, useSpring } from "framer-motion"
+import "./plan.css"
+import { IoArrowBackOutline, IoClose } from "react-icons/io5"
 import {
   FaPlus,
   FaPlane,
@@ -35,119 +29,114 @@ import {
   FaSnowflake,
   FaWind,
   FaRoute,
-  FaChevronLeft,
-  FaChevronRight,
-} from "react-icons/fa";
-import Image from "next/image";
-import Link from "next/link";
-import HomePage, { type DestinationCard } from "./home_page";
-import Screenshot from "../screenshot";
-import {
-  WeatherData,
-  getCoordinates,
-  getWeatherForDate,
-  getVietnameseDescription,
-} from "../../utils/weatherService";
+  FaSignOutAlt,
+} from "react-icons/fa"
+import Image from "next/image"
+import Link from "next/link"
+import HomePage, { type DestinationCard } from "./home_page"
+import Screenshot from "../screenshot"
+import axios from "axios"
 
-// Định nghĩa interface cho Activity
+const ROTATION_RANGE = 25.0
+const HALF_ROTATION_RANGE = ROTATION_RANGE / 2
+
 interface Activity {
-  type: string;
-  title: string;
-  description: string;
-  icon?: string | React.ReactNode;
-  image?: string;
-  location?: string;
-  rating?: number;
-  startTime?: string;
-  endTime?: string;
+  type: string
+  title: string
+  description: string
+  icon?: string | React.ReactNode
+  image?: string
+  location?: string
+  rating?: number
+  startTime?: string
+  endTime?: string
 }
 
-// Định nghĩa interface cho Day
 interface DayPlan {
-  day: number;
-  date: string;
-  activities: Activity[];
+  day: number
+  date: string
+  activities: Activity[]
+}
+
+interface WeatherForecast {
+  Ngày: string
+  "Nhiệt độ tối đa": string
+  "Mô tả": string
+}
+
+interface ScheduleData {
+  schedule: {
+    schedule: Array<{
+      day: string
+      itinerary: Array<{
+        food?: { title: string; description: string; address: string; rating: number; img: string }
+        place?: { title: string; description: string; address: string; rating: number; img: string }
+      }>
+    }>
+  }
+  weather_forecast: {
+    forecast: WeatherForecast[]
+  }
 }
 
 interface TiltActivityCardProps {
-  children: React.ReactNode;
-  onMouseMove?: (e: React.MouseEvent) => void;
-  onMouseLeave?: (e: React.MouseEvent) => void;
+  children: React.ReactNode
+  onMouseMove?: (e: React.MouseEvent) => void
+  onMouseLeave?: (e: React.MouseEvent) => void
 }
 
-const ROTATION_RANGE = 12.5;
-const HALF_ROTATION_RANGE = 12.5 / 2;
+interface DraggableActivityProps {
+  activity: Activity
+  onDelete: (dayIndex: number, activityIndex: number) => void
+  dayIndex: number
+  activityIndex: number
+  onDragStart: (e: React.DragEvent, dayIndex: number, activityIndex: number) => void
+  onDragEnd: (e: React.DragEvent) => void
+  onDragOver: (e: React.DragEvent, dayIndex: number, activityIndex: number) => void
+  onActivityClick: (activity: Activity) => void
+  onTimeChange?: (dayIndex: number, activityIndex: number, startTime: string, endTime: string) => void
+  children: React.ReactNode
+}
 
-// Weather icon mapping
-const getWeatherIcon = (iconCode: string) => {
-  switch (iconCode) {
-    case "01d":
-    case "01n":
-      return FaSun;
-    case "02d":
-    case "02n":
-      return FaCloudSun;
-    case "03d":
-    case "03n":
-    case "04d":
-    case "04n":
-      return FaCloud;
-    case "09d":
-    case "09n":
-    case "10d":
-    case "10n":
-      return FaCloudRain;
-    case "11d":
-    case "11n":
-      return FaCloudRain;
-    case "13d":
-    case "13n":
-      return FaSnowflake;
-    case "50d":
-    case "50n":
-      return FaWind;
-    default:
-      return FaCloud;
-  }
-};
+interface TimePickerProps {
+  startTime: string
+  endTime: string
+  onChange: (startTime: string, endTime: string) => void
+}
 
-const TiltActivityCard: React.FC<TiltActivityCardProps> = ({
-  children,
-  onMouseMove,
-  onMouseLeave,
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+const TiltActivityCard: React.FC<TiltActivityCardProps> = ({ children, onMouseMove, onMouseLeave }) => {
+  const ref = useRef<HTMLDivElement>(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
 
-  const xSpring = useSpring(x);
-  const ySpring = useSpring(y);
+  const xSpring = useSpring(x)
+  const ySpring = useSpring(y)
 
-  const transform = useMotionTemplate`rotateX(${xSpring}deg) rotateY(${ySpring}deg)`;
+  const transform = useMotionTemplate`rotateX(${xSpring}deg) rotateY(${ySpring}deg)`
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
+    if (!ref.current) return
 
-    const rect = ref.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    const rect = ref.current.getBoundingClientRect()
+    const width = rect.width
+    const height = rect.height
 
-    const mouseX = (e.clientX - rect.left) * ROTATION_RANGE;
-    const mouseY = (e.clientY - rect.top) * ROTATION_RANGE;
+    const mouseX = (e.clientX - rect.left) * ROTATION_RANGE
+    const mouseY = (e.clientY - rect.top) * ROTATION_RANGE
 
-    const rX = (mouseY / height - HALF_ROTATION_RANGE) * -1;
-    const rY = mouseX / width - HALF_ROTATION_RANGE;
+    const rX = (mouseY / height - HALF_ROTATION_RANGE) * -1
+    const rY = mouseX / width - HALF_ROTATION_RANGE
 
-    x.set(rX);
-    y.set(rY);
-    onMouseMove?.(e);
-  };
+    x.set(rX)
+    y.set(rY)
+    onMouseMove?.(e)
+  }
 
   const handleMouseLeave = (e: React.MouseEvent) => {
-    x.set(0);
-    y.set(0);
-    onMouseLeave?.(e);
-  };
+    x.set(0)
+    y.set(0)
+    onMouseLeave?.(e)
+  }
 
   return (
     <motion.div
@@ -170,33 +159,7 @@ const TiltActivityCard: React.FC<TiltActivityCardProps> = ({
         {children}
       </div>
     </motion.div>
-  );
-};
-
-interface DraggableActivityProps {
-  activity: Activity;
-  onDelete: (dayIndex: number, activityIndex: number) => void;
-  dayIndex: number;
-  activityIndex: number;
-  onDragStart: (
-    e: React.DragEvent,
-    dayIndex: number,
-    activityIndex: number
-  ) => void;
-  onDragEnd: (e: React.DragEvent) => void;
-  onDragOver: (
-    e: React.DragEvent,
-    dayIndex: number,
-    activityIndex: number
-  ) => void;
-  onActivityClick: (activity: Activity) => void;
-  onTimeChange?: (
-    dayIndex: number,
-    activityIndex: number,
-    startTime: string,
-    endTime: string
-  ) => void;
-  children?: React.ReactNode;
+  )
 }
 
 const DraggableActivity: React.FC<DraggableActivityProps> = ({
@@ -211,58 +174,56 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({
   onTimeChange,
   children,
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [localStartTime, setLocalStartTime] = useState(
-    activity.startTime || ""
-  );
-  const [localEndTime, setLocalEndTime] = useState(activity.endTime || "");
+  const [isHovered, setIsHovered] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [localStartTime, setLocalStartTime] = useState(activity.startTime || "")
+  const [localEndTime, setLocalEndTime] = useState(activity.endTime || "")
 
   useEffect(() => {
-    setLocalStartTime(activity.startTime || "");
-    setLocalEndTime(activity.endTime || "");
-  }, [activity.startTime, activity.endTime]);
+    setLocalStartTime(activity.startTime || "")
+    setLocalEndTime(activity.endTime || "")
+  }, [activity.startTime, activity.endTime])
 
   const handleTimeChange = (newStartTime: string, newEndTime: string) => {
-    setLocalStartTime(newStartTime);
-    setLocalEndTime(newEndTime);
+    setLocalStartTime(newStartTime)
+    setLocalEndTime(newEndTime)
     if (onTimeChange) {
-      onTimeChange(dayIndex, activityIndex, newStartTime, newEndTime);
+      onTimeChange(dayIndex, activityIndex, newStartTime, newEndTime)
     }
-  };
+  }
 
   const handleDragStart = (e: React.DragEvent) => {
-    setIsDragging(true);
+    setIsDragging(true)
     const dragData = {
       dayIndex,
       activityIndex,
       startTime: localStartTime,
       endTime: localEndTime,
-    };
-    e.dataTransfer.setData("text/plain", JSON.stringify(dragData));
-    onDragStart(e, dayIndex, activityIndex);
-    e.currentTarget.classList.add("dragging");
-  };
+    }
+    e.dataTransfer.setData("text/plain", JSON.stringify(dragData))
+    onDragStart(e, dayIndex, activityIndex)
+    e.currentTarget.classList.add("dragging")
+  }
 
   const handleDragEnd = (e: React.DragEvent) => {
-    setIsDragging(false);
-    onDragEnd(e);
-    e.currentTarget.classList.remove("dragging");
-    e.currentTarget.classList.add("dropped");
+    setIsDragging(false)
+    onDragEnd(e)
+    e.currentTarget.classList.remove("dragging")
+    e.currentTarget.classList.add("dropped")
     setTimeout(() => {
-      e.currentTarget.classList.remove("dropped");
-    }, 300);
-  };
+      e.currentTarget.classList.remove("dropped")
+    }, 300)
+  }
 
   const handleDelete = (e: MouseEvent<Element>) => {
-    e.stopPropagation();
-    onDelete(dayIndex, activityIndex);
-  };
+    e.stopPropagation()
+    onDelete(dayIndex, activityIndex)
+  }
 
   const handleContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onActivityClick(activity);
-  };
+    e.stopPropagation()
+    onActivityClick(activity)
+  }
 
   return (
     <motion.div
@@ -270,11 +231,7 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({
       style={{ perspective: 2000 }}
       onDragOver={(e) => onDragOver(e, dayIndex, activityIndex)}
     >
-      <motion.div
-        className="activity-card-inner"
-        whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.2 }}
-      >
+      <motion.div className="activity-card-inner" whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
         <div
           className={`draggable-activity ${isDragging ? "dragging" : ""}`}
           draggable
@@ -283,11 +240,7 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <TimePicker
-            startTime={localStartTime}
-            endTime={localEndTime}
-            onChange={handleTimeChange}
-          />
+          <TimePicker startTime={localStartTime} endTime={localEndTime} onChange={handleTimeChange} />
           <motion.button
             className="delete-btn"
             onClick={handleDelete}
@@ -303,20 +256,10 @@ const DraggableActivity: React.FC<DraggableActivityProps> = ({
         </div>
       </motion.div>
     </motion.div>
-  );
-};
-
-interface TimePickerProps {
-  startTime: string;
-  endTime: string;
-  onChange: (startTime: string, endTime: string) => void;
+  )
 }
 
-const TimePicker: React.FC<TimePickerProps> = ({
-  startTime,
-  endTime,
-  onChange,
-}) => {
+const TimePicker: React.FC<TimePickerProps> = ({ startTime, endTime, onChange }) => {
   return (
     <div className="time-selector-container">
       <div className="time-picker">
@@ -342,451 +285,390 @@ const TimePicker: React.FC<TimePickerProps> = ({
         />
       </div>
     </div>
-  );
-};
+  )
+}
 
 const Plan = () => {
-  const [showHomePage, setShowHomePage] = useState(false);
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
-    null
-  );
-  const [showModal, setShowModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showHomePage, setShowHomePage] = useState(false)
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0)
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [activityToDelete, setActivityToDelete] = useState<{
-    dayIndex: number;
-    activityIndex: number;
-  } | null>(null);
+    dayIndex: number
+    activityIndex: number
+  } | null>(null)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loginError, setLoginError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [userId, setUserId] = useState<number | null>(7)
+  const [scheduleId, setScheduleId] = useState<number | null>(null)
+  const [shareLink, setShareLink] = useState<string | null>(null)
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeftOffset, setScrollLeftOffset] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeftOffset, setScrollLeftOffset] = useState(0)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [dragOverIndex, setDragOverIndex] = useState<{
-    day: number;
-    index: number;
-  } | null>(null);
-  const [activities, setActivities] = useState<DayPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
-  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
-  const [weatherError, setWeatherError] = useState<string | null>(null);
+    day: number
+    index: number
+  } | null>(null)
+  const [activities, setActivities] = useState<DayPlan[]>([])
+  const [weatherForecast, setWeatherForecast] = useState<WeatherForecast[]>([])
+  const [loading, setLoading] = useState(false)
 
-  // Animation variants
   const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.6 } },
-  };
+  }
 
   const slideUp = {
     hidden: { y: 50, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { duration: 0.5 } },
-  };
+  }
 
   const slideRight = {
     hidden: { x: -50, opacity: 0 },
     visible: { x: 0, opacity: 1, transition: { duration: 0.5 } },
-  };
+  }
 
-  // Lấy dữ liệu từ localStorage và gọi API thời tiết
+  // Fetch schedule data after login
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    if (userId) {
+      const fetchSchedule = async () => {
+        try {
+          setLoading(true)
+          console.log("Fetching schedule data for user_id:", userId)
+          const response = await axios.post(
+            "http://127.0.0.1:8000/recommend/travel-schedule/",
+            {
+              province: "Hồ Chí Minh",
+              start_day: "2025-04-15",
+              end_day: "2025-04-20",
+            },
+            {
+              withCredentials: true,
+              timeout: 10000,
+            }
+          )
 
-        const scheduleData = localStorage.getItem("travelSchedule");
-        if (!scheduleData) {
-          throw new Error(
-            "Không tìm thấy dữ liệu kế hoạch trong localStorage."
-          );
-        }
+          if (!response.data || !response.data.schedule || !Array.isArray(response.data.schedule.schedule)) {
+            throw new Error("Dữ liệu lịch trình không đúng định dạng")
+          }
 
-        const parsedData = JSON.parse(scheduleData);
-        if (
-          !parsedData ||
-          !parsedData.schedule ||
-          !Array.isArray(parsedData.schedule.schedule)
-        ) {
-          throw new Error(
-            "Dữ liệu không hợp lệ: 'schedule' không phải là mảng hoặc không tồn tại."
-          );
-        }
-
-        // Lấy province từ đúng vị trí trong cấu trúc dữ liệu
-        const province = parsedData.schedule.province;
-
-        const formattedActivities = parsedData.schedule.schedule.map(
-          (dayItem: any, index: number) => {
-            const dateMatch = dayItem.day.match(/\((.*?)\)/);
-            const date = dateMatch ? dateMatch[1] : dayItem.day;
-
-            const dayActivities = dayItem.itinerary.flatMap((slot: any) => {
-              const activities: Activity[] = [];
-
-              if (slot.food) {
-                activities.push({
-                  type: "food",
-                  title: slot.food.title || "Không có tiêu đề",
-                  description: slot.food.description || "",
-                  location: slot.food.address || "Không có địa chỉ",
-                  rating: slot.food.rating || 0,
-                  image: slot.food.img || "",
-                });
+          const formattedActivities = response.data.schedule.schedule.map((dayItem: any, index: number) => {
+            if (!dayItem.day || typeof dayItem.day !== "string") {
+              console.warn(`Day item at index ${index} has invalid day field:`, dayItem.day)
+              return {
+                day: index + 1,
+                date: "Ngày không xác định",
+                activities: [],
               }
+            }
 
-              if (slot.place) {
-                activities.push({
-                  type: "place",
-                  title: slot.place.title || "Không có tiêu đề",
-                  description: slot.place.description || "",
-                  location: slot.place.address || "Không có địa chỉ",
-                  rating: slot.place.rating || 0,
-                  image: slot.place.img || "",
-                });
-              }
+            const dateMatch = dayItem.day.match(/\$\$(.*?)\$\$/)
+            const date = dateMatch ? dateMatch[1] : dayItem.day
 
-              return activities;
-            });
+            const dayActivities = Array.isArray(dayItem.itinerary)
+              ? dayItem.itinerary.flatMap((slot: any) => {
+                  const activities: Activity[] = []
+                  if (slot.food) {
+                    activities.push({
+                      type: "food",
+                      title: slot.food.title || "Không có tiêu đề",
+                      description: slot.food.description || "",
+                      location: slot.food.address || "Không có địa chỉ",
+                      rating: slot.food.rating || 0,
+                      image: slot.food.img || "",
+                    })
+                  }
+                  if (slot.place) {
+                    activities.push({
+                      type: "place",
+                      title: slot.place.title || "Không có tiêu đề",
+                      description: slot.place.description || "",
+                      location: slot.place.address || "Không có địa chỉ",
+                      rating: slot.place.rating || 0,
+                      image: slot.place.img || "",
+                    })
+                  }
+                  return activities
+                })
+              : []
 
             return {
               day: index + 1,
               date: date,
               activities: dayActivities,
-            };
-          }
-        );
-
-        setActivities(formattedActivities);
-
-        // Lấy dữ liệu thời tiết
-        setIsLoadingWeather(true);
-        setWeatherError(null);
-
-        try {
-          const coordinates = await getCoordinates(province);
-          console.log("Coordinates for", province, ":", coordinates);
-
-          const weatherPromises = formattedActivities.map(
-            async (day: DayPlan) => {
-              return await getWeatherForDate(
-                coordinates.lat,
-                coordinates.lon,
-                day.date
-              );
             }
-          );
+          })
 
-          const weatherResults = await Promise.all(weatherPromises);
-          setWeatherData(weatherResults.filter(Boolean));
-        } catch (weatherError: any) {
-          console.error("Error fetching weather:", weatherError);
-          setWeatherError("Không thể tải dữ liệu thời tiết");
-        } finally {
-          setIsLoadingWeather(false);
+          setActivities(formattedActivities)
+          setWeatherForecast(response.data.weather_forecast.forecast)
+          setLoading(false)
+        } catch (err) {
+          console.error("Error fetching schedule:", err)
+          setErrorMessage("Không thể tải kế hoạch du lịch. Vui lòng thử lại!")
+          setTimeout(() => setErrorMessage(null), 3000)
+          setLoading(false)
         }
-
-        setLoading(false);
-      } catch (err: any) {
-        setError(err.message || "Đã xảy ra lỗi khi tải dữ liệu.");
-        setLoading(false);
-        console.error("Lỗi:", err);
       }
-    };
 
-    fetchData();
-  }, []);
+      fetchSchedule()
+    }
+  }, [userId])
 
-  const startDragging = (e: React.MouseEvent | TouchEvent) => {
-    if (!scrollContainerRef.current) return;
-    setIsDragging(true);
-    const clientX =
-      "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    setStartX(clientX - scrollContainerRef.current.offsetLeft);
-    setScrollLeftOffset(scrollContainerRef.current.scrollLeft);
-  };
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/recommend/login-user/",
+        {
+          email,
+          password,
+        },
+        { withCredentials: true }
+      )
+      if (response.data.message === "Đăng nhập thành công") {
+        setUserId(response.data.user_id)
+        setShowLoginModal(false)
+        setLoginError(null)
+        setSuccessMessage("Đăng nhập thành công!")
+        setTimeout(() => setSuccessMessage(null), 3000)
+      } else {
+        setLoginError("Đăng nhập thất bại")
+      }
+    } catch (err: any) {
+      setLoginError(err.response?.data?.error || "Lỗi khi đăng nhập")
+      console.error("Login error:", err)
+    }
+  }
 
-  const stopDragging = () => {
-    setIsDragging(false);
-  };
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://127.0.0.1:8000/recommend/logout-user/",
+        {},
+        { withCredentials: true }
+      )
+      setUserId(null)
+      setScheduleId(null)
+      setShareLink(null)
+      setShowLoginModal(true)
+      setSuccessMessage("Đăng xuất thành công!")
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err) {
+      console.error("Logout error:", err)
+      setErrorMessage("Lỗi khi đăng xuất")
+      setTimeout(() => setErrorMessage(null), 3000)
+    }
+  }
 
-  const move = (clientX: number) => {
-    if (!isDragging || !scrollContainerRef.current) return;
-    const x = clientX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX) * 2;
-    scrollContainerRef.current.scrollLeft = scrollLeftOffset - walk;
-  };
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true)
+    setStartX(e.pageX - scrollLeftOffset)
+    if (scrollContainerRef.current) {
+      setScrollLeftOffset(scrollContainerRef.current.scrollLeft)
+    }
+  }
 
-  const handleMouseDown = (e: MouseEvent) => {
-    startDragging(e);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    move(e.pageX);
-  };
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !scrollContainerRef.current) return
+    e.preventDefault()
+    const x = e.pageX - startX
+    scrollContainerRef.current.scrollLeft = scrollLeftOffset - x
+  }
 
   const handleMouseUp = () => {
-    stopDragging();
-  };
+    setIsDragging(false)
+  }
 
-  const handleTouchStart = (e: TouchEvent) => {
-    startDragging(e);
-  };
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    setIsDragging(true)
+    setStartX(e.touches[0].pageX - scrollLeftOffset)
+    if (scrollContainerRef.current) {
+      setScrollLeftOffset(scrollContainerRef.current.scrollLeft)
+    }
+  }
 
-  const handleTouchMove = (e: TouchEvent) => {
-    if (!isDragging) return;
-    move(e.touches[0].clientX);
-  };
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    if (!isDragging || !scrollContainerRef.current) return
+    const x = e.touches[0].pageX - startX
+    scrollContainerRef.current.scrollLeft = scrollLeftOffset - x
+  }
 
   const handleTouchEnd = () => {
-    stopDragging();
-  };
+    setIsDragging(false)
+  }
 
-  const handleDragStart = (
-    e: React.DragEvent,
-    dayIndex: number,
-    activityIndex: number
-  ) => {
-    e.dataTransfer.setData("text/plain", `${dayIndex}-${activityIndex}`);
-    e.currentTarget.classList.add("dragging");
-  };
+  const handleDragStart = (e: React.DragEvent, dayIndex: number, activityIndex: number) => {
+    // Logic kéo thả
+  }
 
   const handleDragEnd = (e: React.DragEvent) => {
-    e.currentTarget.classList.remove("dragging");
-    setDragOverIndex(null);
-  };
+    setDragOverIndex(null)
+  }
 
-  const handleDragOver = (
-    e: React.DragEvent,
-    dayIndex: number,
-    activityIndex: number
-  ) => {
-    e.preventDefault();
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const midPoint = rect.top + rect.height / 2;
-    const isBefore = e.clientY < midPoint;
+  const handleDragOver = (e: React.DragEvent, dayIndex: number, activityIndex: number) => {
+    e.preventDefault()
+    setDragOverIndex({ day: dayIndex, index: activityIndex })
+  }
 
-    const newIndex = isBefore ? activityIndex : activityIndex + 1;
-    setDragOverIndex({ day: dayIndex, index: newIndex });
-  };
-
-  const handleDrop = (e: React.DragEvent, targetDayIndex: number) => {
-    e.preventDefault();
-    const [sourceDayIndex, sourceActivityIndex] = e.dataTransfer
-      .getData("text/plain")
-      .split("-")
-      .map(Number);
-
-    if (!dragOverIndex) return;
-
-    const targetIndex =
-      dragOverIndex.day === targetDayIndex
-        ? dragOverIndex.index
-        : activities[targetDayIndex].activities.length;
-
-    if (
-      sourceDayIndex === targetDayIndex &&
-      sourceActivityIndex === targetIndex
-    )
-      return;
-
-    const newActivities = [...activities];
-    const sourceDay = newActivities[sourceDayIndex];
-    const targetDay = newActivities[targetDayIndex];
-
-    const [movedActivity] = sourceDay.activities.splice(sourceActivityIndex, 1);
-    targetDay.activities.splice(targetIndex, 0, movedActivity);
-
-    setActivities(newActivities);
-    setDragOverIndex(null);
-
-    showSuccessNotification(
-      `Đã di chuyển hoạt động sang Ngày ${targetDayIndex + 1}`
-    );
-  };
-
-  const toggleHomePage = (dayIndex?: number) => {
-    if (dayIndex !== undefined) {
-      setSelectedDayIndex(dayIndex);
-    }
-    setShowHomePage(!showHomePage);
-  };
-
-  const handleAddDestination = (destination: DestinationCard) => {
-    const newActivity: Activity = {
-      type: "place",
-      title: destination.title,
-      description: destination.description,
-      image: destination.img,
-      location: destination.address,
-      rating: destination.rating,
-    };
-
-    const newActivities = [...activities];
-    newActivities[selectedDayIndex].activities.push(newActivity);
-    setActivities(newActivities);
-
-    showSuccessNotification(
-      `Đã thêm vào Ngày ${selectedDayIndex + 1} thành công!`
-    );
-  };
-
-  const showSuccessNotification = (message: string) => {
-    const notification = document.createElement("div");
-    notification.className = "success-notification";
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.remove();
-    }, 2000);
-  };
-
-  const handleActivityClick = (activity: Activity) => {
-    setSelectedActivity(activity);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedActivity(null);
-  };
+  const handleDrop = (e: React.DragEvent, dayIndex: number) => {
+    e.preventDefault()
+    const data = JSON.parse(e.dataTransfer.getData("text/plain"))
+    const newActivities = [...activities]
+    const draggedActivity = newActivities[data.dayIndex].activities[data.activityIndex]
+    newActivities[data.dayIndex].activities.splice(data.activityIndex, 1)
+    newActivities[dayIndex].activities.splice(dragOverIndex?.index || 0, 0, draggedActivity)
+    setActivities(newActivities)
+    setDragOverIndex(null)
+  }
 
   const handleDeleteActivity = (dayIndex: number, activityIndex: number) => {
-    setActivityToDelete({ dayIndex, activityIndex });
-    setShowDeleteModal(true);
-  };
+    const newActivities = [...activities]
+    newActivities[dayIndex].activities.splice(activityIndex, 1)
+    setActivities(newActivities)
+  }
 
-  const handleConfirmDelete = () => {
-    if (activityToDelete) {
-      const { dayIndex, activityIndex } = activityToDelete;
-      const newActivities = [...activities];
-      newActivities[dayIndex].activities.splice(activityIndex, 1);
-      setActivities(newActivities);
+  const handleActivityClick = (activity: Activity) => {
+    setSelectedActivity(activity)
+    setShowModal(true)
+  }
 
-      showSuccessNotification("Đã xóa hoạt động thành công!");
-
-      setShowDeleteModal(false);
-      setActivityToDelete(null);
+  const handleTimeChange = (dayIndex: number, activityIndex: number, startTime: string, endTime: string) => {
+    const newActivities = [...activities]
+    newActivities[dayIndex].activities[activityIndex] = {
+      ...newActivities[dayIndex].activities[activityIndex],
+      startTime,
+      endTime,
     }
-  };
+    setActivities(newActivities)
+  }
 
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setActivityToDelete(null);
-  };
+  const toggleHomePage = (dayIndex: number) => {
+    setSelectedDayIndex(dayIndex)
+    setShowHomePage(!showHomePage)
+  }
 
-  const getActivityIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "transport":
-        return {
-          icon: <FaPlane size={16} />,
-          className: "icon-transport",
-        };
-      case "food":
-        return {
-          icon: <FaUtensils size={16} />,
-          className: "icon-food",
-        };
-      case "place":
-        return {
-          icon: <FaMapMarkerAlt size={16} />,
-          className: "icon-place",
-        };
-      case "service":
-        return {
-          icon: <FaCamera size={16} />,
-          className: "icon-service",
-        };
-      case "walking":
-        return {
-          icon: <FaWalking size={16} />,
-          className: "icon-place",
-        };
-      case "hotel":
-        return {
-          icon: <FaHotel size={16} />,
-          className: "icon-service",
-        };
-      case "ticket":
-        return {
-          icon: <FaTicketAlt size={16} />,
-          className: "icon-service",
-        };
-      case "attraction":
-        return {
-          icon: <FaLandmark size={16} />,
-          className: "icon-place",
-        };
-      default:
-        return {
-          icon: <FaMapMarkerAlt size={16} />,
-          className: "icon-place",
-        };
+  const handleAddDestination = (destination: DestinationCard) => {
+    const newActivities = [...activities]
+    newActivities[selectedDayIndex].activities.push({
+      type: "place",
+      title: destination.title,
+      description: destination.description || "",
+      image: destination.img || "",
+      location: destination.address || "",
+      rating: destination.rating,
+    })
+    setActivities(newActivities)
+    setShowHomePage(false)
+  }
+
+  const handleSaveAndShareSchedule = async () => {
+    console.log("handleSaveAndShareSchedule called");
+    console.log("user id:", userId);
+    if (!userId) {
+      setShowLoginModal(true);
+      setErrorMessage("Vui lòng đăng nhập để lưu lịch trình!");
+      setTimeout(() => setErrorMessage(null), 3000);
+      return;
     }
-  };
 
-  const handleTimeChange = (
-    dayIndex: number,
-    activityIndex: number,
-    startTime: string,
-    endTime: string
-  ) => {
-    const newActivities = [...activities];
-    newActivities[dayIndex].activities[activityIndex].startTime = startTime;
-    newActivities[dayIndex].activities[activityIndex].endTime = endTime;
-    setActivities(newActivities);
-  };
-
-  const fetchWeatherData = async () => {
     try {
-      setIsLoadingWeather(true);
-      setWeatherError(null);
+      // Prepare the data for saving the schedule
+      const formattedData = {
+        user_id: userId,
+        schedule_name: "Chuyến đi Hồ Chí Minh",
+        days: activities.map((day, index) => ({
+          day_index: day.day,
+          date_str: day.date,
+          itinerary: day.activities.map((activity, actIndex) => {
+            const item: any = {
+              timeslot: `${activity.startTime || "08:00"} - ${activity.endTime || "09:00"}`,
+              order: actIndex + 1,
+            };
+            if (activity.type === "food") {
+              item.food_title = activity.title;
+              item.food_description = activity.description;
+              item.food_address = activity.location;
+              item.food_rating = activity.rating;
+              item.food_image = activity.image;
+            } else if (activity.type === "place") {
+              item.place_title = activity.title;
+              item.place_description = activity.description;
+              item.place_address = activity.location;
+              item.place_rating = activity.rating;
+              item.place_img = activity.image;
+            }
+            return item;
+          }),
+        })),
+      };
 
-      const travelScheduleStr = localStorage.getItem("travelSchedule");
-      if (!travelScheduleStr) {
-        throw new Error("Không tìm thấy dữ liệu kế hoạch trong localStorage");
-      }
+      console.log("Sending data to save schedule:", formattedData);
 
-      const travelSchedule = JSON.parse(travelScheduleStr);
-      if (!travelSchedule.province || !travelSchedule.schedule?.schedule) {
-        throw new Error("Dữ liệu kế hoạch không hợp lệ");
-      }
-
-      console.log("Fetching weather for province:", travelSchedule.province);
-      const coordinates = await getCoordinates(travelSchedule.province);
-      console.log("Coordinates:", coordinates);
-
-      const weatherPromises = travelSchedule.schedule.schedule.map(
-        async (day: any) => {
-          const dateMatch = day.day.match(/\((.*?)\)/);
-          if (!dateMatch) {
-            console.warn("Invalid date format in day:", day.day);
-            return null;
-          }
-
-          const date = dateMatch[1];
-          console.log("Fetching weather for date:", date);
-          return await getWeatherForDate(
-            coordinates.lat,
-            coordinates.lon,
-            date
-          );
+      // Step 1: Save the schedule
+      const saveResponse = await axios.post(
+        "http://127.0.0.1:8000/recommend/save-schedule/",
+        formattedData,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      const weatherResults = await Promise.all(weatherPromises);
-      setWeatherData(weatherResults.filter(Boolean));
-    } catch (error: any) {
-      console.error("Error fetching weather:", error);
-      setWeatherError(error.message || "Không thể tải dữ liệu thời tiết");
-    } finally {
-      setIsLoadingWeather(false);
+      console.log("Save schedule response:", saveResponse.data);
+
+      if (saveResponse.data && saveResponse.data.schedule_id) {
+        const scheduleId = saveResponse.data.schedule_id;
+        setScheduleId(scheduleId);
+        setErrorMessage(null);
+        setSuccessMessage("Lịch trình đã được lưu thành công!");
+        setTimeout(() => setSuccessMessage(null), 3000);
+
+        // Step 2: Automatically generate the share link
+        const shareResponse = await axios.post(
+          "http://127.0.0.1:8000/recommend/share-schedule/",
+          { user_id: userId, schedule_id: scheduleId },
+          { withCredentials: true }
+        );
+
+        console.log("Share schedule response:", shareResponse.data);
+
+        if (shareResponse.data && shareResponse.data.share_link) {
+          setShareLink(shareResponse.data.share_link);
+          setSuccessMessage("Lịch trình đã được lưu và link chia sẻ đã được tạo!");
+          setTimeout(() => setSuccessMessage(null), 3000);
+        } else {
+          setErrorMessage(shareResponse.data?.error || "Lỗi khi tạo link chia sẻ");
+          setTimeout(() => setErrorMessage(null), 3000);
+        }
+      } else {
+        setErrorMessage(saveResponse.data?.error || "Lỗi khi lưu lịch trình");
+        setTimeout(() => setErrorMessage(null), 3000);
+      }
+    } catch (err: any) {
+      console.error("Error in save and share schedule:", err);
+      setErrorMessage(err.response?.data?.error || "Lỗi khi lưu hoặc chia sẻ lịch trình");
+      setTimeout(() => setErrorMessage(null), 3000);
     }
   };
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "food":
+        return { icon: <FaUtensils />, className: "food-icon" }
+      case "place":
+        return { icon: <FaLandmark />, className: "place-icon" }
+      default:
+        return { icon: <FaMapMarkerAlt />, className: "default-icon" }
+    }
+  }
 
   if (loading) {
     return (
@@ -798,107 +680,71 @@ const Plan = () => {
           <div className="loader-text">Đang tải kế hoạch du lịch...</div>
         </div>
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <div className="error-icon">
-          <FaGlobeAmericas />
-        </div>
-        <h2>Không thể tải kế hoạch</h2>
-        <p>{error}</p>
-        <Link href="/" className="error-button">
-          Quay lại trang chủ
-        </Link>
-      </div>
-    );
+    )
   }
 
   return (
     <div className={`plan-wrapper ${showHomePage ? "with-sidebar" : ""}`}>
-      {showDeleteModal && (
-        <div className="modal-overlay">
-          <motion.div
-            className="delete-modal"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-          >
-            <h3>Xác nhận xóa</h3>
-            <p>Bạn có chắc muốn xóa hoạt động này không?</p>
-            <div className="modal-actions">
-              <button className="cancel-btn" onClick={handleCancelDelete}>
-                Hủy bỏ
-              </button>
-              <button className="confirm-btn" onClick={handleConfirmDelete}>
-                Xóa
-              </button>
-            </div>
-          </motion.div>
+      {/* Toast Notifications */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded shadow-lg">
+          {successMessage}
+        </div>
+      )}
+      {errorMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded shadow-lg">
+          {errorMessage}
         </div>
       )}
 
-      {showModal && selectedActivity && (
-        <div className="modal-overlay">
-          <motion.div
-            className="activity-detail-modal"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-          >
-            <button onClick={handleCloseModal} className="modal-close-btn">
-              <IoClose size={24} />
-            </button>
-
-            {selectedActivity.image && (
-              <div className="modal-image">
-                <Image
-                  src={selectedActivity.image || "/placeholder.svg"}
-                  alt={selectedActivity.title}
-                  fill
-                  className="object-cover"
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-gray-800">Đăng nhập</h2>
+              <button
+                className="text-gray-600 hover:text-gray-800"
+                onClick={() => setShowLoginModal(false)}
+                aria-label="Close login modal"
+              >
+                <IoClose size={24} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  placeholder="Nhập email của bạn"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <div className="modal-image-overlay"></div>
               </div>
-            )}
-
-            <div className="modal-content">
-              <div className="modal-header">
-                <h2>{selectedActivity.title}</h2>
-                {selectedActivity.rating && (
-                  <div className="modal-rating">
-                    <span className="star">★</span>
-                    <span>{selectedActivity.rating}</span>
-                  </div>
-                )}
+              <div>
+                <label className="block text-gray-700 mb-1">Mật khẩu</label>
+                <input
+                  type="password"
+                  placeholder="Nhập mật khẩu của bạn"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-
-              {selectedActivity.location && (
-                <div className="modal-location">
-                  <FaMapMarkerAlt />
-                  <span>{selectedActivity.location}</span>
-                </div>
-              )}
-
-              <div className="modal-description">
-                <p>{selectedActivity.description}</p>
-              </div>
-
-              <div className="modal-actions">
-                <button className="modal-action-btn">
-                  <FaMapMarkerAlt /> Xem trên bản đồ
-                </button>
-                <button className="modal-action-btn secondary">
-                  <FaCamera /> Xem ảnh
-                </button>
-              </div>
+              {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+              <button
+                onClick={handleLogin}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Đăng nhập
+              </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
 
+      {/* Sidebar for Adding Destinations */}
       <div className={`slide-panel ${showHomePage ? "active" : ""}`}>
         <button
           className="close-panel-btn"
@@ -907,23 +753,15 @@ const Plan = () => {
         >
           <IoClose size={24} />
         </button>
-        <HomePage
-          isInPlan={true}
-          onAddToPlan={handleAddDestination}
-          showAddButton={true}
-        />
+        <HomePage isInPlan={true} onAddToPlan={handleAddDestination} showAddButton={true} />
       </div>
 
-      {showHomePage && (
-        <div
-          className="panel-overlay"
-          onClick={() => toggleHomePage(selectedDayIndex)}
-        ></div>
-      )}
+      {showHomePage && <div className="panel-overlay" onClick={() => toggleHomePage(selectedDayIndex)}></div>}
 
       <div className={`plan-container ${showHomePage ? "shifted" : ""}`}>
         <Screenshot className="min-h-screen">
-          <div className="plan-content">
+          <div className="plan-content relative">
+            {/* Background Elements */}
             <div className="plan-background">
               <div className="bg-element plane-1">
                 <FaPlane />
@@ -942,117 +780,49 @@ const Plan = () => {
               </div>
             </div>
 
-            <header className="plan-header">
-              <div className="header-content">
-                <Link href="/" className="back-link">
+            {/* Header */}
+            <header className="plan-header relative">
+              <div className="header-content flex justify-between items-center">
+                <Link href="/" className="back-link flex items-center space-x-2 text-gray-700 hover:text-gray-900">
                   <IoArrowBackOutline size={24} />
                   <span>Quay lại</span>
                 </Link>
 
                 <motion.div
-                  className="plan-title"
+                  className="plan-title text-center"
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <h1>Kế Hoạch Du Lịch</h1>
-                  <div className="plan-info">
-                    <div className="plan-date">
+                  <h1 className="text-3xl font-bold text-gray-800">Kế Hoạch Du Lịch</h1>
+                  <div className="plan-info flex justify-center space-x-4 mt-2">
+                    <div className="plan-date flex items-center space-x-1 text-gray-600">
                       <FaCalendarAlt />
                       <span>
                         {activities.length > 0
-                          ? `${activities[0].date} - ${
-                              activities[activities.length - 1].date
-                            }`
+                          ? `${activities[0].date} - ${activities[activities.length - 1].date}`
                           : "No dates available"}
                       </span>
                     </div>
-                    <div className="plan-location">
+                    <div className="plan-location flex items-center space-x-1 text-gray-600">
                       <FaMapMarkerAlt />
                       <span>
                         {localStorage.getItem("travelSchedule")
-                          ? JSON.parse(localStorage.getItem("travelSchedule")!)
-                              .province
+                          ? JSON.parse(localStorage.getItem("travelSchedule")!).province
                           : "Unknown"}
                       </span>
                     </div>
                   </div>
                 </motion.div>
+
+                <div></div> {/* Placeholder to maintain layout */}
               </div>
             </header>
 
-            <div className="travel-summary">
-              <div className="summary-header">
-                <h3>Tổng quan chuyến đi</h3>
-              </div>
-
-              <div className="summary-stats">
-                <div className="stat-item">
-                  <div className="stat-icon">
-                    <FaCalendarAlt />
-                  </div>
-                  <div className="stat-content">
-                    <span className="stat-value">{activities.length}</span>
-                    <span className="stat-label">Ngày</span>
-                  </div>
-                </div>
-
-                <div className="stat-item">
-                  <div className="stat-icon">
-                    <FaMapMarkerAlt />
-                  </div>
-                  <div className="stat-content">
-                    <span className="stat-value">
-                      {activities.reduce(
-                        (total, day) => total + day.activities.length,
-                        0
-                      )}
-                    </span>
-                    <span className="stat-label">Hoạt động</span>
-                  </div>
-                </div>
-
-                <div className="stat-item">
-                  <div className="stat-icon">
-                    <FaUtensils />
-                  </div>
-                  <div className="stat-content">
-                    <span className="stat-value">
-                      {activities.reduce(
-                        (total, day) =>
-                          total +
-                          day.activities.filter((a) => a.type === "food")
-                            .length,
-                        0
-                      )}
-                    </span>
-                    <span className="stat-label">Bữa ăn</span>
-                  </div>
-                </div>
-
-                <div className="stat-item">
-                  <div className="stat-icon">
-                    <FaLandmark />
-                  </div>
-                  <div className="stat-content">
-                    <span className="stat-value">
-                      {activities.reduce(
-                        (total, day) =>
-                          total +
-                          day.activities.filter((a) => a.type === "place")
-                            .length,
-                        0
-                      )}
-                    </span>
-                    <span className="stat-label">Địa điểm</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+            {/* Days Container */}
             <div
               ref={scrollContainerRef}
-              className="days-container"
+              className="days-container mt-8"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -1064,78 +834,61 @@ const Plan = () => {
               {activities.map((day, dayIndex) => (
                 <motion.div
                   key={dayIndex}
-                  className="day-card"
+                  className="day-card bg-white shadow-lg rounded-lg p-6 mb-6"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: dayIndex * 0.1 }}
                 >
-                  <div className="day-header">
+                  <div className="day-header flex justify-between items-center mb-4">
                     <div className="day-header-content">
-                      <h2>
+                      <h2 className="text-xl font-semibold text-gray-800">
                         Ngày {day.day} - {day.date}
                       </h2>
-                      {weatherData[dayIndex] ? (
-                        <div className="day-weather">
-                          {isLoadingWeather ? (
-                            <div className="weather-loading">
-                              Đang tải thời tiết...
-                            </div>
-                          ) : weatherError ? (
-                            <span className="weather-error">
-                              {weatherError}
-                            </span>
-                          ) : (
-                            <>
-                              <div className="weather-icon">
-                                {React.createElement(
-                                  getWeatherIcon(weatherData[dayIndex].icon)
-                                )}
-                              </div>
-                              <div className="weather-info">
-                                <span className="weather-temp">
-                                  {weatherData[dayIndex].temp}°C
-                                </span>
-                                <span className="weather-desc">
-                                  {getVietnameseDescription(
-                                    weatherData[dayIndex].description
-                                  )}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="day-weather">
-                          <div className="weather-loading">
-                            Đang tải thời tiết...
+                      {weatherForecast[dayIndex] ? (
+                        <div className="day-weather flex items-center space-x-2 mt-2">
+                          <div className="weather-icon text-yellow-500">
+                            {weatherForecast[dayIndex]["Mô tả"].includes("nắng") ? (
+                              <FaSun />
+                            ) : weatherForecast[dayIndex]["Mô tả"].includes("mây") ? (
+                              <FaCloud />
+                            ) : weatherForecast[dayIndex]["Mô tả"].includes("mưa") ? (
+                              <FaCloudRain />
+                            ) : (
+                              <FaWind />
+                            )}
+                          </div>
+                          <div className="weather-info text-gray-600">
+                            <span className="weather-temp">{weatherForecast[dayIndex]["Nhiệt độ tối đa"]}°C</span>
+                            <span className="weather-desc ml-2">{weatherForecast[dayIndex]["Mô tả"]}</span>
                           </div>
                         </div>
+                      ) : (
+                        <span className="text-gray-500">Không có dữ liệu thời tiết</span>
                       )}
                     </div>
                   </div>
 
-                  <div className="timeline-container">
+                  <div className="timeline-container relative">
                     <div className="timeline"></div>
 
                     <div
                       className="activities-list"
                       onDrop={(e) => handleDrop(e, dayIndex)}
                       onDragOver={(e) => {
-                        e.preventDefault();
+                        e.preventDefault()
                         if (!dragOverIndex || dragOverIndex.day !== dayIndex) {
                           setDragOverIndex({
                             day: dayIndex,
                             index: day.activities.length,
-                          });
+                          })
                         }
                       }}
                     >
                       {day.activities.map((activity, actIndex) => (
                         <React.Fragment key={actIndex}>
-                          {dragOverIndex?.day === dayIndex &&
-                            dragOverIndex?.index === actIndex && (
-                              <div className="drop-indicator active" />
-                            )}
+                          {dragOverIndex?.day === dayIndex && dragOverIndex?.index === actIndex && (
+                            <div className="drop-indicator active" />
+                          )}
                           <DraggableActivity
                             activity={activity}
                             onDelete={handleDeleteActivity}
@@ -1147,20 +900,14 @@ const Plan = () => {
                             onActivityClick={handleActivityClick}
                             onTimeChange={handleTimeChange}
                           >
-                            <div
-                              className={`activity-icon-container ${
-                                getActivityIcon(activity.type).className
-                              }`}
-                            >
+                            <div className={`activity-icon-container ${getActivityIcon(activity.type).className}`}>
                               {getActivityIcon(activity.type).icon}
                             </div>
                             <div className="activity-content">
-                              <div className="activity-header">
-                                <h3 className="activity-title">
-                                  {activity.title}
-                                </h3>
+                              <div className="activity-header flex justify-between items-center">
+                                <h3 className="activity-title text-lg font-medium text-gray-800">{activity.title}</h3>
                                 {activity.rating && (
-                                  <div className="activity-rating">
+                                  <div className="activity-rating flex items-center space-x-1 text-yellow-500">
                                     <span className="star">★</span>
                                     <span>{activity.rating}</span>
                                   </div>
@@ -1168,7 +915,7 @@ const Plan = () => {
                               </div>
 
                               {activity.image && (
-                                <div className="activity-image">
+                                <div className="activity-image relative h-40 mt-2 rounded-lg overflow-hidden">
                                   <Image
                                     src={activity.image || "/placeholder.svg"}
                                     alt={activity.title}
@@ -1178,42 +925,37 @@ const Plan = () => {
                                 </div>
                               )}
 
-                              <p className="activity-description">
-                                {activity.description}
-                              </p>
+                              <p className="activity-description text-gray-600 mt-2">{activity.description}</p>
 
                               {activity.location && (
-                                <div className="activity-location">
+                                <div className="activity-location flex items-center space-x-1 text-gray-600 mt-2">
                                   <FaMapMarkerAlt />
                                   <span>{activity.location}</span>
                                 </div>
                               )}
                             </div>
                           </DraggableActivity>
-                          {dragOverIndex?.day === dayIndex &&
-                            dragOverIndex?.index === actIndex + 1 && (
-                              <div className="drop-indicator active" />
-                            )}
+                          {dragOverIndex?.day === dayIndex && dragOverIndex?.index === actIndex + 1 && (
+                            <div className="drop-indicator active" />
+                          )}
                         </React.Fragment>
                       ))}
 
                       {day.activities.length === 0 && (
-                        <div className="empty-activities">
-                          <div className="empty-icon">
+                        <div className="empty-activities text-center py-6">
+                          <div className="empty-icon text-gray-400 text-4xl">
                             <FaSuitcase />
                           </div>
-                          <p>Chưa có hoạt động nào cho ngày này</p>
-                          <p className="empty-subtitle">
-                            Thêm hoạt động để bắt đầu lập kế hoạch
-                          </p>
+                          <p className="text-gray-600 mt-2">Chưa có hoạt động nào cho ngày này</p>
+                          <p className="text-gray-500 mt-1">Thêm hoạt động để bắt đầu lập kế hoạch</p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="day-footer">
+                  <div className="day-footer mt-4">
                     <button
-                      className="add-activity-btn"
+                      className="add-activity-btn flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
                       onClick={() => toggleHomePage(dayIndex)}
                     >
                       <FaPlus />
@@ -1224,54 +966,62 @@ const Plan = () => {
               ))}
             </div>
 
-            <div className="travel-tips">
+            {/* Travel Tips */}
+            <div className="travel-tips mt-8">
               <div className="tips-header">
-                <h3>Lời khuyên cho chuyến đi</h3>
+                <h3 className="text-2xl font-semibold text-gray-800">Lời khuyên cho chuyến đi</h3>
               </div>
-              <div className="tips-content">
-                <div className="tip-card">
-                  <div className="tip-icon">
+              <div className="tips-content grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                <div className="tip-card bg-white shadow-md rounded-lg p-4 flex items-start space-x-4">
+                  <div className="tip-icon text-blue-500 text-3xl">
                     <FaSuitcase />
                   </div>
                   <div className="tip-text">
-                    <h4>Chuẩn bị hành lý</h4>
-                    <p>
-                      Đừng quên mang theo áo mưa và kem chống nắng cho chuyến đi
-                      của bạn!
-                    </p>
+                    <h4 className="text-lg font-medium text-gray-800">Chuẩn bị hành lý</h4>
+                    <p className="text-gray-600">Đừng quên mang theo áo mưa và kem chống nắng cho chuyến đi của bạn!</p>
                   </div>
                 </div>
-                <div className="tip-card">
-                  <div className="tip-icon">
+                <div className="tip-card bg-white shadow-md rounded-lg p-4 flex items-start space-x-4">
+                  <div className="tip-icon text-blue-500 text-3xl">
                     <FaMapMarkerAlt />
                   </div>
                   <div className="tip-text">
-                    <h4>Khám phá địa phương</h4>
-                    <p>
-                      Hãy thử các món ăn địa phương và tham gia các hoạt động
-                      văn hóa để trải nghiệm trọn vẹn.
-                    </p>
+                    <h4 className="text-lg font-medium text-gray-800">Khám phá địa phương</h4>
+                    <p className="text-gray-600">Hãy thử các món ăn địa phương và tham gia các hoạt động văn hóa để trải nghiệm trọn vẹn.</p>
                   </div>
                 </div>
-                <div className="tip-card">
-                  <div className="tip-icon">
+                <div className="tip-card bg-white shadow-md rounded-lg p-4 flex items-start space-x-4">
+                  <div className="tip-icon text-blue-500 text-3xl">
                     <FaCamera />
                   </div>
                   <div className="tip-text">
-                    <h4>Lưu giữ kỷ niệm</h4>
-                    <p>
-                      Đừng quên chụp ảnh và ghi lại những khoảnh khắc đáng nhớ
-                      trong chuyến đi!
-                    </p>
+                    <h4 className="text-lg font-medium text-gray-800">Lưu giữ kỷ niệm</h4>
+                    <p className="text-gray-600">Đừng quên chụp ảnh và ghi lại những khoảnh khắc đáng nhớ trong chuyến đi!</p>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Schedule Actions */}
+            <div className="schedule-actions mt-8 flex space-x-4 justify-center">
+              <button
+                onClick={handleSaveAndShareSchedule}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md"
+              >
+                Lưu lịch trình
+              </button>
+            </div>
+
+            {shareLink && (
+              <p className="mt-4 text-center text-blue-600">
+                Link chia sẻ: <a href={shareLink} className="underline">{shareLink}</a>
+              </p>
+            )}
           </div>
         </Screenshot>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Plan;
+export default Plan
