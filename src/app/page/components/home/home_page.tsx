@@ -1344,4 +1344,3 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
 }
 
 export default HomePage
-
