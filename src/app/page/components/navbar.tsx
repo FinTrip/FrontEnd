@@ -68,11 +68,19 @@ export function Navbar() {
     };
 
     checkLoginStatus();
-    // Thêm event listener để cập nhật khi localStorage thay đổi
-    window.addEventListener("storage", checkLoginStatus);
+    
+    // Thêm event listener cho custom event authStateChanged
+    const handleAuthStateChange = () => {
+      checkLoginStatus();
+    };
+
+    window.addEventListener('authStateChanged', handleAuthStateChange);
+    // Thêm event listener cho storage events
+    window.addEventListener('storage', handleAuthStateChange);
     
     return () => {
-      window.removeEventListener("storage", checkLoginStatus);
+      window.removeEventListener('authStateChanged', handleAuthStateChange);
+      window.removeEventListener('storage', handleAuthStateChange);
     };
   }, []);
 
@@ -82,6 +90,20 @@ export function Navbar() {
     setIsLoggedIn(false);
     setUser(null);
     router.push("/page/auth/login");
+  };
+
+  const handleLoginClick = (e: React.MouseEvent) => {
+    if (isLoggedIn) {
+      e.preventDefault();
+      // Đăng xuất người dùng hiện tại trước khi chuyển hướng đến trang đăng nhập
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      // Xóa cookie token
+      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      setIsLoggedIn(false);
+      setUser(null);
+      router.push("/page/auth/login");
+    }
   };
 
   const handleCreatePost = () => {
@@ -234,6 +256,18 @@ export function Navbar() {
           >
             Plan
           </Link>
+          <Link
+            href="/weather"
+            onClick={handleNavigation}
+            className={cn(
+              "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
+              pathname === "/weather"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
+            )}
+          >
+            Weather
+          </Link>
         </div>
 
         {/* Right Section */}
@@ -312,7 +346,7 @@ export function Navbar() {
               ) : (
                 <>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href="/page/auth/login">Đăng nhập</Link>
+                    <Link href="/page/auth/login" onClick={handleLoginClick}>Đăng nhập</Link>
                   </Button>
                   <Button size="sm" asChild>
                     <Link href="/page/auth/register">Đăng ký</Link>
@@ -405,15 +439,18 @@ export function Navbar() {
                         <Button
                           variant="ghost"
                           className="w-full justify-start"
+                          onClick={handleLogout}
                         >
                           Đăng xuất
                         </Button>
                       </>
                     ) : (
                       <>
-                        <Button className="w-full mt-2">Đăng nhập</Button>
-                        <Button variant="outline" className="w-full">
-                          Đăng ký
+                        <Button className="w-full mt-2" asChild>
+                          <Link href="/page/auth/login" onClick={handleLoginClick}>Đăng nhập</Link>
+                        </Button>
+                        <Button variant="outline" className="w-full" asChild>
+                          <Link href="/page/auth/register">Đăng ký</Link>
                         </Button>
                       </>
                     )}

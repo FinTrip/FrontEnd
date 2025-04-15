@@ -72,7 +72,14 @@ export default function LoginPage() {
         };
 
         // Gọi hàm login của useAuth với dữ liệu từ Spring
-        login(dataSpring.result.token, userData);
+        login(dataSpring.result.token, userData
+        
+        // Sử dụng hàm login từ useAuth hook
+        login(data.result.token, userData);
+        
+        // Kích hoạt sự kiện authStateChanged để cập nhật UI ngay lập tức
+        window.dispatchEvent(new Event('authStateChanged'));
+        
         router.push("/homepage");
 
       } else {
