@@ -1,6 +1,8 @@
 "use client";
 
+
 import React from "react";
+
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -47,11 +49,13 @@ import {
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 
+
 export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
   const router = useRouter();
+
 
   useEffect(() => {
     // Kiểm tra trạng thái đăng nhập từ localStorage
@@ -67,22 +71,25 @@ export function Navbar() {
       }
     };
 
+
     checkLoginStatus();
-    
+   
     // Thêm event listener cho custom event authStateChanged
     const handleAuthStateChange = () => {
       checkLoginStatus();
     };
 
+
     window.addEventListener('authStateChanged', handleAuthStateChange);
     // Thêm event listener cho storage events
     window.addEventListener('storage', handleAuthStateChange);
-    
+   
     return () => {
       window.removeEventListener('authStateChanged', handleAuthStateChange);
       window.removeEventListener('storage', handleAuthStateChange);
     };
   }, []);
+
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -91,6 +98,7 @@ export function Navbar() {
     setUser(null);
     router.push("/page/auth/login");
   };
+
 
   const handleLoginClick = (e: React.MouseEvent) => {
     if (isLoggedIn) {
@@ -106,6 +114,7 @@ export function Navbar() {
     }
   };
 
+
   const handleCreatePost = () => {
     if (!isLoggedIn) {
       alert("Vui lòng đăng nhập để tạo bài viết!");
@@ -115,6 +124,7 @@ export function Navbar() {
     router.push("/forum/create-post");
   };
 
+
   const handleNavigation = (e: React.MouseEvent) => {
     if (!isLoggedIn) {
       e.preventDefault();
@@ -122,6 +132,7 @@ export function Navbar() {
       router.push("/page/auth/login");
     }
   };
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -131,6 +142,7 @@ export function Navbar() {
           <Link href="/" className="font-bold text-xl">
             FinTrip
           </Link>
+
 
           {isLoggedIn && (
             <NavigationMenu>
@@ -206,6 +218,7 @@ export function Navbar() {
           )}
         </div>
 
+
         {/* Center Section */}
         <div className="hidden md:flex items-center gap-2">
           <Link
@@ -270,6 +283,7 @@ export function Navbar() {
           </Link>
         </div>
 
+
         {/* Right Section */}
         <div className="flex items-center gap-4">
           {
@@ -278,6 +292,7 @@ export function Navbar() {
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Tìm kiếm..." className="pl-8" />
               </div>
+
 
               {isLoggedIn ? (
                 <>
@@ -292,6 +307,7 @@ export function Navbar() {
                   <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
                   </Button>
+
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -322,7 +338,7 @@ export function Navbar() {
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuGroup>
-                        <Link href="/profile">
+                        <Link href="/forum/profile">
                           <DropdownMenuItem>
                             <User className="mr-2 h-4 w-4" />
                             <span>Profile</span>
@@ -356,6 +372,7 @@ export function Navbar() {
             </>
           }
 
+
           {
             <Sheet>
               <SheetTrigger asChild>
@@ -370,13 +387,14 @@ export function Navbar() {
                     <Input placeholder="Tìm kiếm..." className="pl-8" />
                   </div>
 
+
                   <div className="grid gap-2">
                     <Link href="/">
                       <Button variant="ghost" className="w-full justify-start">
                         Trang chủ
                       </Button>
                     </Link>
-                    
+                   
                     <Link href="/destinations">
                       <Button variant="ghost" className="w-full justify-start">
                         Điểm đến
@@ -388,6 +406,7 @@ export function Navbar() {
                       </Button>
                     </Link>
 
+
                     {isLoggedIn ? (
                       <>
                         <Link href="/create-post">
@@ -396,7 +415,7 @@ export function Navbar() {
                             <span>Tạo bài viết</span>
                           </Button>
                         </Link>
-                        <Link href="/profile">
+                        <Link href="/forum/profile">
                           <Button
                             variant="ghost"
                             className="w-full justify-start"
@@ -465,6 +484,7 @@ export function Navbar() {
   );
 }
 
+
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
   React.ComponentPropsWithoutRef<"a">
@@ -490,6 +510,7 @@ const ListItem = React.forwardRef<
   );
 });
 ListItem.displayName = "ListItem";
+
 
 const destinations = [
   {
@@ -518,6 +539,7 @@ const destinations = [
   },
 ];
 
+
 const categories = [
   {
     title: "Du lịch biển",
@@ -544,3 +566,6 @@ const categories = [
       "Khám phá nền ẩm thực phong phú từ các vùng miền trong nước và quốc tế",
   },
 ];
+
+
+

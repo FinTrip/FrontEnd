@@ -14,6 +14,7 @@ interface Post {
   id: number
   title: string
   content: string
+  authorId: number
   authorName: string
   createdAt: string
   views: number | null
@@ -397,10 +398,10 @@ export default function PostPage({ params }: { params: { id: string } }) {
                   <Calendar className="h-4 w-4" />
                   <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <Link href={`/forum/user/${post.authorId}`} className="flex items-center gap-1 hover:text-primary transition-colors">
                   <User className="h-4 w-4" />
                   <span>{post.authorName}</span>
-                </div>
+                </Link>
                 <div className="flex items-center gap-1">
                   <Eye className="h-4 w-4" />
                   <span>{post.views || 0} Lượt xem</span>
@@ -503,7 +504,9 @@ export default function PostPage({ params }: { params: { id: string } }) {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-semibold">{post.authorName}</h3>
+                    <Link href={`/forum/user/${post.authorId}`} className="hover:text-primary transition-colors">
+                      <h3 className="font-semibold">{post.authorName}</h3>
+                    </Link>
                     <p className="text-sm text-muted-foreground">
                       Đăng vào {new Date(post.createdAt).toLocaleDateString('vi-VN', {
                         year: 'numeric',
@@ -560,7 +563,9 @@ export default function PostPage({ params }: { params: { id: string } }) {
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{comment.authorName}</span>
+                            <Link href={`/forum/user/${comment.id}`} className="font-medium hover:text-primary transition-colors">
+                              {comment.authorName}
+                            </Link>
                             <span className="text-sm text-muted-foreground">
                               {new Date(comment.createdAt).toLocaleDateString('vi-VN', {
                                 year: 'numeric',
@@ -619,7 +624,9 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                   </Avatar>
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-medium">{reply.authorName}</span>
+                                      <Link href={`/forum/user/${reply.id}`} className="font-medium hover:text-primary transition-colors">
+                                        {reply.authorName}
+                                      </Link>
                                       <span className="text-sm text-muted-foreground">
                                         {new Date(reply.createdAt).toLocaleDateString('vi-VN', {
                                           year: 'numeric',
@@ -680,7 +687,9 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                         </Avatar>
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2">
-                                            <span className="font-medium">{nestedReply.authorName}</span>
+                                            <Link href={`/forum/user/${nestedReply.id}`} className="font-medium hover:text-primary transition-colors">
+                                              {nestedReply.authorName}
+                                            </Link>
                                             <span className="text-sm text-muted-foreground">
                                               {new Date(nestedReply.createdAt).toLocaleDateString('vi-VN', {
                                                 year: 'numeric',
