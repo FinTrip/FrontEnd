@@ -70,7 +70,7 @@ export function Navbar() {
     checkLoginStatus();
     // Thêm event listener để cập nhật khi localStorage thay đổi
     window.addEventListener("storage", checkLoginStatus);
-    
+
     return () => {
       window.removeEventListener("storage", checkLoginStatus);
     };
@@ -278,8 +278,13 @@ export function Navbar() {
                         className="relative h-8 w-8 rounded-full"
                       >
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/avatars/01.png" alt={user?.fullName || ""} />
-                          <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
+                          <AvatarImage
+                            src="/avatars/01.png"
+                            alt={user?.fullName || ""}
+                          />
+                          <AvatarFallback>
+                            {user?.fullName?.charAt(0) || "U"}
+                          </AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
@@ -354,7 +359,7 @@ export function Navbar() {
                         Trang chủ
                       </Button>
                     </Link>
-                    
+
                     <Link href="/destinations">
                       <Button variant="ghost" className="w-full justify-start">
                         Điểm đến

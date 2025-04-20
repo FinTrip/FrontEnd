@@ -1,4 +1,3 @@
-// src/app/page/components/home/plan.tsx
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
@@ -35,8 +34,7 @@ import {
   FaSnowflake,
   FaWind,
   FaRoute,
-  FaChevronLeft,
-  FaChevronRight,
+  FaStar,
 } from "react-icons/fa";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,6 +58,30 @@ interface Activity {
   rating?: number;
   startTime?: string;
   endTime?: string;
+}
+
+// Định nghĩa interface cho Hotel
+interface Hotel {
+  name: string;
+  link: string;
+  description: string;
+  price: string;
+  name_nearby_place: string;
+  hotel_class: string;
+  img_origin: string;
+  location_rating: number;
+  province: string;
+  amenities: string[];
+}
+
+// Định nghĩa interface cho Flight
+interface Flight {
+  outbound_flight_code: string;
+  outbound_time: string;
+  total_price_vnd: string;
+  base_price_vnd: string;
+  fare_basis: string;
+  cabin: string;
 }
 
 // Định nghĩa interface cho Day
@@ -357,7 +379,6 @@ const Plan = () => {
     dayIndex: number;
     activityIndex: number;
   } | null>(null);
-
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeftOffset, setScrollLeftOffset] = useState(0);
@@ -367,6 +388,8 @@ const Plan = () => {
     index: number;
   } | null>(null);
   const [activities, setActivities] = useState<DayPlan[]>([]);
+  const [hotel, setHotel] = useState<Hotel | null>(null);
+  const [flight, setFlight] = useState<Flight | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
@@ -397,6 +420,7 @@ const Plan = () => {
         setError(null);
 
         const scheduleData = localStorage.getItem("travelSchedule");
+        console.log("Raw data from localStorage:", scheduleData);
         if (!scheduleData) {
           throw new Error(
             "Không tìm thấy dữ liệu kế hoạch trong localStorage."
@@ -404,6 +428,7 @@ const Plan = () => {
         }
 
         const parsedData = JSON.parse(scheduleData);
+        console.log("Parsed data from localStorage:", parsedData);
         if (
           !parsedData ||
           !parsedData.schedule ||
@@ -414,8 +439,13 @@ const Plan = () => {
           );
         }
 
-        // Lấy province từ đúng vị trí trong cấu trúc dữ liệu
+        // Lấy province, hotel và flight từ dữ liệu
         const province = parsedData.schedule.province;
+        const selectedHotel = parsedData.hotel?.hotel_details || null;
+        const selectedFlight = parsedData.flight?.flight_details || null;
+
+        setHotel(selectedHotel);
+        setFlight(selectedFlight);
 
         const formattedActivities = parsedData.schedule.schedule.map(
           (dayItem: any, index: number) => {
@@ -458,6 +488,7 @@ const Plan = () => {
           }
         );
 
+        console.log("Formatted Activities:", formattedActivities);
         setActivities(formattedActivities);
 
         // Lấy dữ liệu thời tiết
@@ -466,8 +497,8 @@ const Plan = () => {
 
         try {
           const coordinates = await getCoordinates(province);
-          console.log("Coordinates for", province, ":", coordinates);
-
+          console.log("Coordinates for province:", coordinates);
+          
           const weatherPromises = formattedActivities.map(
             async (day: DayPlan) => {
               return await getWeatherForDate(
@@ -741,53 +772,6 @@ const Plan = () => {
     setActivities(newActivities);
   };
 
-  const fetchWeatherData = async () => {
-    try {
-      setIsLoadingWeather(true);
-      setWeatherError(null);
-
-      const travelScheduleStr = localStorage.getItem("travelSchedule");
-      if (!travelScheduleStr) {
-        throw new Error("Không tìm thấy dữ liệu kế hoạch trong localStorage");
-      }
-
-      const travelSchedule = JSON.parse(travelScheduleStr);
-      if (!travelSchedule.province || !travelSchedule.schedule?.schedule) {
-        throw new Error("Dữ liệu kế hoạch không hợp lệ");
-      }
-
-      console.log("Fetching weather for province:", travelSchedule.province);
-      const coordinates = await getCoordinates(travelSchedule.province);
-      console.log("Coordinates:", coordinates);
-
-      const weatherPromises = travelSchedule.schedule.schedule.map(
-        async (day: any) => {
-          const dateMatch = day.day.match(/\((.*?)\)/);
-          if (!dateMatch) {
-            console.warn("Invalid date format in day:", day.day);
-            return null;
-          }
-
-          const date = dateMatch[1];
-          console.log("Fetching weather for date:", date);
-          return await getWeatherForDate(
-            coordinates.lat,
-            coordinates.lon,
-            date
-          );
-        }
-      );
-
-      const weatherResults = await Promise.all(weatherPromises);
-      setWeatherData(weatherResults.filter(Boolean));
-    } catch (error: any) {
-      console.error("Error fetching weather:", error);
-      setWeatherError(error.message || "Không thể tải dữ liệu thời tiết");
-    } finally {
-      setIsLoadingWeather(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="loading-screen">
@@ -972,7 +956,7 @@ const Plan = () => {
                       <span>
                         {localStorage.getItem("travelSchedule")
                           ? JSON.parse(localStorage.getItem("travelSchedule")!)
-                              .province
+                              .schedule.province
                           : "Unknown"}
                       </span>
                     </div>
@@ -981,11 +965,154 @@ const Plan = () => {
               </div>
             </header>
 
+            {/* Flight Section */}
+            {flight && (
+              <motion.section
+                className="flight-section"
+                initial={slideUp.hidden}
+                animate={slideUp.visible}
+              >
+                <div className="section-header">
+                  <h3>Thông Tin Chuyến Bay</h3>
+                </div>
+                <div className="flight-card">
+                  <div className="flight-header">
+                    <div className="flight-code">
+                      {flight.outbound_flight_code}
+                    </div>
+                    <div className="flight-class">{flight.cabin}</div>
+                  </div>
+                  <div className="flight-body">
+                    <div className="flight-route">
+                      <div className="route-point">
+                        <div className="point-marker departure"></div>
+                        <div className="point-details">
+                          <span className="point-city">
+                            {JSON.parse(localStorage.getItem("travelSession")!)
+                              .flight.origin || "Unknown"}
+                          </span>
+                          <span className="point-time">
+                            {flight.outbound_time}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="route-line">
+                        <FaPlane className="route-plane" />
+                      </div>
+                      <div className="route-point">
+                        <div className="point-marker arrival"></div>
+                        <div className="point-details">
+                          <span className="point-city">
+                            {JSON.parse(localStorage.getItem("travelSession")!)
+                              .flight.destination || "Unknown"}
+                          </span>
+                          <span className="point-time">Arrival</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flight-details">
+                      <div className="detail-item">
+                        <span className="detail-label">Loại vé:</span>
+                        <span className="detail-value">
+                          {flight.fare_basis}
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Giá cơ bản:</span>
+                        <span className="detail-value">
+                          {flight.base_price_vnd}
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Tổng giá:</span>
+                        <span className="detail-value">
+                          {flight.total_price_vnd}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
+            )}
+
+            {/* Hotel Section */}
+            {hotel && (
+              <motion.section
+                className="hotel-section"
+                initial={slideUp.hidden}
+                animate={slideUp.visible}
+              >
+                <div className="section-header">
+                  <h3>Thông Tin Khách Sạn</h3>
+                </div>
+                <div className="hotel-card">
+                  <div className="hotel-image">
+                    <Image
+                      src={hotel.img_origin || "/placeholder.svg"}
+                      alt={hotel.name}
+                      width={600}
+                      height={400}
+                      className="img-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes("placeholder.svg")) {
+                          target.src = "/placeholder.svg";
+                          target.onerror = null;
+                        }
+                      }}
+                    />
+                    <div className="hotel-badge">{hotel.hotel_class}</div>
+                  </div>
+                  <div className="hotel-content">
+                    <h3 className="hotel-name">{hotel.name}</h3>
+                    <div className="hotel-location">
+                      <FaMapMarkerAlt className="location-icon" />
+                      <span>{hotel.name_nearby_place}</span>
+                    </div>
+                    <div className="hotel-rating">
+                      {Array.from({
+                        length: Math.floor(hotel.location_rating),
+                      }).map((_, i) => (
+                        <span key={i} className="star-icon">
+                          <FaStar />
+                        </span>
+                      ))}
+                      <span className="rating-number">
+                        {hotel.location_rating}
+                      </span>
+                    </div>
+                    <p className="hotel-description">{hotel.description}</p>
+                    <div className="hotel-amenities">
+                      <h4>Tiện nghi:</h4>
+                      <ul>
+                        {hotel.amenities.map((amenity, index) => (
+                          <li key={index}>{amenity}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="hotel-footer">
+                      <div className="hotel-price">
+                        {hotel.price}
+                        <span>/đêm</span>
+                      </div>
+                      <a
+                        href={hotel.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="view-button"
+                      >
+                        Xem chi tiết
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
+            )}
+
             <div className="travel-summary">
               <div className="summary-header">
                 <h3>Tổng quan chuyến đi</h3>
               </div>
-
               <div className="summary-stats">
                 <div className="stat-item">
                   <div className="stat-icon">
@@ -996,7 +1123,6 @@ const Plan = () => {
                     <span className="stat-label">Ngày</span>
                   </div>
                 </div>
-
                 <div className="stat-item">
                   <div className="stat-icon">
                     <FaMapMarkerAlt />
@@ -1011,7 +1137,6 @@ const Plan = () => {
                     <span className="stat-label">Hoạt động</span>
                   </div>
                 </div>
-
                 <div className="stat-item">
                   <div className="stat-icon">
                     <FaUtensils />
@@ -1029,7 +1154,6 @@ const Plan = () => {
                     <span className="stat-label">Bữa ăn</span>
                   </div>
                 </div>
-
                 <div className="stat-item">
                   <div className="stat-icon">
                     <FaLandmark />
