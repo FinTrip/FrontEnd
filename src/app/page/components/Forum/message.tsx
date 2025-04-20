@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
-import { Send, X, Users, Loader2 } from "lucide-react"
+import { Send, X, Users, Loader2, Video } from "lucide-react"
 import { Button } from "@/app/page/components/ui/button"
 import { Input } from "@/app/page/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/page/components/ui/avatar"
@@ -9,6 +9,7 @@ import { Badge } from "@/app/page/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/useAuth"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface ChatUser {
   id: number;
@@ -46,6 +47,8 @@ export function BoxChat({ user, group, messages = [], onClose }: BoxChatProps) {
   const [messageInput, setMessageInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [callLoading, setCallLoading] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -107,6 +110,64 @@ export function BoxChat({ user, group, messages = [], onClose }: BoxChatProps) {
     }
   };
 
+  const handleVideoCall = async () => {
+    if (!currentUser || (!user && !group)) return;
+    
+    setCallLoading(true);
+    try {
+      // Tạo ID phòng duy nhất
+      const roomId = user 
+        ? `room_${currentUser.id}_${user.id}_${Date.now()}` // Chat cá nhân
+        : `room_group_${group!.id}_${Date.now()}`; // Chat nhóm
+      
+      const callLink = `${window.location.origin}/callvideo?roomID=${roomId}`;
+      
+      try {
+        if (user) {
+          // Gửi tin nhắn thông báo cho chat cá nhân
+          await fetch("http://localhost:8081/indentity/api/messages/send", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              receiverId: user.id,
+              content: `Hiện tại người này đang tạo 1 phòng họp với bạn. Vui lòng bấm vào <a href="${callLink}" class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none">Tham gia</a>`
+            })
+          });
+        } else if (group) {
+          // Gửi tin nhắn thông báo cho chat nhóm
+          await fetch("http://localhost:8081/indentity/api/chatrooms/send-message", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              roomId: group.id,
+              content: `${currentUser.fullName} đã tạo một phòng họp nhóm. Vui lòng bấm vào <a href="${callLink}" class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none">Tham gia</a>`
+            })
+          });
+        }
+        
+        console.log('Đã gửi tin nhắn thông báo cuộc gọi');
+        
+        // Thông báo thành công và chuyển đến trang cuộc gọi
+        toast.success(`Đã tạo phòng họp và gửi lời mời ${user ? `tới ${user.fullName}` : 'cho cả nhóm'}`);
+        router.push(`/callvideo?roomID=${roomId}`);
+      } catch (error) {
+        console.error("Lỗi khi gửi tin nhắn thông báo:", error);
+        toast.error("Không thể gửi lời mời tham gia. Vui lòng thử lại sau.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi bắt đầu cuộc gọi:", error);
+      toast.error("Không thể bắt đầu cuộc gọi. Vui lòng thử lại sau.");
+    } finally {
+      setCallLoading(false);
+    }
+  };
+
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'online': return 'bg-green-500'
@@ -159,16 +220,32 @@ export function BoxChat({ user, group, messages = [], onClose }: BoxChatProps) {
             </p>
           </div>
         </div>
-        {onClose && (
+        <div className="flex items-center gap-1">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 rounded-full hover:bg-muted"
-            onClick={onClose}
+            className="h-8 w-8 rounded-full hover:bg-muted text-green-600"
+            onClick={handleVideoCall}
+            disabled={callLoading}
+            title={`Tạo phòng họp ${group ? 'nhóm' : ''}`}
           >
-            <X className="h-4 w-4" />
+            {callLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Video className="h-4 w-4" />
+            )}
           </Button>
-        )}
+          {onClose && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 rounded-full hover:bg-muted"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -176,6 +253,8 @@ export function BoxChat({ user, group, messages = [], onClose }: BoxChatProps) {
         <div className="space-y-4">
           {messages.map((message) => {
             const isCurrentUser = currentUser && message.senderId === currentUser.id;
+            
+            const hasHtml = message.content.includes('<a') || message.content.includes('<button');
             
             return (
               <div 
@@ -206,7 +285,11 @@ export function BoxChat({ user, group, messages = [], onClose }: BoxChatProps) {
                       {message.senderName}
                     </p>
                   )}
-                  <p>{message.content}</p>
+                  {hasHtml ? (
+                    <div dangerouslySetInnerHTML={{ __html: message.content }} />
+                  ) : (
+                    <p>{message.content}</p>
+                  )}
                   <div
                     className={cn(
                       "text-[10px] mt-1 flex justify-end",
@@ -260,8 +343,3 @@ export function BoxChat({ user, group, messages = [], onClose }: BoxChatProps) {
     </div>
   )
 }
-
-
-
-
-

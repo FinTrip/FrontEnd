@@ -8,6 +8,7 @@ import { Textarea } from "@/app/page/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
+import { toast } from "react-hot-toast";
 
 interface CreatePost {
   title: string;
@@ -27,7 +28,12 @@ interface PostResponse {
   };
 }
 
-export default function CreatePostForm() {
+interface CreatePostFormProps {
+  onPostCreated?: (newPost: PostResponse['result']) => void;
+  onCancel?: () => void;
+}
+
+export default function CreatePostForm({ onPostCreated, onCancel }: CreatePostFormProps) {
   const [formData, setFormData] = useState<CreatePost>({
     title: "",
     content: "",
@@ -79,15 +85,8 @@ export default function CreatePostForm() {
       formDataToSend.append("title", formData.title);
       formDataToSend.append("content", formData.content);
       
-      // Thêm các files vào FormData
       selectedFiles.forEach((file) => {
         formDataToSend.append("files", file);
-      });
-
-      console.log('Sending request with form data:', {
-        title: formData.title,
-        content: formData.content,
-        filesCount: selectedFiles.length
       });
 
       const response = await fetch(
@@ -129,7 +128,23 @@ export default function CreatePostForm() {
       if (data.code === 200) {
         // Cleanup preview URLs
         previewUrls.forEach(url => URL.revokeObjectURL(url));
-        router.push("/forum");
+        
+        // Call the callback with the new post data
+        if (onPostCreated) {
+          onPostCreated(data.result);
+        }
+        
+        // Reset form
+        setFormData({ title: "", content: "" });
+        setSelectedFiles([]);
+        setPreviewUrls([]);
+        
+        // Close form if onCancel is provided
+        if (onCancel) {
+          onCancel();
+        }
+        
+        toast.success("Bài viết đã được tạo thành công!");
       } else {
         throw new Error(data.message || "Failed to create post");
       }
@@ -144,8 +159,13 @@ export default function CreatePostForm() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Create New Post</CardTitle>
+        {onCancel && (
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

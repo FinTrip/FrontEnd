@@ -11,6 +11,7 @@ import { Badge } from "@/app/page/components/ui/badge";
 import { Button } from "@/app/page/components/ui/button";
 import { User, UserPlus, UserX, Lock, Clock } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface UserProfile {
   id?: number;
@@ -22,12 +23,26 @@ interface UserProfile {
   requestSent?: boolean;
 }
 
+interface UserPost {
+  id: number;
+  title: string;
+  content: string;
+  authorName: string;
+  createdAt: string;
+  views?: number;
+  likes?: number;
+  images?: string[];
+}
+
 export default function UserProfilePage() {
   const { userId } = useParams();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processingFriendAction, setProcessingFriendAction] = useState(false);
+  const [userPosts, setUserPosts] = useState<UserPost[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [postsError, setPostsError] = useState("");
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -86,6 +101,45 @@ export default function UserProfilePage() {
 
     fetchUserProfile();
   }, [userId]);
+
+  const fetchUserPosts = async () => {
+    if (!userId || Array.isArray(userId)) return;
+    
+    setLoadingPosts(true);
+    setPostsError("");
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setPostsError("Bạn cần đăng nhập để xem thông tin này");
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8081/indentity/api/blog/user/${userId}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (response.ok && data.code === 200) {
+        setUserPosts(data.result || []);
+      } else {
+        setPostsError(data.message || "Không thể tải bài viết");
+      }
+    } catch (error) {
+      console.error("Error fetching user posts:", error);
+      setPostsError("Đã xảy ra lỗi khi tải bài viết");
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value === "posts") {
+      fetchUserPosts();
+    }
+  };
 
   const handleFriendAction = async (action: 'add' | 'accept' | 'decline' | 'remove') => {
     if (!userId || Array.isArray(userId)) {
@@ -248,7 +302,7 @@ export default function UserProfilePage() {
         User Profile
       </h1>
      
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs defaultValue="profile" className="w-full" onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="posts">Posts</TabsTrigger>
@@ -309,12 +363,52 @@ export default function UserProfilePage() {
         <TabsContent value="posts">
           <Card>
             <CardHeader>
-              <CardTitle>User Posts</CardTitle>
+              <CardTitle>Bài viết của {user?.fullName || "người dùng"}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-4 text-muted-foreground">
-                Không có bài viết nào
-              </div>
+              {loadingPosts ? (
+                <div className="text-center py-4">Đang tải bài viết...</div>
+              ) : postsError ? (
+                <div className="text-center py-4 text-red-500">{postsError}</div>
+              ) : userPosts.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  Không có bài viết nào
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {userPosts.map((post) => (
+                    <Link 
+                      href={`/forum/posts/${post.id}`} 
+                      key={post.id} 
+                      className="block py-4 first:pt-0 last:pb-0 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm mb-1 truncate">{post.title}</h3>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                            {post.views !== undefined && (
+                              <span>• {post.views} lượt xem</span>
+                            )}
+                            {post.likes !== undefined && (
+                              <span>• {post.likes} lượt thích</span>
+                            )}
+                          </div>
+                        </div>
+                        {post.images && post.images.length > 0 && (
+                          <div className="w-16 h-16 flex-shrink-0">
+                            <img 
+                              src={post.images[0]}
+                              alt="Ảnh bài viết"
+                              className="w-full h-full object-cover rounded-md"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

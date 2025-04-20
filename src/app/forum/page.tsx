@@ -22,6 +22,11 @@ import { toast } from 'sonner'; // Corrected import if it's a package
 import { BoxChat } from "@/app/page/components/Forum/message"
 import { CreateGroupDialog } from "./components/create-group-dialog"
 import { AddMembersDialog } from "./components/add-members-dialog"
+import {
+  Dialog,
+  DialogContent,
+} from "@/app/page/components/ui/dialog"
+import CreatePostForm from "@/app/page/components/Forum/create-post-form"
 
 interface Post {
   id: number
@@ -152,6 +157,19 @@ interface PrivateMessageResponse {
   };
 }
 
+interface PostResponse {
+  code: number;
+  message: string;
+  result: {
+    createdAt: string;
+    images: string[];
+    authorName: string;
+    id: number;
+    title: string;
+    content: string;
+  };
+}
+
 export default function ForumHome() {
   const [posts, setPosts] = useState<Post[]>([])
   const [hotPosts, setHotPosts] = useState<HotPost[]>([])
@@ -196,6 +214,8 @@ export default function ForumHome() {
 
   // Thêm state để lưu tin nhắn cá nhân
   const [privateMessages, setPrivateMessages] = useState<{ [key: number]: PrivateMessageResponse[] }>({});
+
+  const [isCreatePostDialogOpen, setIsCreatePostDialogOpen] = useState(false);
 
   // --- Define fetch functions ---
   const fetchFriends = useCallback(async () => {
@@ -364,15 +384,19 @@ export default function ForumHome() {
       const data = await response.json();
       if (response.ok && data.code === 200) {
         // Format và sắp xếp tin nhắn theo thời gian
-        const formattedMessages = data.result.map((msg: PrivateMessageResponse) => ({
-          id: msg.id,
-          content: msg.content,
-          senderId: msg.sender.id,
-          senderName: msg.sender.fullName,
-          createdAt: msg.createdAt
-        })).sort((a, b) => 
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
+        const sortMessages = <T extends { createdAt: string }>(a: T, b: T) => {
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        };
+
+        const formattedMessages = data.result
+          .map((msg: PrivateMessageResponse) => ({
+            id: msg.id,
+            content: msg.content,
+            senderId: msg.sender.id,
+            senderName: msg.sender.fullName,
+            createdAt: msg.createdAt
+          }))
+          .sort(sortMessages);
 
         setPrivateMessages(prev => ({
           ...prev,
@@ -850,6 +874,27 @@ export default function ForumHome() {
     }
   };
 
+  // Sửa hàm handlePostCreated để chuyển đổi dữ liệu
+  const handlePostCreated = (newPost: PostResponse['result']) => {
+    const formattedPost: Post = {
+      ...newPost,
+      views: 0,
+      likes: 0
+    };
+    setPosts(prevPosts => [formattedPost, ...prevPosts]);
+    setIsCreatePostDialogOpen(false);
+  };
+
+  // Sửa hàm sort với kiểu dữ liệu rõ ràng
+  const sortByDate = (a: { createdAt: string }, b: { createdAt: string }) => {
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  };
+
+  // Sửa hàm sort messages với kiểu dữ liệu cụ thể
+  const sortMessages = <T extends { createdAt: string }>(a: T, b: T) => {
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  };
+
   // --- Phần JSX --- 
   return (
     <div className="container mx-auto px-4 py-12 md:px-6 lg:px-8 flex">
@@ -859,13 +904,21 @@ export default function ForumHome() {
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">FinTrip Forum</h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">Chia sẻ và khám phá những trải nghiệm du lịch tuyệt vời từ cộng đồng.</p>
           <div className="flex justify-center gap-4 flex-wrap">
-            <Link href="/forum/create-post">
-              <Button size="lg">
-                <MessageSquare className="mr-2 h-5 w-5"/> Tạo bài viết mới
-              </Button>
-            </Link>
+            <Button size="lg" onClick={() => setIsCreatePostDialogOpen(true)}>
+              <MessageSquare className="mr-2 h-5 w-5"/> Tạo bài viết mới
+            </Button>
           </div>
         </header>
+
+        {/* Dialog tạo bài viết mới */}
+        <Dialog open={isCreatePostDialogOpen} onOpenChange={setIsCreatePostDialogOpen}>
+          <DialogContent className="max-w-3xl">
+            <CreatePostForm 
+              onPostCreated={handlePostCreated}
+              onCancel={() => setIsCreatePostDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
 
         {/* Bài viết nổi bật */} 
         {!isLoading && hotPosts.length > 0 && (
@@ -902,16 +955,17 @@ export default function ForumHome() {
             <p className="text-center text-muted-foreground py-10">Chưa có bài viết nào.</p>
           )}
           {!isLoading && !error && posts.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {posts.map((post) => (
                     <Link href={`/forum/posts/${post.id}`} key={post.id} className="block group">
                       <Card className="h-full border dark:border-muted/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden rounded-lg group-hover:-translate-y-1">
-                        <div className="aspect-video bg-gradient-to-br from-muted/50 to-muted/20 dark:from-muted/30 dark:to-muted/10">
+                        <div className="h-48 bg-gradient-to-br from-muted/50 to-muted/20 dark:from-muted/30 dark:to-muted/10">
                           {post.images && post.images.length > 0 ? (
                             <img
                               src={post.images[0]}
                               alt={post.title}
                               className="w-full h-full object-cover"
+                              loading="lazy"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -1208,9 +1262,9 @@ export default function ForumHome() {
                             <div>
                               <p className="text-sm font-medium">{friend.fullName || 'Người dùng ẩn danh'}</p>
                               <p className="text-xs text-muted-foreground">
-                                {friend.status === 'online' 
+                                {/* {friend.status === 'online' 
                                   ? 'Đang trực tuyến' 
-                                  : friend.lastActive ? `Hoạt động ${friend.lastActive}` : 'Ngoại tuyến'}
+                                  : friend.lastActive ? `Hoạt động ${friend.lastActive}` : 'Ngoại tuyến'} */}
                               </p>
                             </div>
                           </div>
