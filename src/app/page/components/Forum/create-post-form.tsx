@@ -158,42 +158,43 @@ export default function CreatePostForm({ onPostCreated, onCancel }: CreatePostFo
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Create New Post</CardTitle>
+    <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between border-b bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
+        <CardTitle className="text-white">Create New Post</CardTitle>
         {onCancel && (
-          <Button variant="ghost" onClick={onCancel}>
+          <Button variant="ghost" className="text-white hover:text-white/80" onClick={onCancel}>
             Cancel
           </Button>
         )}
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <CardContent className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title" className="text-gray-700">Title</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Enter post title"
+              className="border-gray-200 focus:border-[#00B4DB] focus:ring-[#00B4DB]/30"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
+            <Label htmlFor="content" className="text-gray-700">Content</Label>
             <Textarea
               id="content"
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               placeholder="Write your post content here..."
-              className="min-h-[200px]"
+              className="min-h-[200px] border-gray-200 focus:border-[#00B4DB] focus:ring-[#00B4DB]/30"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="images">Images</Label>
+            <Label htmlFor="images" className="text-gray-700">Images</Label>
             <Input
               id="images"
               type="file"
@@ -201,7 +202,7 @@ export default function CreatePostForm({ onPostCreated, onCancel }: CreatePostFo
               accept="image/*"
               multiple
               required
-              className="cursor-pointer"
+              className="cursor-pointer border-gray-200 focus:border-[#00B4DB] focus:ring-[#00B4DB]/30"
             />
           </div>
 
@@ -215,12 +216,12 @@ export default function CreatePostForm({ onPostCreated, onCancel }: CreatePostFo
                     alt={`Preview ${index + 1}`}
                     width={200}
                     height={200}
-                    className="object-cover rounded-lg"
+                    className="object-cover rounded-lg shadow-md"
                   />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-200"
                   >
                     ×
                   </button>
@@ -230,12 +231,16 @@ export default function CreatePostForm({ onPostCreated, onCancel }: CreatePostFo
           )}
 
           {error && (
-            <div className="text-red-500 text-sm mt-2">
+            <div className="text-red-500 text-sm mt-2 bg-red-50 p-3 rounded-lg">
               {error}
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full bg-gradient-to-r from-[#00B4DB] to-[#0083B0] hover:from-[#0083B0] hover:to-[#00B4DB] text-white font-medium shadow-lg hover:shadow-xl transition-all" 
+            disabled={isLoading}
+          >
             {isLoading ? "Creating..." : "Create Post"}
           </Button>
         </form>

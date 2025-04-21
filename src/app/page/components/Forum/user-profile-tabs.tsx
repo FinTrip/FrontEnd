@@ -128,111 +128,142 @@ export default function UserProfileTabs() {
 
   return (
     <Tabs defaultValue="profile" className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="profile">Profile</TabsTrigger>
-        <TabsTrigger value="posts">Posts</TabsTrigger>
-        <TabsTrigger value="plans">Plans</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-[#00B4DB] to-[#0083B0] p-1 rounded-lg">
+        <TabsTrigger 
+          value="profile" 
+          className="data-[state=active]:bg-white data-[state=active]:text-[#00B4DB] text-white"
+        >
+          Profile
+        </TabsTrigger>
+        <TabsTrigger 
+          value="posts"
+          className="data-[state=active]:bg-white data-[state=active]:text-[#00B4DB] text-white"
+        >
+          Posts
+        </TabsTrigger>
+        <TabsTrigger 
+          value="plans"
+          className="data-[state=active]:bg-white data-[state=active]:text-[#00B4DB] text-white"
+        >
+          Plans
+        </TabsTrigger>
       </TabsList>
 
-
       <TabsContent value="profile">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          <CardHeader className="border-b bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
+            <CardTitle className="text-white">Profile Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-6">
             {loading ? (
               <div className="text-center py-4">Đang tải thông tin...</div>
             ) : error ? (
-              <div className="text-center py-4 text-red-500">{error}</div>
+              <div className="text-center py-4 text-red-500 bg-red-50 rounded-lg">{error}</div>
             ) : user ? (
               <>
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-20 w-20">
+                  <Avatar className="h-20 w-20 ring-2 ring-[#00B4DB]/20">
                     <AvatarImage src="/images/avatar.png" />
-                    <AvatarFallback>{user.fullName?.charAt(0) || "U"}</AvatarFallback>
+                    <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                      {user.fullName?.charAt(0) || "U"}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-lg font-semibold">{user.fullName}</h3>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <h3 className="text-lg font-semibold text-gray-800">{user.fullName}</h3>
+                    <p className="text-sm text-gray-500">{user.email}</p>
                   </div>
                 </div>
                 <div className="grid gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input id="name" value={user.fullName || ""} readOnly />
+                    <Label htmlFor="name" className="text-gray-700">Name</Label>
+                    <Input 
+                      id="name" 
+                      value={user.fullName || ""} 
+                      readOnly 
+                      className="bg-gray-50 border-gray-200"
+                    />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={user.email || ""} readOnly />
+                    <Label htmlFor="email" className="text-gray-700">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={user.email || ""} 
+                      readOnly 
+                      className="bg-gray-50 border-gray-200"
+                    />
                   </div>
                 </div>
 
-
                 {/* Friends List Section */}
-                <div className="mt-8 pt-4 border-t">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <Users className="mr-2 h-5 w-5" />
+                <div className="mt-8 pt-4 border-t border-gray-100">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-800">
+                    <Users className="mr-2 h-5 w-5 text-[#00B4DB]" />
                     Friends
                   </h3>
                  
                   {loadingFriends ? (
                     <div className="text-center py-4">Đang tải danh sách bạn bè...</div>
                   ) : friendsError ? (
-                    <div className="text-center py-4 text-red-500">{friendsError}</div>
+                    <div className="text-center py-4 text-red-500 bg-red-50 rounded-lg">{friendsError}</div>
                   ) : friends.length > 0 ? (
                     <div className="grid gap-3">
                       {friends.map((friend, index) => (
                         <div
                           key={friend.id || index}
-                          className="flex items-center p-2 rounded-md hover:bg-slate-50 cursor-pointer transition-colors"
+                          className="flex items-center p-3 rounded-lg hover:bg-[#00B4DB]/5 cursor-pointer transition-colors"
                           onClick={() => handleViewFriendProfile(friend)}
                         >
-                          <Avatar className="h-10 w-10 mr-3">
+                          <Avatar className="h-10 w-10 mr-3 ring-2 ring-[#00B4DB]/20">
                             <AvatarImage src="/images/avatar.png" />
-                            <AvatarFallback>{friend.fullName?.charAt(0) || "?"}</AvatarFallback>
+                            <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                              {friend.fullName?.charAt(0) || "?"}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
-                            <h4 className="font-medium">{friend.fullName}</h4>
+                            <h4 className="font-medium text-gray-800">{friend.fullName}</h4>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-4 text-muted-foreground">Chưa có bạn bè nào</div>
+                    <div className="text-center py-4 text-gray-500">Chưa có bạn bè nào</div>
                   )}
                 </div>
               </>
             ) : (
-              <div className="text-center py-4">Không có thông tin người dùng</div>
+              <div className="text-center py-4 text-gray-500">Không có thông tin người dùng</div>
             )}
           </CardContent>
         </Card>
       </TabsContent>
 
-
       <TabsContent value="posts">
-        <Card>
-          <CardHeader>
-            <CardTitle>My Posts</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          <CardHeader className="border-b bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
+            <CardTitle className="text-white">My Posts</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="space-y-4">
               <div className="flex items-start space-x-4">
-                <Avatar>
+                <Avatar className="ring-2 ring-[#00B4DB]/20">
                   <AvatarImage src="/images/avatar.png" />
-                  <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                    {user?.fullName?.charAt(0) || "U"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">Exploring Ha Giang</h4>
-                    <Badge variant="secondary">Draft</Badge>
+                    <h4 className="font-semibold text-gray-800">Exploring Ha Giang</h4>
+                    <Badge className="bg-[#00B4DB] text-white">Draft</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-500 mt-1">
                     A beautiful journey through the northern mountains...
                   </p>
-                  <div className="mt-2 flex items-center space-x-4">
-                    <Button variant="outline" size="sm">Edit</Button>
+                  <div className="mt-4 flex items-center space-x-4">
+                    <Button variant="outline" size="sm" className="text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10">
+                      Edit
+                    </Button>
                     <Button variant="destructive" size="sm">Delete</Button>
                   </div>
                 </div>
@@ -242,41 +273,44 @@ export default function UserProfileTabs() {
         </Card>
       </TabsContent>
 
-
       <TabsContent value="plans">
-        <Card>
-          <CardHeader>
-            <CardTitle>My Travel Plans</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          <CardHeader className="border-b bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
+            <CardTitle className="text-white">My Travel Plans</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="space-y-4">
               <div className="flex items-start space-x-4">
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">Weekend in Da Nang</h4>
-                    <Badge>Active</Badge>
+                    <h4 className="font-semibold text-gray-800">Weekend in Da Nang</h4>
+                    <Badge className="bg-[#00B4DB] text-white">Active</Badge>
                   </div>
-                  <div className="mt-2 flex items-center space-x-4 text-sm text-muted-foreground">
+                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
                     <div className="flex items-center">
-                      <Calendar className="mr-1 h-4 w-4" />
+                      <Calendar className="mr-1 h-4 w-4 text-[#00B4DB]" />
                       <span>Mar 15-17, 2024</span>
                     </div>
                     <div className="flex items-center">
-                      <MapPin className="mr-1 h-4 w-4" />
+                      <MapPin className="mr-1 h-4 w-4 text-[#00B4DB]" />
                       <span>Da Nang, Vietnam</span>
                     </div>
                     <div className="flex items-center">
-                      <Clock className="mr-1 h-4 w-4" />
+                      <Clock className="mr-1 h-4 w-4 text-[#00B4DB]" />
                       <span>3 days</span>
                     </div>
                     <div className="flex items-center">
-                      <Users className="mr-1 h-4 w-4" />
+                      <Users className="mr-1 h-4 w-4 text-[#00B4DB]" />
                       <span>2 participants</span>
                     </div>
                   </div>
-                  <div className="mt-2 flex items-center space-x-4">
-                    <Button variant="outline" size="sm">View Details</Button>
-                    <Button variant="outline" size="sm">Edit</Button>
+                  <div className="mt-4 flex items-center space-x-4">
+                    <Button variant="outline" size="sm" className="text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10">
+                      View Details
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10">
+                      Edit
+                    </Button>
                   </div>
                 </div>
               </div>

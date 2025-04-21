@@ -297,95 +297,108 @@ export default function UserProfilePage() {
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8 flex items-center">
-        <User className="mr-2 h-7 w-7" />
+      <h1 className="text-3xl font-bold mb-8 flex items-center text-gray-800">
+        <User className="mr-2 h-7 w-7 text-[#00B4DB]" />
         User Profile
       </h1>
      
       <Tabs defaultValue="profile" className="w-full" onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="posts">Posts</TabsTrigger>
-          <TabsTrigger value="plans">Plans</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-[#00B4DB] to-[#0083B0] text-white">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-white data-[state=active]:text-[#00B4DB]">Profile</TabsTrigger>
+          <TabsTrigger value="posts" className="data-[state=active]:bg-white data-[state=active]:text-[#00B4DB]">Posts</TabsTrigger>
+          <TabsTrigger value="plans" className="data-[state=active]:bg-white data-[state=active]:text-[#00B4DB]">Plans</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Profile Information</CardTitle>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between border-b">
+              <CardTitle className="text-gray-800">Profile Information</CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="flex items-center gap-1">
+                <Badge variant="outline" className="flex items-center gap-1 text-gray-500">
                   <Lock className="h-3 w-3" />
                   Chỉ xem
                 </Badge>
                 {!loading && !error && user && renderFriendButton()}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
               {loading ? (
-                <div className="text-center py-4">Đang tải thông tin...</div>
+                <div className="text-center py-4 text-gray-500">Đang tải thông tin...</div>
               ) : error ? (
                 <div className="text-center py-4 text-red-500">{error}</div>
               ) : user ? (
                 <>
                   <div className="flex items-center space-x-4">
-                    <Avatar className="h-20 w-20">
+                    <Avatar className="h-20 w-20 ring-2 ring-[#00B4DB]/20">
                       <AvatarImage src={user.avatarUrl || "/images/avatar.png"} />
-                      <AvatarFallback>{user.fullName?.charAt(0) || "U"}</AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                        {user.fullName?.charAt(0) || "U"}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-lg font-semibold">{user.fullName}</h3>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <h3 className="text-lg font-semibold text-gray-800">{user.fullName}</h3>
+                      <p className="text-sm text-gray-500">{user.email}</p>
                     </div>
                   </div>
                   <div className="grid gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="name">Name</Label>
-                      <Input id="name" value={user.fullName || ""} readOnly className="bg-slate-50" />
+                      <Label htmlFor="name" className="text-gray-700">Name</Label>
+                      <Input 
+                        id="name" 
+                        value={user.fullName || ""} 
+                        readOnly 
+                        className="bg-gray-50 border-gray-200 focus:border-[#00B4DB] focus:ring-[#00B4DB]/30" 
+                      />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" value={user.email || ""} readOnly className="bg-slate-50" />
+                      <Label htmlFor="email" className="text-gray-700">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={user.email || ""} 
+                        readOnly 
+                        className="bg-gray-50 border-gray-200 focus:border-[#00B4DB] focus:ring-[#00B4DB]/30" 
+                      />
                     </div>
-                    <div className="text-sm text-muted-foreground mt-2 flex items-center">
+                    <div className="text-sm text-gray-500 mt-2 flex items-center">
                       <Lock className="h-4 w-4 mr-1" />
                       Bạn chỉ có quyền xem thông tin của người dùng này
                     </div>
                   </div>
                 </>
               ) : (
-                <div className="text-center py-4">Không có thông tin người dùng</div>
+                <div className="text-center py-4 text-gray-500">Không có thông tin người dùng</div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="posts">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bài viết của {user?.fullName || "người dùng"}</CardTitle>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle className="text-gray-800">Bài viết của {user?.fullName || "người dùng"}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               {loadingPosts ? (
-                <div className="text-center py-4">Đang tải bài viết...</div>
+                <div className="text-center py-4 text-gray-500">Đang tải bài viết...</div>
               ) : postsError ? (
                 <div className="text-center py-4 text-red-500">{postsError}</div>
               ) : userPosts.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-4 text-gray-500">
                   Không có bài viết nào
                 </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y divide-gray-100">
                   {userPosts.map((post) => (
                     <Link 
                       href={`/forum/posts/${post.id}`} 
                       key={post.id} 
-                      className="block py-4 first:pt-0 last:pb-0 hover:bg-muted/50 transition-colors"
+                      className="block py-4 first:pt-0 last:pb-0 hover:bg-[#00B4DB]/5 transition-colors rounded-lg"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm mb-1 truncate">{post.title}</h3>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <h3 className="font-medium text-sm mb-1 text-gray-800 truncate">{post.title}</h3>
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
                             <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                             {post.views !== undefined && (
                               <span>• {post.views} lượt xem</span>
@@ -396,12 +409,13 @@ export default function UserProfilePage() {
                           </div>
                         </div>
                         {post.images && post.images.length > 0 && (
-                          <div className="w-16 h-16 flex-shrink-0">
+                          <div className="w-16 h-16 flex-shrink-0 relative group">
                             <img 
                               src={post.images[0]}
                               alt="Ảnh bài viết"
-                              className="w-full h-full object-cover rounded-md"
+                              className="w-full h-full object-cover rounded-md transition-transform duration-200 group-hover:scale-105"
                             />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-md" />
                           </div>
                         )}
                       </div>
@@ -414,12 +428,12 @@ export default function UserProfilePage() {
         </TabsContent>
 
         <TabsContent value="plans">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Travel Plans</CardTitle>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle className="text-gray-800">User Travel Plans</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-4 text-muted-foreground">
+            <CardContent className="p-6">
+              <div className="text-center py-4 text-gray-500">
                 Không có kế hoạch du lịch nào
               </div>
             </CardContent>

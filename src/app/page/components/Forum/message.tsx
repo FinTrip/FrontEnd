@@ -213,11 +213,11 @@ export function BoxChat({ user, group, messages = [], onClose }: BoxChatProps) {
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               {user 
                 ? user.status === 'online' ? 'Đang hoạt động' : 'Không hoạt động'
                 : group?.isAdmin ? 'Quản trị viên' : 'Thành viên'}
-            </p>
+            </p> */}
           </div>
         </div>
         <div className="flex items-center gap-1">

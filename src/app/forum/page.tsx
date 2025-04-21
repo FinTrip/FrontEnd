@@ -897,408 +897,411 @@ export default function ForumHome() {
 
   // --- Phần JSX --- 
   return (
-    <div className="container mx-auto px-4 py-12 md:px-6 lg:px-8 flex">
-      <div className="flex-grow lg:pr-8">
-        {/* Header và Sections bài viết (giữ nguyên) */}
-        <header className="mb-12 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">FinTrip Forum</h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">Chia sẻ và khám phá những trải nghiệm du lịch tuyệt vời từ cộng đồng.</p>
-          <div className="flex justify-center gap-4 flex-wrap">
-            <Button size="lg" onClick={() => setIsCreatePostDialogOpen(true)}>
-              <MessageSquare className="mr-2 h-5 w-5"/> Tạo bài viết mới
-            </Button>
-          </div>
-        </header>
-
-        {/* Dialog tạo bài viết mới */}
-        <Dialog open={isCreatePostDialogOpen} onOpenChange={setIsCreatePostDialogOpen}>
-          <DialogContent className="max-w-3xl">
-            <CreatePostForm 
-              onPostCreated={handlePostCreated}
-              onCancel={() => setIsCreatePostDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-
-        {/* Bài viết nổi bật */} 
-        {!isLoading && hotPosts.length > 0 && (
-          <section className="mb-16 bg-card border rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b bg-muted/30 dark:bg-muted/20">
-              <h2 className="text-2xl font-semibold flex items-center gap-2.5">
-                <Flame className="text-orange-500 h-6 w-6" /> Bài viết nổi bật
-              </h2>
+    <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe]">
+      <div className="container mx-auto px-4 py-8 md:px-6 lg:px-8 flex">
+        <div className="flex-grow lg:pr-8">
+          {/* Header */}
+          <header className="mb-8 text-center relative overflow-hidden rounded-xl bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
+            <div className="relative py-12 px-8">
+              <div className="absolute inset-0 bg-[url('/images/travel-pattern.png')] opacity-10"></div>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white drop-shadow-lg">
+                FinTrip Forum
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+                Chia sẻ và khám phá những trải nghiệm du lịch tuyệt vời từ cộng đồng
+              </p>
+              <div className="flex justify-center gap-4 flex-wrap">
+                <Button 
+                  size="lg" 
+                  className="relative bg-[#FF3366] hover:bg-[#FF1F4F] text-white font-semibold shadow-lg hover:shadow-xl transition-all px-6 py-2.5 rounded-full" 
+                  onClick={() => setIsCreatePostDialogOpen(true)}
+                >
+                  <MessageSquare className="mr-2 h-5 w-5 animate-pulse"/> 
+                  <span className="relative">
+                    Tạo bài viết mới
+                    <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-white/30 rounded"></span>
+                  </span>
+                </Button>
+              </div>
             </div>
-            {hotPostsError && <p className="text-red-500 text-sm p-4">{hotPostsError}</p>} 
-            <div className="divide-y divide-border">
-              {hotPosts.map((post, index) => (
-                <HotPostItem key={`hot-${post.id}`} post={post} index={index} />
-              ))}
-            </div>
-          </section>
-        )}
-        {!isLoading && hotPosts.length === 0 && hotPostsError && !error && (
-            <p className="text-center text-red-500 mb-8">{hotPostsError}</p>
-        )}
+          </header>
 
-        {/* Bài viết mới nhất */} 
-        <section>
-          <h2 className="text-3xl font-semibold mb-8">Bài viết mới nhất</h2>
-            
-          {isLoading && (
-              <div className="text-center py-10 text-muted-foreground">Đang tải bài viết...</div>
-          )}
-          {!isLoading && error && (
-              <div className="text-center text-red-500 py-10">{error}</div>
+          {/* Dialog tạo bài viết mới */}
+          <Dialog open={isCreatePostDialogOpen} onOpenChange={setIsCreatePostDialogOpen}>
+            <DialogContent className="max-w-3xl">
+              <CreatePostForm 
+                onPostCreated={handlePostCreated}
+                onCancel={() => setIsCreatePostDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Bài viết nổi bật */}
+          {!isLoading && hotPosts.length > 0 && (
+            <section className="mb-8 bg-white/80 backdrop-blur-sm border-0 rounded-xl overflow-hidden shadow-lg">
+              <div className="p-4 border-b bg-gradient-to-r from-[#00B4DB] to-[#0083B0] text-white">
+                <h2 className="text-xl font-semibold flex items-center gap-2.5">
+                  <Flame className="text-[#FFA03F] h-5 w-5" /> Bài viết nổi bật
+                </h2>
+              </div>
+              <div className="divide-y divide-blue-50">
+                {hotPosts.map((post, index) => (
+                  <Link href={`/forum/posts/${post.id}`} key={`hot-${post.id}`} className="block group">
+                    <div className="flex items-center gap-4 p-4 hover:bg-blue-50/50 transition-colors">
+                      <span className="text-lg font-medium text-[#00B4DB] w-6 text-center">{index + 1}</span>
+                      <Separator orientation="vertical" className="h-8 bg-blue-100" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm text-gray-800 group-hover:text-[#00B4DB] truncate mb-1">{post.title}</h4>
+                        <div className="flex items-center text-xs text-gray-500">
+                          <User className="h-3.5 w-3.5 mr-1" />{post.authorName}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
 
-          {!isLoading && !error && posts.length === 0 && (
-            <p className="text-center text-muted-foreground py-10">Chưa có bài viết nào.</p>
-          )}
-          {!isLoading && !error && posts.length > 0 && (
+          {/* Bài viết mới nhất */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-6 text-[#00B4DB]">Bài viết mới nhất</h2>
+            {!isLoading && !error && posts.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {posts.map((post) => (
-                    <Link href={`/forum/posts/${post.id}`} key={post.id} className="block group">
-                      <Card className="h-full border dark:border-muted/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden rounded-lg group-hover:-translate-y-1">
-                        <div className="h-48 bg-gradient-to-br from-muted/50 to-muted/20 dark:from-muted/30 dark:to-muted/10">
-                          {post.images && post.images.length > 0 ? (
+                {posts.map((post) => (
+                  <Link href={`/forum/posts/${post.id}`} key={post.id} className="block group">
+                    <Card className="h-full bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden rounded-xl">
+                      <div className="h-48 relative overflow-hidden">
+                        {post.images && post.images.length > 0 ? (
+                          <>
                             <img
                               src={post.images[0]}
                               alt={post.title}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                             />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                              <MessageSquare className="h-8 w-8" />
-                            </div>
-                          )}
-                        </div>
-                        <CardHeader className="p-5 pb-3">
-                          <CardTitle className="text-lg font-semibold line-clamp-2 group-hover:text-primary mb-1" title={post.title}>{post.title}</CardTitle>
-                          <CardDescription className="flex items-center gap-1.5 text-xs pt-1">
-                            <User className="h-3.5 w-3.5" /> {post.authorName}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-5 pt-0 flex-grow">
-                          <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground mb-4">
-                            {post.content.length > 130 ? post.content.substring(0, 130) + "..." : post.content}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                              <Calendar className="h-3.5 w-3.5" />
-                              <span>{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'N/A'}</span>
-                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+                            <MessageSquare className="h-8 w-8 text-[#00B4DB]" />
                           </div>
-                        </CardContent>
-                        <CardFooter className="border-t p-4 bg-muted/30 dark:bg-muted/20">
-                          <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
-                            <div className="flex items-center gap-4">
-                              <span className="flex items-center gap-1.5" title="Lượt thích">
-                                <ThumbsUp className="h-4 w-4" />
-                                {post.likes || 0}
-                              </span>
-                              <span className="flex items-center gap-1.5" title="Lượt xem">
-                                <Eye className="h-4 w-4" />
-                                {post.views || 0}
-                              </span>
-                            </div>
-                            <span className="flex items-center gap-1.5" title="Bình luận">
-                              <MessageSquare className="h-4 w-4" />
+                        )}
+                      </div>
+                      <CardHeader className="p-4">
+                        <CardTitle className="text-lg font-semibold line-clamp-2 text-gray-800 group-hover:text-[#00B4DB] transition-colors">
+                          {post.title}
+                        </CardTitle>
+                        <CardDescription className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <User className="h-3.5 w-3.5" /> {post.authorName}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <p className="line-clamp-2 text-sm text-gray-600">
+                          {post.content}
+                        </p>
+                      </CardContent>
+                      <CardFooter className="p-4 border-t bg-gradient-to-br from-blue-50 to-blue-100/30">
+                        <div className="flex items-center justify-between w-full text-sm text-gray-500">
+                          <div className="flex items-center gap-4">
+                            <span className="flex items-center gap-1.5 text-[#00B4DB]">
+                              <ThumbsUp className="h-4 w-4" /> {post.likes || 0}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Eye className="h-4 w-4" /> {post.views || 0}
                             </span>
                           </div>
-                        </CardFooter>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-          )}
-        </section>
-      </div>
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(post.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
 
-      {/* Sidebar bạn bè và nhóm */}
-      <div className="w-80 flex-shrink-0 lg:pl-8 hidden lg:block">
-        <div className="sticky top-6 bg-card border rounded-xl shadow-sm overflow-hidden h-[calc(100vh-3rem)] flex flex-col">
-          <div className="p-4 border-b bg-muted/30 dark:bg-muted/20">
-            <h2 className="text-xl font-semibold flex items-center gap-2.5">
-              <Users className="h-5 w-5" /> Bạn bè & Nhóm
-            </h2>
-            <div className="relative mt-3">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Tìm bạn bè hoặc nhóm..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        {/* Sidebar */}
+        <div className="w-80 flex-shrink-0 lg:pl-8 hidden lg:block">
+          <div className="sticky top-6 bg-white/80 backdrop-blur-sm border-0 rounded-xl overflow-hidden h-[calc(100vh-3rem)] flex flex-col shadow-lg">
+            <div className="p-4 border-b bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
+              <h2 className="text-xl font-semibold flex items-center gap-2.5 text-white">
+                <Users className="h-5 w-5" /> Bạn bè & Nhóm
+              </h2>
+              <div className="relative mt-3">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Tìm bạn bè hoặc nhóm..."
+                  className="pl-9 bg-white/90 border-0 text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-[#00B4DB]/50"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="flex-grow flex flex-col overflow-hidden">
-            {/* Lời mời kết bạn */}
-            {!searchQuery && (
-              <div className="p-4 border-b">
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <UserPlus className="h-4 w-4" /> Lời mời kết bạn
-                  {!isLoadingRequests && friendRequests.length > 0 && (
-                    <Badge className="ml-1">{friendRequests.length}</Badge>
-                  )}
-                </h3>
-                {isLoadingRequests ? (
-                  <p className="text-sm text-center text-muted-foreground py-2">Đang tải lời mời...</p>
-                ) : friendRequests.length === 0 ? (
-                  <p className="text-sm text-center text-muted-foreground py-2">Không có lời mời kết bạn nào.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {friendRequests.map(request => (
-                      <div key={request.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={request.senderAvatar} />
-                            <AvatarFallback>
-                              {request.senderFullName && typeof request.senderFullName === 'string'
-                                ? request.senderFullName.substring(0, 2).toUpperCase()
-                                : '??'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">{request.senderFullName || 'Người dùng ẩn danh'}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {request.requestDate ? new Date(request.requestDate).toLocaleDateString() : 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="h-8 px-2" 
-                            onClick={() => handleAcceptRequest(request.id)}
-                          >
-                            Đồng ý
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-8 px-2" 
-                            onClick={() => handleDeclineRequest(request.id)}
-                          >
-                            Từ chối
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tin nhắn nhóm gần đây */}
-            {!searchQuery && (
-              <div className="p-4 border-b">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" /> Danh sách nhóm
+            <div className="flex-grow flex flex-col overflow-hidden">
+              {/* Lời mời kết bạn */}
+              {!searchQuery && (
+                <div className="p-4 border-b">
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2 text-gray-800">
+                    <UserPlus className="h-4 w-4" /> Lời mời kết bạn
+                    {!isLoadingRequests && friendRequests.length > 0 && (
+                      <Badge className="ml-1">{friendRequests.length}</Badge>
+                    )}
                   </h3>
-                </div>
-                <div className="space-y-3">
-                  {isLoadingGroups ? (
-                    <p className="text-sm text-center text-muted-foreground py-2">Đang tải danh sách nhóm...</p>
-                  ) : groups.length === 0 ? (
-                    <p className="text-sm text-center text-muted-foreground py-2">Bạn chưa tham gia nhóm nào.</p>
+                  {isLoadingRequests ? (
+                    <p className="text-sm text-center text-gray-500 py-2">Đang tải lời mời...</p>
+                  ) : friendRequests.length === 0 ? (
+                    <p className="text-sm text-center text-gray-500 py-2">Không có lời mời kết bạn nào.</p>
                   ) : (
-                    <>
-                      {groups.map((group) => (
-                        <div 
-                          key={group.id} 
-                          className="group hover:bg-muted/60 dark:hover:bg-muted/40 p-2 rounded-lg transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div 
-                              className="flex items-center gap-3 flex-1 cursor-pointer"
-                              onClick={() => handleGroupClick(group)}
-                            >
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src={group.avatarUrl} />
-                                <AvatarFallback>{group.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-sm truncate">{group.name}</h4>
-                                {/* <p className="text-xs text-muted-foreground">
-                                  {group.memberCount} thành viên
-                                </p> */}
-                              </div>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 w-8 p-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <span className="sr-only">Mở menu nhóm</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleGroupClick(group)}>
-                                  Nhắn tin
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => alert(`Xem thông tin nhóm ${group.name}`)}>
-                                  Xem thông tin nhóm
-                                </DropdownMenuItem>
-                                {group.isAdmin && (
-                                  <DropdownMenuItem onClick={() => alert(`Quản lý nhóm ${group.name}`)}>
-                                    Quản lý nhóm
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem onClick={() => setAddMembersDialogState({
-                                  isOpen: true,
-                                  roomId: group.id
-                                })}>
-                                  Thêm thành viên
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-100/80 dark:focus:bg-red-700/20" onClick={() => alert(`Rời nhóm ${group.name}`)}>
-                                  Rời nhóm
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      ))}
-                      <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup} />
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Danh sách bạn bè hoặc kết quả tìm kiếm */}
-            <div className="p-4 flex-grow overflow-y-auto">
-              {searchQuery ? (
-                // Existing search results content
-                <div>
-                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    <Search className="h-4 w-4" /> Kết quả tìm kiếm cho &quot;{searchQuery}&quot;
-                  </h3>
-                  {isSearching && <p className="text-sm text-center text-muted-foreground py-4">Đang tìm kiếm...</p>}
-                  {searchError && <p className="text-sm text-center text-red-500 py-4">{searchError}</p>}
-                  {!isSearching && !searchError && searchResults.length === 0 && (
-                    <p className="text-sm text-center text-muted-foreground py-4">Không tìm thấy người dùng nào.</p>
-                  )}
-                  {!isSearching && searchResults.length > 0 && (
                     <div className="space-y-3">
-                      {searchResults.map(userResult => (
-                        <div key={userResult.id} className="flex items-center justify-between group hover:bg-muted/60 dark:hover:bg-muted/40 p-1.5 -m-1.5 rounded-md transition-colors duration-150">
+                      {friendRequests.map(request => (
+                        <div key={request.id} className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Avatar className="h-9 w-9">
-                              <AvatarFallback>
-                                {userResult.fullName && typeof userResult.fullName === 'string'
-                                  ? userResult.fullName.substring(0, 2).toUpperCase()
+                            <Avatar className="h-8 w-8 ring-2 ring-[#00B4DB]/20">
+                              <AvatarImage src={request.senderAvatar} />
+                              <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                                {request.senderFullName && typeof request.senderFullName === 'string'
+                                  ? request.senderFullName.substring(0, 2).toUpperCase()
                                   : '??'}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="text-sm font-medium">{userResult.fullName || 'Người dùng ẩn danh'}</p>
-                              <p className="text-xs text-muted-foreground">{userResult.email}</p>
-                            </div>
-                          </div>
-                          <div>
-                            {userResult.alreadyFriend ? (
-                              <Badge variant="secondary" className="cursor-default">
-                                <CheckCircle className="h-3 w-3 mr-1" /> Bạn bè
-                              </Badge>
-                            ) : userResult.requestPending || userResult.requestSent ? (
-                              <Badge variant="outline" className="cursor-default text-muted-foreground">
-                                <Clock className="h-3 w-3 mr-1" /> Đã gửi yêu cầu
-                              </Badge>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="h-8 px-2"
-                                onClick={() => handleAddFriend(userResult)}
-                              >
-                                <UserPlus className="h-4 w-4 mr-1"/> Thêm bạn
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    <Users className="h-4 w-4" /> Danh sách bạn bè
-                  </h3>
-                  {isLoadingFriends ? (
-                    <p className="text-sm text-center text-muted-foreground py-4">Đang tải danh sách bạn bè...</p>
-                  ) : filteredFriends.length === 0 ? (
-                    <p className="text-sm text-center text-muted-foreground py-4">Bạn chưa có bạn bè nào.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredFriends.map((friend: Friend) => (
-                        <div key={friend.id} className="flex items-center justify-between group hover:bg-muted/60 dark:hover:bg-muted/40 p-1.5 -m-1.5 rounded-md transition-colors duration-150">
-                          <div 
-                            className="flex items-center gap-2 flex-1 cursor-pointer"
-                            onClick={() => handleFriendClick(friend)}
-                          >
-                            <div className="relative">
-                              <Avatar className="h-9 w-9">
-                                <AvatarImage src={friend.avatarUrl} />
-                                <AvatarFallback>
-                                  {friend.fullName && typeof friend.fullName === 'string'
-                                    ? friend.fullName.substring(0, 2).toUpperCase()
-                                    : '??'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span 
-                                className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card ${getStatusColor(friend.status)}`}
-                                title={friend.status === 'online' ? 'Trực tuyến' : friend.status === 'away' ? 'Vắng mặt' : 'Ngoại tuyến'}
-                              />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">{friend.fullName || 'Người dùng ẩn danh'}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {/* {friend.status === 'online' 
-                                  ? 'Đang trực tuyến' 
-                                  : friend.lastActive ? `Hoạt động ${friend.lastActive}` : 'Ngoại tuyến'} */}
+                              <p className="text-sm font-medium text-gray-800">{request.senderFullName || 'Người dùng ẩn danh'}</p>
+                              <p className="text-xs text-gray-500">
+                                {request.requestDate ? new Date(request.requestDate).toLocaleDateString() : 'N/A'}
                               </p>
                             </div>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="sr-only">Mở menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleFriendClick(friend)}>
-                                Nhắn tin
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => alert(`Xem trang cá nhân của ${friend.fullName}`)}>
-                                Xem trang cá nhân
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleBlockUser(friend.id)}>
-                                Chặn người dùng
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-100/80 dark:focus:bg-red-700/20" onClick={() => handleRemoveFriend(friend.id)}>
-                                Hủy kết bạn
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleToggleFavorite(friend.id)}>
-                                {friend.isFavorite ? 'Bỏ bạn thân' : 'Đánh dấu bạn thân'}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-8 px-2 text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10" 
+                              onClick={() => handleAcceptRequest(request.id)}
+                            >
+                              Đồng ý
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-8 px-2 text-gray-500 hover:text-gray-700" 
+                              onClick={() => handleDeclineRequest(request.id)}
+                            >
+                              Từ chối
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               )}
+
+              {/* Tin nhắn nhóm gần đây */}
+              {!searchQuery && (
+                <div className="p-4 border-b">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium flex items-center gap-2 text-gray-800">
+                      <MessageSquare className="h-4 w-4" /> Danh sách nhóm
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {isLoadingGroups ? (
+                      <p className="text-sm text-center text-gray-500 py-2">Đang tải danh sách nhóm...</p>
+                    ) : groups.length === 0 ? (
+                      <p className="text-sm text-center text-gray-500 py-2">Bạn chưa tham gia nhóm nào.</p>
+                    ) : (
+                      <>
+                        {groups.map((group) => (
+                          <div 
+                            key={group.id} 
+                            className="group hover:bg-[#00B4DB]/5 p-2 rounded-lg transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div 
+                                className="flex items-center gap-3 flex-1 cursor-pointer"
+                                onClick={() => handleGroupClick(group)}
+                              >
+                                <Avatar className="h-10 w-10 ring-2 ring-[#00B4DB]/20">
+                                  <AvatarImage src={group.avatarUrl} />
+                                  <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                                    {group.name.substring(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-sm text-gray-800 truncate">{group.name}</h4>
+                                </div>
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-8 w-8 p-0 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <span className="sr-only">Mở menu nhóm</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleGroupClick(group)}>
+                                    Nhắn tin
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => alert(`Xem thông tin nhóm ${group.name}`)}>
+                                    Xem thông tin nhóm
+                                  </DropdownMenuItem>
+                                  {group.isAdmin && (
+                                    <DropdownMenuItem onClick={() => alert(`Quản lý nhóm ${group.name}`)}>
+                                      Quản lý nhóm
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem onClick={() => setAddMembersDialogState({
+                                    isOpen: true,
+                                    roomId: group.id
+                                  })}>
+                                    Thêm thành viên
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-100/80" onClick={() => alert(`Rời nhóm ${group.name}`)}>
+                                    Rời nhóm
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        ))}
+                        <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup} />
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Danh sách bạn bè hoặc kết quả tìm kiếm */}
+              <div className="p-4 flex-grow overflow-y-auto">
+                {searchQuery ? (
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2 text-gray-800">
+                      <Search className="h-4 w-4" /> Kết quả tìm kiếm cho &quot;{searchQuery}&quot;
+                    </h3>
+                    {isSearching && <p className="text-sm text-center text-gray-500 py-4">Đang tìm kiếm...</p>}
+                    {searchError && <p className="text-sm text-center text-red-500 py-4">{searchError}</p>}
+                    {!isSearching && !searchError && searchResults.length === 0 && (
+                      <p className="text-sm text-center text-gray-500 py-4">Không tìm thấy người dùng nào.</p>
+                    )}
+                    {!isSearching && searchResults.length > 0 && (
+                      <div className="space-y-3">
+                        {searchResults.map(userResult => (
+                          <div key={userResult.id} className="flex items-center justify-between group hover:bg-[#00B4DB]/5 p-1.5 -m-1.5 rounded-md transition-colors duration-150">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-9 w-9 ring-2 ring-[#00B4DB]/20">
+                                <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                                  {userResult.fullName && typeof userResult.fullName === 'string'
+                                    ? userResult.fullName.substring(0, 2).toUpperCase()
+                                    : '??'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-sm font-medium text-gray-800">{userResult.fullName || 'Người dùng ẩn danh'}</p>
+                                <p className="text-xs text-gray-500">{userResult.email}</p>
+                              </div>
+                            </div>
+                            <div>
+                              {userResult.alreadyFriend ? (
+                                <Badge variant="secondary" className="cursor-default">
+                                  <CheckCircle className="h-3 w-3 mr-1" /> Bạn bè
+                                </Badge>
+                              ) : userResult.requestPending || userResult.requestSent ? (
+                                <Badge variant="outline" className="cursor-default text-gray-500">
+                                  <Clock className="h-3 w-3 mr-1" /> Đã gửi yêu cầu
+                                </Badge>
+                              ) : (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 px-2 text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10"
+                                  onClick={() => handleAddFriend(userResult)}
+                                >
+                                  <UserPlus className="h-4 w-4 mr-1"/> Thêm bạn
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2 text-gray-800">
+                      <Users className="h-4 w-4" /> Danh sách bạn bè
+                    </h3>
+                    {isLoadingFriends ? (
+                      <p className="text-sm text-center text-gray-500 py-4">Đang tải danh sách bạn bè...</p>
+                    ) : filteredFriends.length === 0 ? (
+                      <p className="text-sm text-center text-gray-500 py-4">Bạn chưa có bạn bè nào.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredFriends.map((friend: Friend) => (
+                          <div key={friend.id} className="flex items-center justify-between group hover:bg-[#00B4DB]/5 p-1.5 -m-1.5 rounded-md transition-colors duration-150">
+                            <div 
+                              className="flex items-center gap-2 flex-1 cursor-pointer"
+                              onClick={() => handleFriendClick(friend)}
+                            >
+                              <div className="relative">
+                                <Avatar className="h-9 w-9 ring-2 ring-[#00B4DB]/20">
+                                  <AvatarImage src={friend.avatarUrl} />
+                                  <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                                    {friend.fullName && typeof friend.fullName === 'string'
+                                      ? friend.fullName.substring(0, 2).toUpperCase()
+                                      : '??'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span 
+                                  className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${getStatusColor(friend.status)}`}
+                                  title={friend.status === 'online' ? 'Trực tuyến' : friend.status === 'away' ? 'Vắng mặt' : 'Ngoại tuyến'}
+                                />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-800">{friend.fullName || 'Người dùng ẩn danh'}</p>
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <span className="sr-only">Mở menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleFriendClick(friend)}>
+                                  Nhắn tin
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => alert(`Xem trang cá nhân của ${friend.fullName}`)}>
+                                  Xem trang cá nhân
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleBlockUser(friend.id)}>
+                                  Chặn người dùng
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-100/80" onClick={() => handleRemoveFriend(friend.id)}>
+                                  Hủy kết bạn
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleToggleFavorite(friend.id)}>
+                                  {friend.isFavorite ? 'Bỏ bạn thân' : 'Đánh dấu bạn thân'}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

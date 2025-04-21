@@ -144,7 +144,7 @@ export function Navbar() {
           </Link>
 
 
-          {isLoggedIn && (
+          {/* {isLoggedIn && (
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
@@ -215,7 +215,7 @@ export function Navbar() {
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
-          )}
+          )} */}
         </div>
 
 
@@ -296,14 +296,14 @@ export function Navbar() {
 
               {isLoggedIn ? (
                 <>
-                  <Button
+                  {/* <Button
                     size="sm"
                     className="gap-1"
                     onClick={handleCreatePost}
                   >
                     <PlusCircle className="h-4 w-4" />
                     <span>Tạo bài viết</span>
-                  </Button>
+                  </Button> */}
                   <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
                   </Button>
