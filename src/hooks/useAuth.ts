@@ -5,7 +5,8 @@ import Cookies from 'js-cookie'
 interface User {
   fullName: string;
   email: string;
-  id?: number;
+  id: number;
+  role?: string;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -41,6 +42,8 @@ export function useAuth() {
     if (storedToken && userStr) {
       try {
         const userData = JSON.parse(userStr)
+        console.log('Checking auth - User data:', userData)
+        console.log('User ID:', userData.id)
         setIsAuthenticated(true)
         setUser(userData)
         setToken(storedToken)
@@ -61,6 +64,8 @@ export function useAuth() {
   }
 
   const login = (token: string, userData: User) => {
+    console.log('Login - User data:', userData)
+    console.log('Login - User ID:', userData.id)
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(userData))
     

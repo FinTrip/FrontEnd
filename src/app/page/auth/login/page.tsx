@@ -1,3 +1,4 @@
+
 // G:\Cap2FinTrip\FrontEnd\src\app\page\auth\login\page.tsx
 "use client";
 import React, { useState } from "react";
@@ -20,84 +21,43 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
-    const apiSpring = "http://localhost:8081/indentity/api/auth/login"; // API hiện tại (Giả sử là Spring)
-    const apiPython = "http://YOUR_PYTHON_API_LOGIN_URL"; // !!! THAY THẾ BẰNG URL API PYTHON CỦA BẠN !!!
-
-    const loginPayload = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    };
-
     try {
-      // Gọi cả hai API cùng lúc
-      const [responseSpring, responsePython] = await Promise.all([
-        fetch(apiSpring, loginPayload),
-        fetch(apiPython, loginPayload) // Sử dụng cùng payload
-      ]);
+      const response = await fetch(
+        "http://localhost:8081/indentity/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
+      );
 
-      // Parse JSON cho cả hai, xử lý lỗi nếu parse thất bại
-      let dataSpring, dataPython;
-      try {
-        dataSpring = await responseSpring.json();
-      } catch (jsonError) {
-        console.error("Error parsing Spring JSON:", jsonError);
-        dataSpring = { code: -1, message: "Invalid response from Spring API" }; // Gán lỗi giả
-      }
-      try {
-        dataPython = await responsePython.json();
-      } catch (jsonError) {
-        console.error("Error parsing Python JSON:", jsonError);
-        dataPython = { code: -1, message: "Invalid response from Python API" }; // Gán lỗi giả
-      }
+      const data = await response.json();
+      console.log("API Response:", data);
 
-
-      console.log("Spring API Response:", dataSpring);
-      console.log("Python API Response:", dataPython);
-
-      // *** Logic quan trọng: Bắt buộc cả hai API phải thành công ***
-      const isSpringOk = responseSpring.ok && dataSpring.code === 200;
-      const isPythonOk = responsePython.ok && dataPython.code === 200;
-
-      if (isSpringOk && isPythonOk) {
-        // Cả hai đều thành công
-        console.log("Login successful on both Spring and Python APIs.");
-
-        // Quyết định sử dụng token/dữ liệu từ API nào (ví dụ: dùng của Spring)
+      if (response.ok && data.code === 200) {
+        // Lưu token và thông tin user
         const userData = {
-          fullName: dataSpring.result.user?.fullName || email.split('@')[0],
-          email: dataSpring.result.user?.email || email,
+          id: data.result.id,
+          fullName: data.result.fullName,
+          email: data.result.email,
         };
-
-        // Gọi hàm login của useAuth với dữ liệu từ Spring
-        login(dataSpring.result.token, userData
         
         // Sử dụng hàm login từ useAuth hook
         login(data.result.token, userData);
-        
-        // Kích hoạt sự kiện authStateChanged để cập nhật UI ngay lập tức
-        window.dispatchEvent(new Event('authStateChanged'));
-        
         router.push("/homepage");
-
       } else {
-        // Ít nhất một API thất bại
-        let errorMessages = [];
-        if (!isSpringOk) {
-          errorMessages.push(`Spring Auth Failed: ${dataSpring.message || responseSpring.statusText || 'Unknown Error'}`);
-        }
-        if (!isPythonOk) {
-          errorMessages.push(`Python Auth Failed: ${dataPython.message || responsePython.statusText || 'Unknown Error'}`);
-        }
-        setError(errorMessages.join(" | "));
-        console.error("Login failed:", errorMessages.join(" | "));
+        setError(
+          data.message || "Login failed. Please check your credentials."
+        );
       }
-
     } catch (err) {
-      setError("Network error connecting to login servers. Please try again later.");
-      console.error("Login fetch/network error:", err);
+      setError("An error occurred. Please try again later.");
+      console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }

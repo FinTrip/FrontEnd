@@ -14,6 +14,7 @@ interface Post {
   id: number
   title: string
   content: string
+  authorId: number
   authorName: string
   createdAt: string
   views: number | null
@@ -71,9 +72,9 @@ export default function PostPage({ params }: { params: { id: string } }) {
               const repliesResponse = await fetch(`http://localhost:8081/indentity/api/comment/${comment.id}/replies`)
               const repliesData = await repliesResponse.json()
               if (repliesData.code === 200) {
-                // Sort replies by creation time (newest first)
+                // Sort replies by creation time (oldest first)
                 const sortedReplies = repliesData.result.sort((a: Reply, b: Reply) => 
-                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                  new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
                 )
                 return {
                   ...comment,
@@ -378,7 +379,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
     <div className="container mx-auto py-8">
       <Link
         href="/forum"
-        className="flex items-center gap-2 text-muted-foreground mb-6 hover:text-primary transition-colors"
+        className="flex items-center gap-2 text-gray-500 hover:text-[#00B4DB] transition-colors mb-6"
       >
         <ArrowLeft className="h-4 w-4" />
         <span>Quay lại trang chủ</span>
@@ -386,23 +387,23 @@ export default function PostPage({ params }: { params: { id: string } }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-3xl">{post.title}</CardTitle>
-              <CardDescription className="flex items-center gap-2 text-base">
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle className="text-3xl text-gray-800">{post.title}</CardTitle>
+              <CardDescription className="flex items-center gap-2 text-base text-[#00B4DB]">
                 <MapPin className="h-4 w-4" /> Đà Nẵng
               </CardDescription>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-4 w-4 text-[#00B4DB]" />
                   <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
+                <Link href={`/forum/user/${post.authorId}`} className="flex items-center gap-1 hover:text-[#00B4DB] transition-colors">
+                  <User className="h-4 w-4 text-[#00B4DB]" />
                   <span>{post.authorName}</span>
-                </div>
+                </Link>
                 <div className="flex items-center gap-1">
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 text-[#00B4DB]" />
                   <span>{post.views || 0} Lượt xem</span>
                 </div>
               </div>
@@ -413,7 +414,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className={`flex items-center gap-1 transition-colors ${isLiked ? 'text-blue-600 hover:text-blue-700' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`flex items-center gap-1 transition-colors ${isLiked ? 'text-[#00B4DB] hover:text-[#0083B0]' : 'text-gray-500 hover:text-[#00B4DB]'}`}
                     onClick={handleLikeToggle}
                     disabled={isProcessingLike || isLoadingLikeStatus || isLiked === null}
                     title={isLiked === null ? "Đang tải trạng thái..." : isLiked ? "Bỏ thích" : "Thích"}
@@ -425,20 +426,25 @@ export default function PostPage({ params }: { params: { id: string } }) {
                     )}
                     <span>Thích ({likeCount})</span>
                   </Button>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground hover:text-foreground" onClick={handleFocusCommentTextarea}>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="flex items-center gap-1 text-gray-500 hover:text-[#00B4DB]" 
+                    onClick={handleFocusCommentTextarea}
+                  >
                     <MessageSquare className="h-4 w-4" />
                     <span>Bình luận ({comments.length})</span>
                   </Button>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                  {/* <Button variant="ghost" size="sm" className="flex items-center gap-1 text-gray-500 hover:text-[#00B4DB]">
                     <Share2 className="h-4 w-4" />
                     <span>Chia sẻ</span>
-                  </Button>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                  </Button> */}
+                  {/* <Button variant="ghost" size="sm" className="flex items-center gap-1 text-gray-500 hover:text-[#00B4DB]">
                     <Bookmark className="h-4 w-4" />
                     <span>Lưu</span>
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
 
@@ -456,55 +462,31 @@ export default function PostPage({ params }: { params: { id: string } }) {
                         <img
                           src={imageUrl}
                           alt={`Ảnh ${index + 1} của bài viết`}
-                          className="rounded-lg object-cover w-full h-full transition-transform duration-200 group-hover:scale-[1.02]"
+                          className="rounded-lg object-cover w-full h-full shadow-md transition-transform duration-200 group-hover:scale-[1.02]"
                         />
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
                           <Eye className="w-6 h-6 text-white" />
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                <p>{post.content}</p>
+                <p className="text-gray-700 leading-relaxed">{post.content}</p>
               </div>
 
-              {/* Lightbox */}
-              {selectedImage && (
-                <div 
-                  className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-                  onClick={() => setSelectedImage(null)}
-                >
-                  <div className="relative max-w-5xl w-full">
-                    <button
-                      className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedImage(null);
-                      }}
-                    >
-                      <X className="w-8 h-8" />
-                    </button>
-                    <img
-                      src={selectedImage}
-                      alt="Ảnh chi tiết"
-                      className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* Author Section */}
-              <div className="mt-8 p-6 bg-muted rounded-lg">
+              <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-100">
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="text-lg">
+                  <Avatar className="h-12 w-12 ring-2 ring-[#00B4DB]/20">
+                    <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white text-lg">
                       {post.authorName[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-semibold">{post.authorName}</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <Link href={`/forum/user/${post.authorId}`} className="hover:text-[#00B4DB] transition-colors">
+                      <h3 className="font-semibold text-gray-800">{post.authorName}</h3>
+                    </Link>
+                    <p className="text-sm text-gray-500">
                       Đăng vào {new Date(post.createdAt).toLocaleDateString('vi-VN', {
                         year: 'numeric',
                         month: 'long',
@@ -519,49 +501,60 @@ export default function PostPage({ params }: { params: { id: string } }) {
             </CardContent>
           </Card>
 
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Bình luận ({comments.length})</CardTitle>
+          <Card className="mt-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle className="text-gray-800">Bình luận ({comments.length})</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div ref={commentSectionRef} className="flex gap-4 pt-4">
-                <Avatar>
-                  <AvatarFallback>{user?.fullName ? user.fullName[0].toUpperCase() : '?'}</AvatarFallback>
+            <CardContent className="space-y-6 p-6">
+              <div ref={commentSectionRef} className="flex gap-4">
+                <Avatar className="ring-2 ring-[#00B4DB]/20">
+                  <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                    {user?.fullName ? user.fullName[0].toUpperCase() : '?'}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <Textarea 
                     ref={commentTextareaRef}
                     placeholder="Viết bình luận của bạn..." 
-                    className="mb-2"
+                    className="mb-2 border-gray-200 focus:border-[#00B4DB] focus:ring-[#00B4DB]/30"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                   />
-                  <Button onClick={handleCommentSubmit}>Đăng bình luận</Button>
+                  <Button 
+                    onClick={handleCommentSubmit}
+                    className="bg-[#00B4DB] hover:bg-[#0083B0] text-white"
+                  >
+                    Đăng bình luận
+                  </Button>
                 </div>
               </div>
 
               <Separator />
 
               {error && (
-                <div className="text-red-500 text-sm">{error}</div>
+                <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</div>
               )}
 
               {comments.length === 0 ? (
-                <div className="text-center text-muted-foreground">
+                <div className="text-center text-gray-500">
                   Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
                 </div>
               ) : (
                 <div className="space-y-4">
                   {comments.map((comment) => (
-                    <div key={comment.id} className="space-y-4 border-b border-gray-200 pb-4 mb-4 last:border-0">
+                    <div key={comment.id} className="space-y-4 border-b border-gray-100 pb-4 mb-4 last:border-0">
                       <div className="flex gap-4">
-                        <Avatar>
-                          <AvatarFallback>{comment.authorName[0]}</AvatarFallback>
+                        <Avatar className="ring-2 ring-[#00B4DB]/20">
+                          <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                            {comment.authorName[0]}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{comment.authorName}</span>
-                            <span className="text-sm text-muted-foreground">
+                            <Link href={`/forum/user/${comment.id}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
+                              {comment.authorName}
+                            </Link>
+                            <span className="text-sm text-gray-500">
                               {new Date(comment.createdAt).toLocaleDateString('vi-VN', {
                                 year: 'numeric',
                                 month: 'long',
@@ -571,11 +564,11 @@ export default function PostPage({ params }: { params: { id: string } }) {
                               })}
                             </span>
                           </div>
-                          <p className="mt-1">{comment.content}</p>
+                          <p className="mt-1 text-gray-700">{comment.content}</p>
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="mt-2"
+                            className="mt-2 text-gray-500 hover:text-[#00B4DB]"
                             onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                           >
                             Trả lời
@@ -586,21 +579,29 @@ export default function PostPage({ params }: { params: { id: string } }) {
                       <div className="ml-12 space-y-4">
                         {replyingTo === comment.id && (
                           <div className="flex gap-4 border-l-2 border-gray-200 pl-4">
-                            <Avatar>
-                              <AvatarFallback>TH</AvatarFallback>
+                            <Avatar className="ring-2 ring-[#00B4DB]/20">
+                              <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                                {user?.fullName ? user.fullName[0].toUpperCase() : '?'}
+                              </AvatarFallback>
                             </Avatar>
                             <div className="flex-1">
                               <Textarea 
                                 placeholder="Viết trả lời của bạn..." 
-                                className="mb-2"
+                                className="mb-2 border-gray-200 focus:border-[#00B4DB] focus:ring-[#00B4DB]/30"
                                 value={newReply[comment.id] || ""}
                                 onChange={(e) => setNewReply({ ...newReply, [comment.id]: e.target.value })}
                               />
                               <div className="flex gap-2">
-                                <Button onClick={() => handleReplySubmit(comment.id)}>Đăng trả lời</Button>
+                                <Button 
+                                  onClick={() => handleReplySubmit(comment.id)}
+                                  className="bg-[#00B4DB] hover:bg-[#0083B0] text-white"
+                                >
+                                  Đăng trả lời
+                                </Button>
                                 <Button 
                                   variant="outline" 
                                   onClick={() => setReplyingTo(null)}
+                                  className="text-gray-500 hover:text-[#00B4DB] border-gray-200"
                                 >
                                   Hủy
                                 </Button>
@@ -614,13 +615,17 @@ export default function PostPage({ params }: { params: { id: string } }) {
                             {comment.replies.map((reply) => (
                               <div key={reply.id} className="border-l-2 border-gray-200 pl-4">
                                 <div className="flex gap-4">
-                                  <Avatar>
-                                    <AvatarFallback>{reply.authorName[0]}</AvatarFallback>
+                                  <Avatar className="ring-2 ring-[#00B4DB]/20">
+                                    <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                                      {reply.authorName[0]}
+                                    </AvatarFallback>
                                   </Avatar>
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-medium">{reply.authorName}</span>
-                                      <span className="text-sm text-muted-foreground">
+                                      <Link href={`/forum/user/${reply.id}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
+                                        {reply.authorName}
+                                      </Link>
+                                      <span className="text-sm text-gray-500">
                                         {new Date(reply.createdAt).toLocaleDateString('vi-VN', {
                                           year: 'numeric',
                                           month: 'long',
@@ -630,11 +635,11 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                         })}
                                       </span>
                                     </div>
-                                    <p className="mt-1">{reply.content}</p>
+                                    <p className="mt-1 text-gray-700">{reply.content}</p>
                                     <Button 
                                       variant="ghost" 
                                       size="sm" 
-                                      className="mt-2"
+                                      className="mt-2 text-gray-500 hover:text-[#00B4DB]"
                                       onClick={() => setReplyingToReply(
                                         replyingToReply?.replyId === reply.id ? null : { commentId: comment.id, replyId: reply.id }
                                       )}
@@ -646,23 +651,29 @@ export default function PostPage({ params }: { params: { id: string } }) {
 
                                 {replyingToReply?.replyId === reply.id && (
                                   <div className="ml-12 flex gap-4 mt-4">
-                                    <Avatar>
-                                      <AvatarFallback>TH</AvatarFallback>
+                                    <Avatar className="ring-2 ring-[#00B4DB]/20">
+                                      <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                                        {user?.fullName ? user.fullName[0].toUpperCase() : '?'}
+                                      </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">
                                       <Textarea 
                                         placeholder="Viết trả lời của bạn..." 
-                                        className="mb-2"
+                                        className="mb-2 border-gray-200 focus:border-[#00B4DB] focus:ring-[#00B4DB]/30"
                                         value={newNestedReply[reply.id] || ""}
                                         onChange={(e) => setNewNestedReply({ ...newNestedReply, [reply.id]: e.target.value })}
                                       />
                                       <div className="flex gap-2">
-                                        <Button onClick={() => handleNestedReplySubmit(comment.id, reply.id)}>
+                                        <Button 
+                                          onClick={() => handleNestedReplySubmit(comment.id, reply.id)}
+                                          className="bg-[#00B4DB] hover:bg-[#0083B0] text-white"
+                                        >
                                           Đăng trả lời
                                         </Button>
                                         <Button 
                                           variant="outline" 
                                           onClick={() => setReplyingToReply(null)}
+                                          className="text-gray-500 hover:text-[#00B4DB] border-gray-200"
                                         >
                                           Hủy
                                         </Button>
@@ -675,13 +686,17 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                   <div className="ml-12 space-y-4 mt-4">
                                     {reply.replies.map((nestedReply) => (
                                       <div key={nestedReply.id} className="flex gap-4">
-                                        <Avatar>
-                                          <AvatarFallback>{nestedReply.authorName[0]}</AvatarFallback>
+                                        <Avatar className="ring-2 ring-[#00B4DB]/20">
+                                          <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
+                                            {nestedReply.authorName[0]}
+                                          </AvatarFallback>
                                         </Avatar>
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2">
-                                            <span className="font-medium">{nestedReply.authorName}</span>
-                                            <span className="text-sm text-muted-foreground">
+                                            <Link href={`/forum/user/${nestedReply.id}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
+                                              {nestedReply.authorName}
+                                            </Link>
+                                            <span className="text-sm text-gray-500">
                                               {new Date(nestedReply.createdAt).toLocaleDateString('vi-VN', {
                                                 year: 'numeric',
                                                 month: 'long',
@@ -691,7 +706,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                               })}
                                             </span>
                                           </div>
-                                          <p className="mt-1">{nestedReply.content}</p>
+                                          <p className="mt-1 text-gray-700">{nestedReply.content}</p>
                                         </div>
                                       </div>
                                     ))}
@@ -711,17 +726,17 @@ export default function PostPage({ params }: { params: { id: string } }) {
         </div>
 
         <div>
-          <Card className="sticky top-8">
-            <CardHeader>
-              <CardTitle>Bài viết liên quan</CardTitle>
+          <Card className="sticky top-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle className="text-gray-800">Bài viết liên quan</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center text-muted-foreground">
+            <CardContent className="space-y-4 p-6">
+              <div className="text-center text-gray-500">
                 Chưa có bài viết liên quan
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10">
                 Xem thêm bài viết
               </Button>
             </CardFooter>
