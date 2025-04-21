@@ -1,3 +1,4 @@
+
 // G:\Cap2FinTrip\FrontEnd\src\app\page\auth\login\page.tsx
 "use client";
 import React, { useState } from "react";
@@ -41,8 +42,9 @@ export default function LoginPage() {
       if (response.ok && data.code === 200) {
         // Lưu token và thông tin user
         const userData = {
-          fullName: data.result.user?.fullName || email.split('@')[0],
-          email: data.result.user?.email || email,
+          id: data.result.id,
+          fullName: data.result.fullName,
+          email: data.result.email,
         };
         
         // Sử dụng hàm login từ useAuth hook

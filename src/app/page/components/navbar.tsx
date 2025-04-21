@@ -68,11 +68,19 @@ export function Navbar() {
     };
 
     checkLoginStatus();
-    // Thêm event listener để cập nhật khi localStorage thay đổi
-    window.addEventListener("storage", checkLoginStatus);
+
+    // Thêm event listener cho custom event authStateChanged
+    const handleAuthStateChange = () => {
+      checkLoginStatus();
+    };
+
+    window.addEventListener("authStateChanged", handleAuthStateChange);
+    // Thêm event listener cho storage events
+    window.addEventListener("storage", handleAuthStateChange);
 
     return () => {
-      window.removeEventListener("storage", checkLoginStatus);
+      window.removeEventListener("authStateChanged", handleAuthStateChange);
+      window.removeEventListener("storage", handleAuthStateChange);
     };
   }, []);
 
@@ -82,6 +90,21 @@ export function Navbar() {
     setIsLoggedIn(false);
     setUser(null);
     router.push("/page/auth/login");
+  };
+
+  const handleLoginClick = (e: React.MouseEvent) => {
+    if (isLoggedIn) {
+      e.preventDefault();
+      // Đăng xuất người dùng hiện tại trước khi chuyển hướng đến trang đăng nhập
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      // Xóa cookie token
+      document.cookie =
+        "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      setIsLoggedIn(false);
+      setUser(null);
+      router.push("/page/auth/login");
+    }
   };
 
   const handleCreatePost = () => {
@@ -110,7 +133,7 @@ export function Navbar() {
             FinTrip
           </Link>
 
-          {isLoggedIn && (
+          {/* {isLoggedIn && (
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
@@ -181,7 +204,7 @@ export function Navbar() {
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
-          )}
+          )} */}
         </div>
 
         {/* Center Section */}
@@ -259,14 +282,14 @@ export function Navbar() {
 
               {isLoggedIn ? (
                 <>
-                  <Button
+                  {/* <Button
                     size="sm"
                     className="gap-1"
                     onClick={handleCreatePost}
                   >
                     <PlusCircle className="h-4 w-4" />
                     <span>Tạo bài viết</span>
-                  </Button>
+                  </Button> */}
                   <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
                   </Button>
@@ -305,7 +328,7 @@ export function Navbar() {
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuGroup>
-                        <Link href="/profile">
+                        <Link href="/forum/profile">
                           <DropdownMenuItem>
                             <User className="mr-2 h-4 w-4" />
                             <span>Profile</span>
@@ -329,7 +352,9 @@ export function Navbar() {
               ) : (
                 <>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href="/page/auth/login">Đăng nhập</Link>
+                    <Link href="/page/auth/login" onClick={handleLoginClick}>
+                      Đăng nhập
+                    </Link>
                   </Button>
                   <Button size="sm" asChild>
                     <Link href="/page/auth/register">Đăng ký</Link>
@@ -379,7 +404,7 @@ export function Navbar() {
                             <span>Tạo bài viết</span>
                           </Button>
                         </Link>
-                        <Link href="/profile">
+                        <Link href="/forum/profile">
                           <Button
                             variant="ghost"
                             className="w-full justify-start"
@@ -422,15 +447,23 @@ export function Navbar() {
                         <Button
                           variant="ghost"
                           className="w-full justify-start"
+                          onClick={handleLogout}
                         >
                           Đăng xuất
                         </Button>
                       </>
                     ) : (
                       <>
-                        <Button className="w-full mt-2">Đăng nhập</Button>
-                        <Button variant="outline" className="w-full">
-                          Đăng ký
+                        <Button className="w-full mt-2" asChild>
+                          <Link
+                            href="/page/auth/login"
+                            onClick={handleLoginClick}
+                          >
+                            Đăng nhập
+                          </Link>
+                        </Button>
+                        <Button variant="outline" className="w-full" asChild>
+                          <Link href="/page/auth/register">Đăng ký</Link>
                         </Button>
                       </>
                     )}
