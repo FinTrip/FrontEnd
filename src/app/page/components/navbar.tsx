@@ -1,8 +1,6 @@
 "use client";
 
-
 import React from "react";
-
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -49,13 +47,11 @@ import {
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 
-
 export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
   const router = useRouter();
-
 
   useEffect(() => {
     // Kiểm tra trạng thái đăng nhập từ localStorage
@@ -71,25 +67,22 @@ export function Navbar() {
       }
     };
 
-
     checkLoginStatus();
-   
+
     // Thêm event listener cho custom event authStateChanged
     const handleAuthStateChange = () => {
       checkLoginStatus();
     };
 
-
-    window.addEventListener('authStateChanged', handleAuthStateChange);
+    window.addEventListener("authStateChanged", handleAuthStateChange);
     // Thêm event listener cho storage events
-    window.addEventListener('storage', handleAuthStateChange);
-   
+    window.addEventListener("storage", handleAuthStateChange);
+
     return () => {
-      window.removeEventListener('authStateChanged', handleAuthStateChange);
-      window.removeEventListener('storage', handleAuthStateChange);
+      window.removeEventListener("authStateChanged", handleAuthStateChange);
+      window.removeEventListener("storage", handleAuthStateChange);
     };
   }, []);
-
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -99,7 +92,6 @@ export function Navbar() {
     router.push("/page/auth/login");
   };
 
-
   const handleLoginClick = (e: React.MouseEvent) => {
     if (isLoggedIn) {
       e.preventDefault();
@@ -107,13 +99,13 @@ export function Navbar() {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       // Xóa cookie token
-      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie =
+        "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       setIsLoggedIn(false);
       setUser(null);
       router.push("/page/auth/login");
     }
   };
-
 
   const handleCreatePost = () => {
     if (!isLoggedIn) {
@@ -124,7 +116,6 @@ export function Navbar() {
     router.push("/forum/create-post");
   };
 
-
   const handleNavigation = (e: React.MouseEvent) => {
     if (!isLoggedIn) {
       e.preventDefault();
@@ -132,7 +123,6 @@ export function Navbar() {
       router.push("/page/auth/login");
     }
   };
-
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -142,7 +132,6 @@ export function Navbar() {
           <Link href="/" className="font-bold text-xl">
             FinTrip
           </Link>
-
 
           {/* {isLoggedIn && (
             <NavigationMenu>
@@ -218,7 +207,6 @@ export function Navbar() {
           )} */}
         </div>
 
-
         {/* Center Section */}
         <div className="hidden md:flex items-center gap-2">
           <Link
@@ -283,7 +271,6 @@ export function Navbar() {
           </Link>
         </div>
 
-
         {/* Right Section */}
         <div className="flex items-center gap-4">
           {
@@ -292,7 +279,6 @@ export function Navbar() {
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Tìm kiếm..." className="pl-8" />
               </div>
-
 
               {isLoggedIn ? (
                 <>
@@ -308,7 +294,6 @@ export function Navbar() {
                     <Bell className="h-5 w-5" />
                   </Button>
 
-
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -316,8 +301,13 @@ export function Navbar() {
                         className="relative h-8 w-8 rounded-full"
                       >
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/avatars/01.png" alt={user?.fullName || ""} />
-                          <AvatarFallback>{user?.fullName?.charAt(0) || "U"}</AvatarFallback>
+                          <AvatarImage
+                            src="/avatars/01.png"
+                            alt={user?.fullName || ""}
+                          />
+                          <AvatarFallback>
+                            {user?.fullName?.charAt(0) || "U"}
+                          </AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
@@ -362,7 +352,9 @@ export function Navbar() {
               ) : (
                 <>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href="/page/auth/login" onClick={handleLoginClick}>Đăng nhập</Link>
+                    <Link href="/page/auth/login" onClick={handleLoginClick}>
+                      Đăng nhập
+                    </Link>
                   </Button>
                   <Button size="sm" asChild>
                     <Link href="/page/auth/register">Đăng ký</Link>
@@ -371,7 +363,6 @@ export function Navbar() {
               )}
             </>
           }
-
 
           {
             <Sheet>
@@ -387,14 +378,13 @@ export function Navbar() {
                     <Input placeholder="Tìm kiếm..." className="pl-8" />
                   </div>
 
-
                   <div className="grid gap-2">
                     <Link href="/">
                       <Button variant="ghost" className="w-full justify-start">
                         Trang chủ
                       </Button>
                     </Link>
-                   
+
                     <Link href="/destinations">
                       <Button variant="ghost" className="w-full justify-start">
                         Điểm đến
@@ -405,7 +395,6 @@ export function Navbar() {
                         Chủ đề
                       </Button>
                     </Link>
-
 
                     {isLoggedIn ? (
                       <>
@@ -466,7 +455,12 @@ export function Navbar() {
                     ) : (
                       <>
                         <Button className="w-full mt-2" asChild>
-                          <Link href="/page/auth/login" onClick={handleLoginClick}>Đăng nhập</Link>
+                          <Link
+                            href="/page/auth/login"
+                            onClick={handleLoginClick}
+                          >
+                            Đăng nhập
+                          </Link>
                         </Button>
                         <Button variant="outline" className="w-full" asChild>
                           <Link href="/page/auth/register">Đăng ký</Link>
@@ -483,7 +477,6 @@ export function Navbar() {
     </header>
   );
 }
-
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
@@ -510,7 +503,6 @@ const ListItem = React.forwardRef<
   );
 });
 ListItem.displayName = "ListItem";
-
 
 const destinations = [
   {
@@ -539,7 +531,6 @@ const destinations = [
   },
 ];
 
-
 const categories = [
   {
     title: "Du lịch biển",
@@ -566,6 +557,3 @@ const categories = [
       "Khám phá nền ẩm thực phong phú từ các vùng miền trong nước và quốc tế",
   },
 ];
-
-
-

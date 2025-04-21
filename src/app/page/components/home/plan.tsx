@@ -1,55 +1,35 @@
-// src/app/page/components/home/plan.tsx
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
-import type { MouseEvent, TouchEvent } from "react";
-import {
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  useSpring,
-} from "framer-motion";
-import "./plan.css";
-import { IoArrowBackOutline, IoClose } from "react-icons/io5";
+import type React from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { IoArrowBackOutline } from "react-icons/io5";
 import {
   FaPlus,
-  FaPlane,
   FaUtensils,
   FaMapMarkerAlt,
   FaCamera,
-  FaWalking,
-  FaHotel,
-  FaTicketAlt,
   FaLandmark,
   FaTrash,
   FaClock,
   FaCalendarAlt,
   FaSuitcase,
   FaGlobeAmericas,
-  FaUmbrellaBeach,
-  FaMountain,
   FaSun,
-  FaCloudSun,
   FaCloud,
   FaCloudRain,
-  FaSnowflake,
   FaWind,
-  FaRoute,
-  FaChevronLeft,
-  FaChevronRight,
+  FaArrowRight,
+  FaArrowLeft,
+  FaTimes,
+  FaStar,
 } from "react-icons/fa";
 import Image from "next/image";
 import Link from "next/link";
-import HomePage, { type DestinationCard } from "./home_page";
-import Screenshot from "../screenshot";
-import {
-  WeatherData,
-  getCoordinates,
-  getWeatherForDate,
-  getVietnameseDescription,
-} from "../../utils/weatherService";
+import toast, { Toaster } from "react-hot-toast"; // Thay thế shadcn/ui bằng react-hot-toast
+import axios from "axios";
 
-// Định nghĩa interface cho Activity
+// Types
 interface Activity {
   type: string;
   title: string;
@@ -62,348 +42,131 @@ interface Activity {
   endTime?: string;
 }
 
-// Định nghĩa interface cho Day
 interface DayPlan {
   day: number;
   date: string;
   activities: Activity[];
 }
 
-interface TiltActivityCardProps {
-  children: React.ReactNode;
-  onMouseMove?: (e: React.MouseEvent) => void;
-  onMouseLeave?: (e: React.MouseEvent) => void;
+interface WeatherForecast {
+  Ngày: string;
+  "Nhiệt độ tối đa": string;
+  "Mô tả": string;
 }
 
-const ROTATION_RANGE = 12.5;
-const HALF_ROTATION_RANGE = 12.5 / 2;
-
-// Weather icon mapping
-const getWeatherIcon = (iconCode: string) => {
-  switch (iconCode) {
-    case "01d":
-    case "01n":
-      return FaSun;
-    case "02d":
-    case "02n":
-      return FaCloudSun;
-    case "03d":
-    case "03n":
-    case "04d":
-    case "04n":
-      return FaCloud;
-    case "09d":
-    case "09n":
-    case "10d":
-    case "10n":
-      return FaCloudRain;
-    case "11d":
-    case "11n":
-      return FaCloudRain;
-    case "13d":
-    case "13n":
-      return FaSnowflake;
-    case "50d":
-    case "50n":
-      return FaWind;
-    default:
-      return FaCloud;
-  }
-};
-
-const TiltActivityCard: React.FC<TiltActivityCardProps> = ({
-  children,
-  onMouseMove,
-  onMouseLeave,
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const xSpring = useSpring(x);
-  const ySpring = useSpring(y);
-
-  const transform = useMotionTemplate`rotateX(${xSpring}deg) rotateY(${ySpring}deg)`;
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
-
-    const rect = ref.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-
-    const mouseX = (e.clientX - rect.left) * ROTATION_RANGE;
-    const mouseY = (e.clientY - rect.top) * ROTATION_RANGE;
-
-    const rX = (mouseY / height - HALF_ROTATION_RANGE) * -1;
-    const rY = mouseX / width - HALF_ROTATION_RANGE;
-
-    x.set(rX);
-    y.set(rY);
-    onMouseMove?.(e);
+interface ScheduleData {
+  schedule: {
+    schedule: Array<{
+      day: string;
+      itinerary: Array<{
+        food?: {
+          title: string;
+          description: string;
+          address: string;
+          rating: number;
+          img: string;
+        };
+        place?: {
+          title: string;
+          description: string;
+          address: string;
+          rating: number;
+          img: string;
+        };
+      }>;
+    }>;
+    province: string;
   };
-
-  const handleMouseLeave = (e: React.MouseEvent) => {
-    x.set(0);
-    y.set(0);
-    onMouseLeave?.(e);
+  weather_forecast: {
+    forecast: WeatherForecast[];
   };
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        transformStyle: "preserve-3d",
-        transform,
-      }}
-      className="activity-card-container"
-    >
-      <div
-        style={{
-          transform: "translateZ(25px)",
-          transformStyle: "preserve-3d",
-        }}
-        className="activity-card-inner"
-      >
-        {children}
-      </div>
-    </motion.div>
-  );
-};
-
-interface DraggableActivityProps {
-  activity: Activity;
-  onDelete: (dayIndex: number, activityIndex: number) => void;
-  dayIndex: number;
-  activityIndex: number;
-  onDragStart: (
-    e: React.DragEvent,
-    dayIndex: number,
-    activityIndex: number
-  ) => void;
-  onDragEnd: (e: React.DragEvent) => void;
-  onDragOver: (
-    e: React.DragEvent,
-    dayIndex: number,
-    activityIndex: number
-  ) => void;
-  onActivityClick: (activity: Activity) => void;
-  onTimeChange?: (
-    dayIndex: number,
-    activityIndex: number,
-    startTime: string,
-    endTime: string
-  ) => void;
-  children?: React.ReactNode;
 }
 
-const DraggableActivity: React.FC<DraggableActivityProps> = ({
-  activity,
-  onDelete,
-  dayIndex,
-  activityIndex,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onActivityClick,
-  onTimeChange,
-  children,
-}) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [localStartTime, setLocalStartTime] = useState(
-    activity.startTime || ""
-  );
-  const [localEndTime, setLocalEndTime] = useState(activity.endTime || "");
-
-  useEffect(() => {
-    setLocalStartTime(activity.startTime || "");
-    setLocalEndTime(activity.endTime || "");
-  }, [activity.startTime, activity.endTime]);
-
-  const handleTimeChange = (newStartTime: string, newEndTime: string) => {
-    setLocalStartTime(newStartTime);
-    setLocalEndTime(newEndTime);
-    if (onTimeChange) {
-      onTimeChange(dayIndex, activityIndex, newStartTime, newEndTime);
-    }
-  };
-
-  const handleDragStart = (e: React.DragEvent) => {
-    setIsDragging(true);
-    const dragData = {
-      dayIndex,
-      activityIndex,
-      startTime: localStartTime,
-      endTime: localEndTime,
-    };
-    e.dataTransfer.setData("text/plain", JSON.stringify(dragData));
-    onDragStart(e, dayIndex, activityIndex);
-    e.currentTarget.classList.add("dragging");
-  };
-
-  const handleDragEnd = (e: React.DragEvent) => {
-    setIsDragging(false);
-    onDragEnd(e);
-    e.currentTarget.classList.remove("dragging");
-    e.currentTarget.classList.add("dropped");
-    setTimeout(() => {
-      e.currentTarget.classList.remove("dropped");
-    }, 300);
-  };
-
-  const handleDelete = (e: MouseEvent<Element>) => {
-    e.stopPropagation();
-    onDelete(dayIndex, activityIndex);
-  };
-
-  const handleContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onActivityClick(activity);
-  };
-
-  return (
-    <motion.div
-      className="activity-card-container"
-      style={{ perspective: 2000 }}
-      onDragOver={(e) => onDragOver(e, dayIndex, activityIndex)}
-    >
-      <motion.div
-        className="activity-card-inner"
-        whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div
-          className={`draggable-activity ${isDragging ? "dragging" : ""}`}
-          draggable
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          <TimePicker
-            startTime={localStartTime}
-            endTime={localEndTime}
-            onChange={handleTimeChange}
-          />
-          <motion.button
-            className="delete-btn"
-            onClick={handleDelete}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <FaTrash />
-          </motion.button>
-          <div className="activity-content" onClick={handleContentClick}>
-            {children}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-interface TimePickerProps {
-  startTime: string;
-  endTime: string;
-  onChange: (startTime: string, endTime: string) => void;
+interface DestinationCard {
+  title: string;
+  description?: string;
+  img?: string;
+  address?: string;
+  rating: number;
 }
 
-const TimePicker: React.FC<TimePickerProps> = ({
-  startTime,
-  endTime,
-  onChange,
-}) => {
+// HomePage Component (Mocked for simplicity)
+const HomePage: React.FC<{
+  isInPlan?: boolean;
+  onAddToPlan?: (destination: DestinationCard) => void;
+  showAddButton?: boolean;
+}> = ({ onAddToPlan }) => {
+  const mockDestinations: DestinationCard[] = [
+    {
+      title: "Chợ Bến Thành",
+      description:
+        "Khám phá khu chợ truyền thống với nhiều mặt hàng đặc sản và đồ lưu niệm.",
+      img: "https://images.unsplash.com/photo-1592812430165-1b1e5811b2e5",
+      address: "Lê Lợi, Bến Thành, Quận 1, TP.HCM",
+      rating: 4.3,
+    },
+  ];
+
   return (
-    <div className="time-selector-container">
-      <div className="time-picker">
-        <div className="time-label">
-          <FaClock className="time-icon" size={14} />
-          <span>Start</span>
+    <div className="p-4">
+      {mockDestinations.map((destination, index) => (
+        <div key={index} className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <h3 className="font-bold">{destination.title}</h3>
+          <p>{destination.description}</p>
+          {onAddToPlan && (
+            <button
+              onClick={() => onAddToPlan(destination)}
+              className="mt-2 bg-[#1a936f] hover:bg-[#114b5f] text-white px-4 py-2 rounded"
+            >
+              Thêm vào lịch trình
+            </button>
+          )}
         </div>
-        <input
-          type="time"
-          value={startTime}
-          onChange={(e) => onChange(e.target.value, endTime)}
-          className="time-input"
-        />
-        <div className="time-label">
-          <FaClock className="time-icon" size={14} />
-          <span>End</span>
-        </div>
-        <input
-          type="time"
-          value={endTime}
-          onChange={(e) => onChange(startTime, e.target.value)}
-          className="time-input"
-        />
-      </div>
+      ))}
     </div>
   );
 };
 
-const Plan = () => {
+// Main Component
+export default function Plan() {
   const [showHomePage, setShowHomePage] = useState(false);
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(1);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
     null
   );
-  const [showModal, setShowModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [activityToDelete, setActivityToDelete] = useState<{
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [activityToMove, setActivityToMove] = useState<{
     dayIndex: number;
     activityIndex: number;
+    activity: Activity;
   } | null>(null);
-
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeftOffset, setScrollLeftOffset] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<{
-    day: number;
-    index: number;
-  } | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [userId, setUserId] = useState<number | null>(7);
+  const [scheduleId, setScheduleId] = useState<number | null>(null);
+  const [shareLink, setShareLink] = useState<string | null>(null);
   const [activities, setActivities] = useState<DayPlan[]>([]);
+  const [weatherForecast, setWeatherForecast] = useState<WeatherForecast[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
-  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
-  const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Animation variants
-  const fadeIn = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.6 } },
-  };
-
-  const slideUp = {
-    hidden: { y: 50, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.5 } },
-  };
-
-  const slideRight = {
-    hidden: { x: -50, opacity: 0 },
-    visible: { x: 0, opacity: 1, transition: { duration: 0.5 } },
-  };
-
-  // Lấy dữ liệu từ localStorage và gọi API thời tiết
+  // Load data from localStorage
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = () => {
       try {
         setLoading(true);
-        setError(null);
 
         const scheduleData = localStorage.getItem("travelSchedule");
         if (!scheduleData) {
           throw new Error(
-            "Không tìm thấy dữ liệu kế hoạch trong localStorage."
+            "Không tìm thấy dữ liệu lịch trình trong localStorage."
           );
         }
 
-        const parsedData = JSON.parse(scheduleData);
+        const parsedData: ScheduleData = JSON.parse(scheduleData);
         if (
           !parsedData ||
           !parsedData.schedule ||
@@ -414,17 +177,15 @@ const Plan = () => {
           );
         }
 
-        // Lấy province từ đúng vị trí trong cấu trúc dữ liệu
-        const province = parsedData.schedule.province;
-
         const formattedActivities = parsedData.schedule.schedule.map(
-          (dayItem: any, index: number) => {
-            const dateMatch = dayItem.day.match(/\((.*?)\)/);
+          (dayItem, index) => {
+            const dateMatch =
+              dayItem.day.match(/\$\$(.*?)\$\$/) ||
+              dayItem.day.match(/\((.*?)\)/);
             const date = dateMatch ? dateMatch[1] : dayItem.day;
 
-            const dayActivities = dayItem.itinerary.flatMap((slot: any) => {
+            const dayActivities = dayItem.itinerary.flatMap((slot) => {
               const activities: Activity[] = [];
-
               if (slot.food) {
                 activities.push({
                   type: "food",
@@ -433,9 +194,10 @@ const Plan = () => {
                   location: slot.food.address || "Không có địa chỉ",
                   rating: slot.food.rating || 0,
                   image: slot.food.img || "",
+                  startTime: "12:00",
+                  endTime: "13:30",
                 });
               }
-
               if (slot.place) {
                 activities.push({
                   type: "place",
@@ -444,9 +206,10 @@ const Plan = () => {
                   location: slot.place.address || "Không có địa chỉ",
                   rating: slot.place.rating || 0,
                   image: slot.place.img || "",
+                  startTime: "09:00",
+                  endTime: "11:00",
                 });
               }
-
               return activities;
             });
 
@@ -459,274 +222,170 @@ const Plan = () => {
         );
 
         setActivities(formattedActivities);
-
-        // Lấy dữ liệu thời tiết
-        setIsLoadingWeather(true);
-        setWeatherError(null);
-
-        try {
-          const coordinates = await getCoordinates(province);
-          console.log("Coordinates for", province, ":", coordinates);
-
-          const weatherPromises = formattedActivities.map(
-            async (day: DayPlan) => {
-              return await getWeatherForDate(
-                coordinates.lat,
-                coordinates.lon,
-                day.date
-              );
-            }
-          );
-
-          const weatherResults = await Promise.all(weatherPromises);
-          setWeatherData(weatherResults.filter(Boolean));
-        } catch (weatherError: any) {
-          console.error("Error fetching weather:", weatherError);
-          setWeatherError("Không thể tải dữ liệu thời tiết");
-        } finally {
-          setIsLoadingWeather(false);
-        }
-
+        setWeatherForecast(parsedData.weather_forecast.forecast);
         setLoading(false);
       } catch (err: any) {
-        setError(err.message || "Đã xảy ra lỗi khi tải dữ liệu.");
+        console.error("Error loading schedule:", err);
+        toast.error("Không thể tải kế hoạch du lịch. Vui lòng thử lại!");
         setLoading(false);
-        console.error("Lỗi:", err);
       }
     };
 
-    fetchData();
+    loadData();
   }, []);
 
-  const startDragging = (e: React.MouseEvent | TouchEvent) => {
-    if (!scrollContainerRef.current) return;
-    setIsDragging(true);
-    const clientX =
-      "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    setStartX(clientX - scrollContainerRef.current.offsetLeft);
-    setScrollLeftOffset(scrollContainerRef.current.scrollLeft);
-  };
-
-  const stopDragging = () => {
-    setIsDragging(false);
-  };
-
-  const move = (clientX: number) => {
-    if (!isDragging || !scrollContainerRef.current) return;
-    const x = clientX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX) * 2;
-    scrollContainerRef.current.scrollLeft = scrollLeftOffset - walk;
-  };
-
-  const handleMouseDown = (e: MouseEvent) => {
-    startDragging(e);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    move(e.pageX);
-  };
-
-  const handleMouseUp = () => {
-    stopDragging();
-  };
-
-  const handleTouchStart = (e: TouchEvent) => {
-    startDragging(e);
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-    if (!isDragging) return;
-    move(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    stopDragging();
-  };
-
-  const handleDragStart = (
-    e: React.DragEvent,
-    dayIndex: number,
-    activityIndex: number
-  ) => {
-    e.dataTransfer.setData("text/plain", `${dayIndex}-${activityIndex}`);
-    e.currentTarget.classList.add("dragging");
-  };
-
-  const handleDragEnd = (e: React.DragEvent) => {
-    e.currentTarget.classList.remove("dragging");
-    setDragOverIndex(null);
-  };
-
-  const handleDragOver = (
-    e: React.DragEvent,
-    dayIndex: number,
-    activityIndex: number
-  ) => {
-    e.preventDefault();
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const midPoint = rect.top + rect.height / 2;
-    const isBefore = e.clientY < midPoint;
-
-    const newIndex = isBefore ? activityIndex : activityIndex + 1;
-    setDragOverIndex({ day: dayIndex, index: newIndex });
-  };
-
-  const handleDrop = (e: React.DragEvent, targetDayIndex: number) => {
-    e.preventDefault();
-    const [sourceDayIndex, sourceActivityIndex] = e.dataTransfer
-      .getData("text/plain")
-      .split("-")
-      .map(Number);
-
-    if (!dragOverIndex) return;
-
-    const targetIndex =
-      dragOverIndex.day === targetDayIndex
-        ? dragOverIndex.index
-        : activities[targetDayIndex].activities.length;
-
-    if (
-      sourceDayIndex === targetDayIndex &&
-      sourceActivityIndex === targetIndex
-    )
-      return;
-
-    const newActivities = [...activities];
-    const sourceDay = newActivities[sourceDayIndex];
-    const targetDay = newActivities[targetDayIndex];
-
-    const [movedActivity] = sourceDay.activities.splice(sourceActivityIndex, 1);
-    targetDay.activities.splice(targetIndex, 0, movedActivity);
-
-    setActivities(newActivities);
-    setDragOverIndex(null);
-
-    showSuccessNotification(
-      `Đã di chuyển hoạt động sang Ngày ${targetDayIndex + 1}`
-    );
-  };
-
-  const toggleHomePage = (dayIndex?: number) => {
-    if (dayIndex !== undefined) {
-      setSelectedDayIndex(dayIndex);
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/recommend/login-user/",
+        { email, password },
+        { withCredentials: true }
+      );
+      if (response.data.message === "Đăng nhập thành công") {
+        setUserId(response.data.user_id);
+        setShowLoginModal(false);
+        setLoginError(null);
+        toast.success("Đăng nhập thành công!");
+      } else {
+        setLoginError("Đăng nhập thất bại");
+      }
+    } catch (err: any) {
+      setLoginError(err.response?.data?.error || "Lỗi khi đăng nhập");
+      console.error("Login error:", err);
+      toast.error("Lỗi khi đăng nhập");
     }
-    setShowHomePage(!showHomePage);
   };
 
-  const handleAddDestination = (destination: DestinationCard) => {
-    const newActivity: Activity = {
-      type: "place",
-      title: destination.title,
-      description: destination.description,
-      image: destination.img,
-      location: destination.address,
-      rating: destination.rating,
-    };
-
-    const newActivities = [...activities];
-    newActivities[selectedDayIndex].activities.push(newActivity);
-    setActivities(newActivities);
-
-    showSuccessNotification(
-      `Đã thêm vào Ngày ${selectedDayIndex + 1} thành công!`
-    );
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://127.0.0.1:8000/recommend/logout-user/",
+        {},
+        { withCredentials: true }
+      );
+      setUserId(null);
+      setScheduleId(null);
+      setShareLink(null);
+      setShowLoginModal(true);
+      toast.success("Đăng xuất thành công!");
+    } catch (err) {
+      console.error("Logout error:", err);
+      toast.error("Lỗi khi đăng xuất");
+    }
   };
 
-  const showSuccessNotification = (message: string) => {
-    const notification = document.createElement("div");
-    notification.className = "success-notification";
-    notification.textContent = message;
-    document.body.appendChild(notification);
+  const handleSaveAndShareSchedule = async () => {
+    if (!userId) {
+      setShowLoginModal(true);
+      toast.error("Vui lòng đăng nhập để lưu lịch trình!");
+      return;
+    }
 
-    setTimeout(() => {
-      notification.remove();
-    }, 2000);
+    try {
+      toast("Đang lưu lịch trình của bạn...");
+
+      const formattedData = {
+        user_id: userId,
+        schedule_name: "Chuyến đi Hồ Chí Minh",
+        days: activities.map((day) => ({
+          day_index: day.day,
+          date_str: day.date,
+          itinerary: day.activities.map((activity, actIndex) => {
+            const item: any = {
+              timeslot: `${activity.startTime || "08:00"} - ${
+                activity.endTime || "09:00"
+              }`,
+              order: actIndex + 1,
+            };
+            if (activity.type === "food") {
+              item.food_title = activity.title;
+              item.food_description = activity.description;
+              item.food_address = activity.location;
+              item.food_rating = activity.rating;
+              item.food_image = activity.image;
+            } else if (activity.type === "place") {
+              item.place_title = activity.title;
+              item.place_description = activity.description;
+              item.place_address = activity.location;
+              item.place_rating = activity.rating;
+              item.place_img = activity.image;
+            }
+            return item;
+          }),
+        })),
+      };
+
+      const saveResponse = await axios.post(
+        "http://127.0.0.1:8000/recommend/save-schedule/",
+        formattedData,
+        { withCredentials: true }
+      );
+
+      if (saveResponse.data && saveResponse.data.schedule_id) {
+        const scheduleId = saveResponse.data.schedule_id;
+        setScheduleId(scheduleId);
+        toast.success("Lịch trình đã được lưu thành công!");
+
+        const shareResponse = await axios.post(
+          "http://127.0.0.1:8000/recommend/share-schedule/",
+          { user_id: userId, schedule_id: scheduleId },
+          { withCredentials: true }
+        );
+
+        if (shareResponse.data && shareResponse.data.share_link) {
+          setShareLink(shareResponse.data.share_link);
+          toast.success("Lịch trình đã được lưu và link chia sẻ đã được tạo!");
+        }
+      }
+    } catch (err: any) {
+      console.error("Error in save and share schedule:", err);
+      toast.error(
+        err.response?.data?.error || "Lỗi khi lưu hoặc chia sẻ lịch trình"
+      );
+    }
   };
 
   const handleActivityClick = (activity: Activity) => {
     setSelectedActivity(activity);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedActivity(null);
+    setShowActivityModal(true);
   };
 
   const handleDeleteActivity = (dayIndex: number, activityIndex: number) => {
-    setActivityToDelete({ dayIndex, activityIndex });
-    setShowDeleteModal(true);
+    const newActivities = [...activities];
+    newActivities[dayIndex].activities.splice(activityIndex, 1);
+    setActivities(newActivities);
+    toast.success("Hoạt động đã được xóa khỏi lịch trình");
   };
 
-  const handleConfirmDelete = () => {
-    if (activityToDelete) {
-      const { dayIndex, activityIndex } = activityToDelete;
-      const newActivities = [...activities];
-      newActivities[dayIndex].activities.splice(activityIndex, 1);
-      setActivities(newActivities);
+  const handleMoveActivity = (dayIndex: number, activityIndex: number) => {
+    setActivityToMove({
+      dayIndex,
+      activityIndex,
+      activity: activities[dayIndex].activities[activityIndex],
+    });
+    setShowMoveModal(true);
+  };
 
-      showSuccessNotification("Đã xóa hoạt động thành công!");
+  const handleConfirmMove = (targetDayIndex: number) => {
+    if (!activityToMove) return;
 
-      setShowDeleteModal(false);
-      setActivityToDelete(null);
+    const { dayIndex, activityIndex, activity } = activityToMove;
+
+    if (targetDayIndex === dayIndex) {
+      setShowMoveModal(false);
+      setActivityToMove(null);
+      return;
     }
-  };
 
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setActivityToDelete(null);
-  };
+    const newActivities = [...activities];
+    newActivities[dayIndex].activities.splice(activityIndex, 1);
+    newActivities[targetDayIndex].activities.push(activity);
 
-  const getActivityIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "transport":
-        return {
-          icon: <FaPlane size={16} />,
-          className: "icon-transport",
-        };
-      case "food":
-        return {
-          icon: <FaUtensils size={16} />,
-          className: "icon-food",
-        };
-      case "place":
-        return {
-          icon: <FaMapMarkerAlt size={16} />,
-          className: "icon-place",
-        };
-      case "service":
-        return {
-          icon: <FaCamera size={16} />,
-          className: "icon-service",
-        };
-      case "walking":
-        return {
-          icon: <FaWalking size={16} />,
-          className: "icon-place",
-        };
-      case "hotel":
-        return {
-          icon: <FaHotel size={16} />,
-          className: "icon-service",
-        };
-      case "ticket":
-        return {
-          icon: <FaTicketAlt size={16} />,
-          className: "icon-service",
-        };
-      case "attraction":
-        return {
-          icon: <FaLandmark size={16} />,
-          className: "icon-place",
-        };
-      default:
-        return {
-          icon: <FaMapMarkerAlt size={16} />,
-          className: "icon-place",
-        };
-    }
+    setActivities(newActivities);
+    setShowMoveModal(false);
+    setActivityToMove(null);
+
+    toast.success(`Hoạt động đã được chuyển sang Ngày ${targetDayIndex + 1}`);
   };
 
   const handleTimeChange = (
@@ -736,542 +395,939 @@ const Plan = () => {
     endTime: string
   ) => {
     const newActivities = [...activities];
-    newActivities[dayIndex].activities[activityIndex].startTime = startTime;
-    newActivities[dayIndex].activities[activityIndex].endTime = endTime;
+    newActivities[dayIndex].activities[activityIndex] = {
+      ...newActivities[dayIndex].activities[activityIndex],
+      startTime,
+      endTime,
+    };
     setActivities(newActivities);
   };
 
-  const fetchWeatherData = async () => {
-    try {
-      setIsLoadingWeather(true);
-      setWeatherError(null);
+  const toggleHomePage = (dayIndex: number) => {
+    setSelectedDayIndex(dayIndex);
+    setShowHomePage(!showHomePage);
+  };
 
-      const travelScheduleStr = localStorage.getItem("travelSchedule");
-      if (!travelScheduleStr) {
-        throw new Error("Không tìm thấy dữ liệu kế hoạch trong localStorage");
-      }
+  const handleAddDestination = (destination: DestinationCard) => {
+    const newActivities = [...activities];
+    newActivities[selectedDayIndex].activities.push({
+      type: "place",
+      title: destination.title,
+      description: destination.description || "",
+      image: destination.img || "",
+      location: destination.address || "",
+      rating: destination.rating,
+      startTime: "09:00",
+      endTime: "11:00",
+    });
+    setActivities(newActivities);
+    setShowHomePage(false);
+    toast.success(
+      `Đã thêm ${destination.title} vào ngày ${selectedDayIndex + 1}`
+    );
+  };
 
-      const travelSchedule = JSON.parse(travelScheduleStr);
-      if (!travelSchedule.province || !travelSchedule.schedule?.schedule) {
-        throw new Error("Dữ liệu kế hoạch không hợp lệ");
-      }
-
-      console.log("Fetching weather for province:", travelSchedule.province);
-      const coordinates = await getCoordinates(travelSchedule.province);
-      console.log("Coordinates:", coordinates);
-
-      const weatherPromises = travelSchedule.schedule.schedule.map(
-        async (day: any) => {
-          const dateMatch = day.day.match(/\((.*?)\)/);
-          if (!dateMatch) {
-            console.warn("Invalid date format in day:", day.day);
-            return null;
-          }
-
-          const date = dateMatch[1];
-          console.log("Fetching weather for date:", date);
-          return await getWeatherForDate(
-            coordinates.lat,
-            coordinates.lon,
-            date
-          );
-        }
+  const nextSlide = () => {
+    if (activities[selectedDayIndex]?.activities) {
+      setCurrentSlide(
+        (prev) => (prev + 1) % activities[selectedDayIndex].activities.length
       );
+    }
+  };
 
-      const weatherResults = await Promise.all(weatherPromises);
-      setWeatherData(weatherResults.filter(Boolean));
-    } catch (error: any) {
-      console.error("Error fetching weather:", error);
-      setWeatherError(error.message || "Không thể tải dữ liệu thời tiết");
-    } finally {
-      setIsLoadingWeather(false);
+  const prevSlide = () => {
+    if (activities[selectedDayIndex]?.activities) {
+      setCurrentSlide(
+        (prev) =>
+          (prev - 1 + activities[selectedDayIndex].activities.length) %
+          activities[selectedDayIndex].activities.length
+      );
     }
   };
 
   if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loader">
-          <div className="loader-icon">
-            <FaGlobeAmericas className="globe-icon" />
-          </div>
-          <div className="loader-text">Đang tải kế hoạch du lịch...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <div className="error-icon">
-          <FaGlobeAmericas />
-        </div>
-        <h2>Không thể tải kế hoạch</h2>
-        <p>{error}</p>
-        <Link href="/" className="error-button">
-          Quay lại trang chủ
-        </Link>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
-    <div className={`plan-wrapper ${showHomePage ? "with-sidebar" : ""}`}>
-      {showDeleteModal && (
-        <div className="modal-overlay">
-          <motion.div
-            className="delete-modal"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-          >
-            <h3>Xác nhận xóa</h3>
-            <p>Bạn có chắc muốn xóa hoạt động này không?</p>
-            <div className="modal-actions">
-              <button className="cancel-btn" onClick={handleCancelDelete}>
-                Hủy bỏ
-              </button>
-              <button className="confirm-btn" onClick={handleConfirmDelete}>
-                Xóa
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {showModal && selectedActivity && (
-        <div className="modal-overlay">
-          <motion.div
-            className="activity-detail-modal"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-          >
-            <button onClick={handleCloseModal} className="modal-close-btn">
-              <IoClose size={24} />
-            </button>
-
-            {selectedActivity.image && (
-              <div className="modal-image">
-                <Image
-                  src={selectedActivity.image || "/placeholder.svg"}
-                  alt={selectedActivity.title}
-                  fill
-                  className="object-cover"
-                />
-                <div className="modal-image-overlay"></div>
-              </div>
-            )}
-
-            <div className="modal-content">
-              <div className="modal-header">
-                <h2>{selectedActivity.title}</h2>
-                {selectedActivity.rating && (
-                  <div className="modal-rating">
-                    <span className="star">★</span>
-                    <span>{selectedActivity.rating}</span>
-                  </div>
-                )}
-              </div>
-
-              {selectedActivity.location && (
-                <div className="modal-location">
-                  <FaMapMarkerAlt />
-                  <span>{selectedActivity.location}</span>
-                </div>
-              )}
-
-              <div className="modal-description">
-                <p>{selectedActivity.description}</p>
-              </div>
-
-              <div className="modal-actions">
-                <button className="modal-action-btn">
-                  <FaMapMarkerAlt /> Xem trên bản đồ
-                </button>
-                <button className="modal-action-btn secondary">
-                  <FaCamera /> Xem ảnh
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      <div className={`slide-panel ${showHomePage ? "active" : ""}`}>
-        <button
-          className="close-panel-btn"
-          onClick={() => toggleHomePage(selectedDayIndex)}
-          aria-label="Close homepage panel"
-        >
-          <IoClose size={24} />
-        </button>
-        <HomePage
-          isInPlan={true}
-          onAddToPlan={handleAddDestination}
-          showAddButton={true}
-        />
-      </div>
-
-      {showHomePage && (
-        <div
-          className="panel-overlay"
-          onClick={() => toggleHomePage(selectedDayIndex)}
-        ></div>
-      )}
-
-      <div className={`plan-container ${showHomePage ? "shifted" : ""}`}>
-        <Screenshot className="min-h-screen">
-          <div className="plan-content">
-            <div className="plan-background">
-              <div className="bg-element plane-1">
-                <FaPlane />
-              </div>
-              <div className="bg-element plane-2">
-                <FaPlane />
-              </div>
-              <div className="bg-element mountain">
-                <FaMountain />
-              </div>
-              <div className="bg-element beach">
-                <FaUmbrellaBeach />
-              </div>
-              <div className="bg-element route">
-                <FaRoute />
-              </div>
-            </div>
-
-            <header className="plan-header">
-              <div className="header-content">
-                <Link href="/" className="back-link">
-                  <IoArrowBackOutline size={24} />
-                  <span>Quay lại</span>
-                </Link>
-
-                <motion.div
-                  className="plan-title"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                  <h1>Kế Hoạch Du Lịch</h1>
-                  <div className="plan-info">
-                    <div className="plan-date">
-                      <FaCalendarAlt />
-                      <span>
-                        {activities.length > 0
-                          ? `${activities[0].date} - ${
-                              activities[activities.length - 1].date
-                            }`
-                          : "No dates available"}
-                      </span>
-                    </div>
-                    <div className="plan-location">
-                      <FaMapMarkerAlt />
-                      <span>
-                        {localStorage.getItem("travelSchedule")
-                          ? JSON.parse(localStorage.getItem("travelSchedule")!)
-                              .province
-                          : "Unknown"}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            </header>
-
-            <div className="travel-summary">
-              <div className="summary-header">
-                <h3>Tổng quan chuyến đi</h3>
-              </div>
-
-              <div className="summary-stats">
-                <div className="stat-item">
-                  <div className="stat-icon">
-                    <FaCalendarAlt />
-                  </div>
-                  <div className="stat-content">
-                    <span className="stat-value">{activities.length}</span>
-                    <span className="stat-label">Ngày</span>
-                  </div>
-                </div>
-
-                <div className="stat-item">
-                  <div className="stat-icon">
-                    <FaMapMarkerAlt />
-                  </div>
-                  <div className="stat-content">
-                    <span className="stat-value">
-                      {activities.reduce(
-                        (total, day) => total + day.activities.length,
-                        0
-                      )}
-                    </span>
-                    <span className="stat-label">Hoạt động</span>
-                  </div>
-                </div>
-
-                <div className="stat-item">
-                  <div className="stat-icon">
-                    <FaUtensils />
-                  </div>
-                  <div className="stat-content">
-                    <span className="stat-value">
-                      {activities.reduce(
-                        (total, day) =>
-                          total +
-                          day.activities.filter((a) => a.type === "food")
-                            .length,
-                        0
-                      )}
-                    </span>
-                    <span className="stat-label">Bữa ăn</span>
-                  </div>
-                </div>
-
-                <div className="stat-item">
-                  <div className="stat-icon">
-                    <FaLandmark />
-                  </div>
-                  <div className="stat-content">
-                    <span className="stat-value">
-                      {activities.reduce(
-                        (total, day) =>
-                          total +
-                          day.activities.filter((a) => a.type === "place")
-                            .length,
-                        0
-                      )}
-                    </span>
-                    <span className="stat-label">Địa điểm</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              ref={scrollContainerRef}
-              className="days-container"
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+    <div className="min-h-screen bg-[#fef9f3]">
+      <Toaster /> {/* Toaster từ react-hot-toast */}
+      {/* Login Modal */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4"
             >
-              {activities.map((day, dayIndex) => (
-                <motion.div
-                  key={dayIndex}
-                  className="day-card"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: dayIndex * 0.1 }}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold">Đăng nhập</h2>
+                <button
+                  onClick={() => setShowLoginModal(false)}
+                  className="p-2 rounded-full hover:bg-gray-200"
                 >
-                  <div className="day-header">
-                    <div className="day-header-content">
-                      <h2>
-                        Ngày {day.day} - {day.date}
-                      </h2>
-                      {weatherData[dayIndex] ? (
-                        <div className="day-weather">
-                          {isLoadingWeather ? (
-                            <div className="weather-loading">
-                              Đang tải thời tiết...
-                            </div>
-                          ) : weatherError ? (
-                            <span className="weather-error">
-                              {weatherError}
-                            </span>
-                          ) : (
-                            <>
-                              <div className="weather-icon">
-                                {React.createElement(
-                                  getWeatherIcon(weatherData[dayIndex].icon)
-                                )}
-                              </div>
-                              <div className="weather-info">
-                                <span className="weather-temp">
-                                  {weatherData[dayIndex].temp}°C
-                                </span>
-                                <span className="weather-desc">
-                                  {getVietnameseDescription(
-                                    weatherData[dayIndex].description
-                                  )}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="day-weather">
-                          <div className="weather-loading">
-                            Đang tải thời tiết...
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <FaTimes />
+                </button>
+              </div>
 
-                  <div className="timeline-container">
-                    <div className="timeline"></div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    placeholder="Nhập email của bạn"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a936f]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 mb-1">Mật khẩu</label>
+                  <input
+                    type="password"
+                    placeholder="Nhập mật khẩu của bạn"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a936f]"
+                  />
+                </div>
+                {loginError && (
+                  <p className="text-red-500 text-sm">{loginError}</p>
+                )}
+                <button
+                  onClick={handleLogin}
+                  className="w-full bg-[#1a936f] hover:bg-[#114b5f] text-white px-4 py-2 rounded"
+                >
+                  Đăng nhập
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Activity Detail Modal */}
+      <AnimatePresence>
+        {showActivityModal && selectedActivity && (
+          <ActivityDetailModal
+            activity={selectedActivity}
+            onClose={() => setShowActivityModal(false)}
+          />
+        )}
+      </AnimatePresence>
+      {/* Move Activity Modal */}
+      <AnimatePresence>
+        {showMoveModal && activityToMove && (
+          <MoveActivityModal
+            days={activities.map((day) => ({ day: day.day, date: day.date }))}
+            currentDayIndex={activityToMove.dayIndex}
+            onMove={handleConfirmMove}
+            onClose={() => {
+              setShowMoveModal(false);
+              setActivityToMove(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+      {/* Sidebar for Adding Destinations */}
+      <div
+        className={`fixed inset-0 bg-white z-40 transform transition-transform duration-300 ${
+          showHomePage ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="p-4 flex justify-between items-center border-b">
+          <h2 className="text-xl font-bold">Thêm hoạt động</h2>
+          <button
+            onClick={() => setShowHomePage(false)}
+            className="p-2 rounded-full hover:bg-gray-200"
+          >
+            <FaTimes />
+          </button>
+        </div>
+        <div className="overflow-auto h-[calc(100vh-64px)]">
+          {showHomePage && (
+            <HomePage
+              isInPlan={true}
+              onAddToPlan={handleAddDestination}
+              showAddButton={true}
+            />
+          )}
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <header className="mb-10">
+          <div className="flex justify-between items-center">
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-gray-700 hover:text-[#d62828] transition-colors"
+            >
+              <IoArrowBackOutline size={24} />
+              <span>Quay lại</span>
+            </Link>
 
-                    <div
-                      className="activities-list"
-                      onDrop={(e) => handleDrop(e, dayIndex)}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        if (!dragOverIndex || dragOverIndex.day !== dayIndex) {
-                          setDragOverIndex({
-                            day: dayIndex,
-                            index: day.activities.length,
-                          });
-                        }
-                      }}
-                    >
-                      {day.activities.map((activity, actIndex) => (
-                        <React.Fragment key={actIndex}>
-                          {dragOverIndex?.day === dayIndex &&
-                            dragOverIndex?.index === actIndex && (
-                              <div className="drop-indicator active" />
-                            )}
-                          <DraggableActivity
-                            activity={activity}
-                            onDelete={handleDeleteActivity}
-                            dayIndex={dayIndex}
-                            activityIndex={actIndex}
-                            onDragStart={handleDragStart}
-                            onDragEnd={handleDragEnd}
-                            onDragOver={handleDragOver}
-                            onActivityClick={handleActivityClick}
-                            onTimeChange={handleTimeChange}
-                          >
-                            <div
-                              className={`activity-icon-container ${
-                                getActivityIcon(activity.type).className
-                              }`}
-                            >
-                              {getActivityIcon(activity.type).icon}
-                            </div>
-                            <div className="activity-content">
-                              <div className="activity-header">
-                                <h3 className="activity-title">
-                                  {activity.title}
-                                </h3>
-                                {activity.rating && (
-                                  <div className="activity-rating">
-                                    <span className="star">★</span>
-                                    <span>{activity.rating}</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {activity.image && (
-                                <div className="activity-image">
-                                  <Image
-                                    src={activity.image || "/placeholder.svg"}
-                                    alt={activity.title}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                </div>
-                              )}
-
-                              <p className="activity-description">
-                                {activity.description}
-                              </p>
-
-                              {activity.location && (
-                                <div className="activity-location">
-                                  <FaMapMarkerAlt />
-                                  <span>{activity.location}</span>
-                                </div>
-                              )}
-                            </div>
-                          </DraggableActivity>
-                          {dragOverIndex?.day === dayIndex &&
-                            dragOverIndex?.index === actIndex + 1 && (
-                              <div className="drop-indicator active" />
-                            )}
-                        </React.Fragment>
-                      ))}
-
-                      {day.activities.length === 0 && (
-                        <div className="empty-activities">
-                          <div className="empty-icon">
-                            <FaSuitcase />
-                          </div>
-                          <p>Chưa có hoạt động nào cho ngày này</p>
-                          <p className="empty-subtitle">
-                            Thêm hoạt động để bắt đầu lập kế hoạch
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="day-footer">
-                    <button
-                      className="add-activity-btn"
-                      onClick={() => toggleHomePage(dayIndex)}
-                    >
-                      <FaPlus />
-                      <span>Thêm hoạt động</span>
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+            <div className="text-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+                Kế Hoạch Du Lịch
+              </h1>
+              <div className="flex justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2 text-gray-600 bg-white px-4 py-2 rounded-full shadow-sm">
+                  <FaCalendarAlt className="text-[#d62828]" />
+                  <span>
+                    {activities.length > 0
+                      ? `${activities[0].date} - ${
+                          activities[activities.length - 1].date
+                        }`
+                      : "Không có ngày"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600 bg-white px-4 py-2 rounded-full shadow-sm">
+                  <FaMapMarkerAlt className="text-[#d62828]" />
+                  <span>
+                    {localStorage.getItem("travelSchedule")
+                      ? JSON.parse(localStorage.getItem("travelSchedule")!)
+                          .schedule.province
+                      : "Hồ Chí Minh"}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div className="travel-tips">
-              <div className="tips-header">
-                <h3>Lời khuyên cho chuyến đi</h3>
-              </div>
-              <div className="tips-content">
-                <div className="tip-card">
-                  <div className="tip-icon">
-                    <FaSuitcase />
-                  </div>
-                  <div className="tip-text">
-                    <h4>Chuẩn bị hành lý</h4>
-                    <p>
-                      Đừng quên mang theo áo mưa và kem chống nắng cho chuyến đi
-                      của bạn!
-                    </p>
-                  </div>
-                </div>
-                <div className="tip-card">
-                  <div className="tip-icon">
-                    <FaMapMarkerAlt />
-                  </div>
-                  <div className="tip-text">
-                    <h4>Khám phá địa phương</h4>
-                    <p>
-                      Hãy thử các món ăn địa phương và tham gia các hoạt động
-                      văn hóa để trải nghiệm trọn vẹn.
-                    </p>
-                  </div>
-                </div>
-                <div className="tip-card">
-                  <div className="tip-icon">
-                    <FaCamera />
-                  </div>
-                  <div className="tip-text">
-                    <h4>Lưu giữ kỷ niệm</h4>
-                    <p>
-                      Đừng quên chụp ảnh và ghi lại những khoảnh khắc đáng nhớ
-                      trong chuyến đi!
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="invisible">
+              <IoArrowBackOutline size={24} />
             </div>
           </div>
-        </Screenshot>
+        </header>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Day Selector (Left Side) */}
+          <div className="md:col-span-1">
+            <DaySelector
+              days={activities}
+              selectedDayIndex={selectedDayIndex}
+              onSelectDay={setSelectedDayIndex}
+              weatherForecast={weatherForecast}
+            />
+          </div>
+
+          {/* Activities Display (Right Side) */}
+          <div className="md:col-span-3">
+            <div
+              key={selectedDayIndex}
+              className="bg-white rounded-2xl shadow-xl p-6 overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Ngày {activities[selectedDayIndex]?.day} -{" "}
+                  {activities[selectedDayIndex]?.date}
+                </h2>
+
+                <button
+                  onClick={() => toggleHomePage(selectedDayIndex)}
+                  className="bg-[#1a936f] hover:bg-[#114b5f] text-white px-4 py-2 rounded flex items-center"
+                >
+                  <FaPlus className="mr-2" />
+                  Thêm hoạt động
+                </button>
+              </div>
+
+              {activities[selectedDayIndex]?.activities.length > 0 ? (
+                <div className="px-4 -mx-4">
+                  <div className="relative">
+                    <div className="flex overflow-x-auto gap-4 pb-6 snap-x snap-mandatory">
+                      {activities[selectedDayIndex].activities.map(
+                        (activity, index) => (
+                          <div
+                            key={index}
+                            className="min-w-[48%] flex-shrink-0 snap-start"
+                          >
+                            <ActivityCardSimple
+                              activity={activity}
+                              onActivityClick={() =>
+                                handleActivityClick(activity)
+                              }
+                              onDeleteActivity={() =>
+                                handleDeleteActivity(selectedDayIndex, index)
+                              }
+                              onMoveActivity={() =>
+                                handleMoveActivity(selectedDayIndex, index)
+                              }
+                            />
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    {/* Navigation Arrows */}
+                    {activities[selectedDayIndex].activities.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevSlide}
+                          className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md"
+                          aria-label="Previous activity"
+                        >
+                          <FaArrowLeft className="text-gray-600" />
+                        </button>
+                        <button
+                          onClick={nextSlide}
+                          className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md"
+                          aria-label="Next activity"
+                        >
+                          <FaArrowRight className="text-gray-600" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Pagination dots */}
+                    <div className="flex justify-center mt-4 gap-2">
+                      {activities[selectedDayIndex].activities.map(
+                        (_, index) => (
+                          <button
+                            key={index}
+                            className={`w-2 h-2 rounded-full ${
+                              index === currentSlide
+                                ? "bg-[#1a936f]"
+                                : "bg-gray-300"
+                            }`}
+                            onClick={() => setCurrentSlide(index)}
+                            aria-label={`Go to activity ${index + 1}`}
+                          />
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-xl">
+                  <FaSuitcase className="text-5xl text-gray-300 mb-4" />
+                  <p className="text-xl font-medium text-gray-600">
+                    Chưa có hoạt động nào cho ngày này
+                  </p>
+                  <p className="text-gray-500 mt-2">
+                    Thêm hoạt động để bắt đầu lập kế hoạch
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Travel Tips */}
+        <TravelTips />
+
+        {/* Schedule Actions */}
+        <div className="mt-10 flex justify-center">
+          <button
+            onClick={handleSaveAndShareSchedule}
+            className="bg-[#d62828] hover:bg-[#9e1a1a] text-white px-8 py-6 text-lg rounded-xl shadow-lg"
+          >
+            Lưu và chia sẻ lịch trình
+          </button>
+        </div>
+
+        {shareLink && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 text-center"
+          >
+            <p className="text-[#1a936f] font-medium">
+              Link chia sẻ:{" "}
+              <a href={shareLink} className="underline">
+                {shareLink}
+              </a>
+            </p>
+          </motion.div>
+        )}
       </div>
     </div>
   );
-};
+}
 
-export default Plan;
+// DaySelector Component
+function DaySelector({
+  days,
+  selectedDayIndex,
+  onSelectDay,
+  weatherForecast,
+}: {
+  days: DayPlan[];
+  selectedDayIndex: number;
+  onSelectDay: (index: number) => void;
+  weatherForecast: WeatherForecast[];
+}) {
+  const getWeatherIcon = (description: string) => {
+    if (description.includes("nắng"))
+      return <FaSun className="text-yellow-500" />;
+    if (description.includes("mây"))
+      return <FaCloud className="text-gray-500" />;
+    if (description.includes("mưa"))
+      return <FaCloudRain className="text-blue- Kỳ500" />;
+    return <FaWind className="text-gray-400" />;
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-xl p-4 sticky top-4">
+      <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+        Lịch trình
+      </h2>
+
+      <div className="space-y-2">
+        {days.map((day, index) => (
+          <button
+            key={index}
+            onClick={() => onSelectDay(index)}
+            className={`w-full text-left p-4 rounded-xl transition-all duration-300 ${
+              selectedDayIndex === index
+                ? "bg-[#1a936f] text-white shadow-md"
+                : "bg-gray-50 hover:bg-gray-100 text-gray-800"
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="font-bold">Ngày {day.day}</div>
+                <div className="text-sm opacity-90">{day.date}</div>
+              </div>
+
+              {weatherForecast[index] && (
+                <div className="flex items-center gap-1">
+                  {getWeatherIcon(weatherForecast[index]["Mô tả"])}
+                  <span className="text-sm">
+                    {weatherForecast[index]["Nhiệt độ tối đa"]}°C
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div
+              className={`text-xs mt-2 ${
+                selectedDayIndex === index ? "text-white/80" : "text-gray-500"
+              }`}
+            >
+              {day.activities.length} hoạt động
+            </div>
+
+            {selectedDayIndex === index && (
+              <div className="h-1 bg-white rounded-full mt-2" />
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ActivityCardSimple Component
+function ActivityCardSimple({
+  activity,
+  onActivityClick,
+  onDeleteActivity,
+  onMoveActivity,
+}: {
+  activity: Activity;
+  onActivityClick: () => void;
+  onDeleteActivity: () => void;
+  onMoveActivity: () => void;
+}) {
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "food":
+        return <FaUtensils className="text-yellow-500" />;
+      case "place":
+        return <FaLandmark className="text-green-600" />;
+      default:
+        return <FaMapMarkerAlt className="text-blue-500" />;
+    }
+  };
+
+  const renderRating = (rating: number | undefined) => {
+    if (!rating) return null;
+    return (
+      <div className="flex items-center bg-yellow-500 text-white px-2 py-1 rounded-full text-xs absolute top-2 right-2">
+        <span className="mr-1">★</span>
+        <span>{rating.toFixed(1)}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 h-full">
+      <div className="relative">
+        {activity.image && (
+          <div className="relative h-40 w-full">
+            <Image
+              src={activity.image || "/placeholder.svg"}
+              alt={activity.title}
+              fill
+              className="object-cover"
+            />
+            {activity.rating && renderRating(activity.rating)}
+          </div>
+        )}
+
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div
+              className={`p-1.5 rounded-full ${
+                activity.type === "food" ? "bg-yellow-100" : "bg-green-100"
+              }`}
+            >
+              {getActivityIcon(activity.type)}
+            </div>
+            <h3 className="font-bold text-lg">{activity.title}</h3>
+          </div>
+
+          <div className="flex items-center gap-1 text-gray-600 text-sm mb-2">
+            <FaClock className="text-[#1a936f]" />
+            <span>
+              {activity.startTime || "08:00"} - {activity.endTime || "09:00"}
+            </span>
+          </div>
+
+          {activity.location && (
+            <div className="flex items-center gap-1 text-gray-600 text-sm mb-3">
+              <FaMapMarkerAlt className="text-red-500 flex-shrink-0" />
+              <span className="line-clamp-1">{activity.location}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between mt-2 gap-2">
+            <button
+              onClick={onActivityClick}
+              className="text-xs border border-[#1a936f] text-[#1a936f] hover:bg-[#1a936f] hover:text-white px-3 py-1 rounded"
+            >
+              Xem chi tiết
+            </button>
+
+            <div className="flex gap-1">
+              <button
+                onClick={onMoveActivity}
+                className="flex items-center gap-1 text-xs border border-[#1a936f] text-[#1a936f] hover:bg-[#1a936f] hover:text-white px-3 py-1 rounded"
+              >
+                <FaArrowRight size={12} />
+                Di chuyển
+              </button>
+
+              <button
+                onClick={onDeleteActivity}
+                className="flex items-center gap-1 text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+              >
+                <FaTrash size={12} />
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// TimePicker Component
+function TimePicker({
+  startTime,
+  endTime,
+  onChange,
+}: {
+  startTime: string;
+  endTime: string;
+  onChange: (startTime: string, endTime: string) => void;
+}) {
+  return (
+    <div className="bg-gray-50 p-3 rounded-xl flex flex-wrap gap-2 items-center justify-between mb-3">
+      <div className="flex items-center gap-2 text-sm">
+        <FaClock className="text-[#1a936f]" />
+        <span className="font-medium text-gray-700">Thời gian:</span>
+      </div>
+
+      <div className="flex items-center gap-2 text-sm">
+        <div className="flex flex-col">
+          <label htmlFor="startTime" className="text-xs text-gray-500 mb-1">
+            Bắt đầu
+          </label>
+          <input
+            id="startTime"
+            type="time"
+            value={startTime}
+            onChange={(e) => onChange(e.target.value, endTime)}
+            className="border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1a936f] text-sm w-24"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label htmlFor="endTime" className="text-xs text-gray-500 mb-1">
+            Kết thúc
+          </label>
+          <input
+            id="endTime"
+            type="time"
+            value={endTime}
+            onChange={(e) => onChange(startTime, e.target.value)}
+            className="border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1a936f] text-sm w-24"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// MoveActivityModal Component
+function MoveActivityModal({
+  days,
+  currentDayIndex,
+  onMove,
+  onClose,
+}: {
+  days: Array<{ day: number; date: string }>;
+  currentDayIndex: number;
+  onMove: (targetDayIndex: number) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold">Di chuyển hoạt động</h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-200"
+          >
+            <FaTimes />
+          </button>
+        </div>
+
+        <p className="text-gray-600 mb-6">
+          Chọn ngày bạn muốn di chuyển hoạt động này đến:
+        </p>
+
+        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+          {days.map((day, index) => (
+            <motion.button
+              key={index}
+              onClick={() => onMove(index)}
+              disabled={index === currentDayIndex}
+              className={`w-full flex items-center justify-between p-4 rounded-xl transition-all ${
+                index === currentDayIndex
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-50 hover:bg-[#1a936f] hover:text-white"
+              }`}
+              whileHover={index !== currentDayIndex ? { scale: 1.02 } : {}}
+              whileTap={index !== currentDayIndex ? { scale: 0.98 } : {}}
+            >
+              <div className="text-left">
+                <div className="font-medium">Ngày {day.day}</div>
+                <div className="text-sm opacity-80">{day.date}</div>
+              </div>
+
+              {index !== currentDayIndex && (
+                <FaArrowRight className="opacity-70" />
+              )}
+            </motion.button>
+          ))}
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+          >
+            Hủy
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ActivityDetailModal Component
+function ActivityDetailModal({
+  activity,
+  onClose,
+}: {
+  activity: Activity;
+  onClose: () => void;
+}) {
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "food":
+        return <FaUtensils className="text-yellow-500" />;
+      case "place":
+        return <FaLandmark className="text-green-600" />;
+      default:
+        return <FaMapMarkerAlt className="text-blue-500" />;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 50 }}
+        className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-2xl w-full max-h-[90vh] flex flex-col"
+      >
+        {/* Header with image */}
+        <div className="relative">
+          {activity.image ? (
+            <div className="relative h-64 w-full">
+              <Image
+                src={activity.image || "/placeholder.svg"}
+                alt={activity.title}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            </div>
+          ) : (
+            <div className="h-32 bg-gradient-to-r from-[#1a936f] to-[#114b5f]"></div>
+          )}
+
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2"
+          >
+            <FaTimes />
+          </button>
+
+          <div className="absolute bottom-4 left-6 right-6 text-white">
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className={`p-2 rounded-full ${
+                  activity.type === "food" ? "bg-yellow-500" : "bg-green-500"
+                }`}
+              >
+                {getActivityIcon(activity.type)}
+              </div>
+              <h2 className="text-2xl font-bold">{activity.title}</h2>
+            </div>
+
+            {activity.rating && (
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <FaStar
+                    key={i}
+                    className={
+                      i < Math.floor(activity.rating || 0)
+                        ? "text-yellow-400"
+                        : "text-gray-400"
+                    }
+                  />
+                ))}
+                <span className="ml-1 text-white/90">{activity.rating}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-grow">
+          {activity.startTime && activity.endTime && (
+            <TimePicker
+              startTime={activity.startTime}
+              endTime={activity.endTime}
+              onChange={() => {}} // Read-only in the modal
+            />
+          )}
+
+          {activity.location && (
+            <div className="flex items-center gap-2 text-gray-600 mb-4">
+              <div className="bg-red-100 text-red-500 p-2 rounded-full">
+                <FaMapMarkerAlt />
+              </div>
+              <span>{activity.location}</span>
+            </div>
+          )}
+
+          <div className="bg-gray-50 p-4 rounded-xl my-4">
+            <h3 className="font-medium text-gray-800 mb-2">Mô tả</h3>
+            <p className="text-gray-700 leading-relaxed">
+              {activity.description}
+            </p>
+          </div>
+
+          {activity.type === "place" && (
+            <div className="bg-green-50 p-4 rounded-xl my-4">
+              <h3 className="font-medium text-green-800 mb-2">
+                Thông tin địa điểm
+              </h3>
+              <p className="text-green-700">
+                Đây là một địa điểm tham quan nổi tiếng tại Hồ Chí Minh. Bạn nên
+                dành khoảng 2 giờ để khám phá đầy đủ.
+              </p>
+            </div>
+          )}
+
+          {activity.type === "food" && (
+            <div className="bg-yellow-50 p-4 rounded-xl my-4">
+              <h3 className="font-medium text-yellow-800 mb-2">
+                Thông tin ẩm thực
+              </h3>
+              <p className="text-yellow-700">
+                Đây là một địa điểm ẩm thực nổi tiếng tại Hồ Chí Minh. Bạn nên
+                thử các món đặc sản tại đây.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="w-full bg-[#1a936f] hover:bg-[#114b5f] text-white px-4 py-2 rounded"
+          >
+            Đóng
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// LoadingScreen Component
+function LoadingScreen() {
+  return (
+    <div className="fixed inset-0 bg-[#fef9f3] flex items-center justify-center z-50">
+      <div className="text-center">
+        <motion.div
+          animate={{
+            rotate: 360,
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            rotate: {
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            },
+            scale: {
+              duration: 1,
+              repeat: Number.POSITIVE_INFINITY,
+              repeatType: "reverse",
+            },
+          }}
+          className="inline-block text-6xl text-[#d62828] mb-6"
+        >
+          <FaGlobeAmericas />
+        </motion.div>
+
+        <motion.h2
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-2xl font-bold text-gray-800 mb-2"
+        >
+          Đang tải kế hoạch du lịch
+        </motion.h2>
+
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: "100%" }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+          className="h-1 bg-[#1a936f] rounded-full max-w-xs mx-auto"
+        />
+      </div>
+    </div>
+  );
+}
+
+// TravelTips Component
+function TravelTips() {
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  };
+
+  return (
+    <motion.div
+      className="mt-16 bg-white rounded-2xl shadow-xl p-6 border-l-4 border-[#f3a712]"
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true }}
+      variants={container}
+    >
+      <motion.h3
+        className="text-2xl font-bold text-gray-800 mb-6"
+        variants={item}
+      >
+        Lời khuyên cho chuyến đi
+      </motion.h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div
+          className="bg-gray-50 p-5 rounded-xl flex items-start gap-4"
+          variants={item}
+          whileHover={{ y: -5, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+        >
+          <div className="bg-[#f3a712]/10 p-3 rounded-full text-[#f3a712] text-xl">
+            <FaSuitcase />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-800 mb-2">
+              Chuẩn bị hành lý
+            </h4>
+            <p className="text-gray-600">
+              Đừng quên mang theo áo mưa và kem chống nắng cho chuyến đi của
+              bạn!
+            </p>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="bg-gray-50 p-5 rounded-xl flex items-start gap-4"
+          variants={item}
+          whileHover={{ y: -5, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+        >
+          <div className="bg-[#f3a712]/10 p-3 rounded-full text-[#f3a712] text-xl">
+            <FaMapMarkerAlt />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-800 mb-2">
+              Khám phá địa phương
+            </h4>
+            <p className="text-gray-600">
+              Hãy thử các món ăn địa phương và tham gia các hoạt động văn hóa để
+              trải nghiệm trọn vẹn.
+            </p>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="bg-gray-50 p-5 rounded-xl flex items-start gap-4"
+          variants={item}
+          whileHover={{ y: -5, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+        >
+          <div className="bg-[#f3a712]/10 p-3 rounded-full text-[#f3a712] text-xl">
+            <FaCamera />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-800 mb-2">
+              Lưu giữ kỷ niệm
+            </h4>
+            <p className="text-gray-600">
+              Đừng quên chụp ảnh và ghi lại những khoảnh khắc đáng nhớ trong
+              chuyến đi!
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
