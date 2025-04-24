@@ -269,6 +269,18 @@ export function Navbar() {
           >
             Weather
           </Link>
+          <Link
+            href="/todolist"
+            onClick={handleNavigation}
+            className={cn(
+              "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
+              pathname === "/todolist"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
+            )}
+          >
+            To do list
+          </Link>
         </div>
 
         {/* Right Section */}
@@ -428,14 +440,14 @@ export function Navbar() {
                             Đã lưu
                           </Button>
                         </Link>
-                        <Link href="/callvideo">
+                        {/* <Link href="/callvideo">
                           <Button
                             variant="ghost"
                             className="w-full justify-start"
                           >
                             Video Call
                           </Button>
-                        </Link>
+                        </Link> */}
                         <Link href="/settings">
                           <Button
                             variant="ghost"

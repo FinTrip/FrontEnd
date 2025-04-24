@@ -26,7 +26,7 @@ import {
 } from "react-icons/fa";
 import Image from "next/image";
 import Link from "next/link";
-import toast, { Toaster } from "react-hot-toast"; // Thay thế shadcn/ui bằng react-hot-toast
+import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 
 // Types
@@ -38,8 +38,7 @@ interface Activity {
   image?: string;
   location?: string;
   rating?: number;
-  startTime?: string;
-  endTime?: string;
+  time?: string; // Thêm trường time
 }
 
 interface DayPlan {
@@ -54,25 +53,41 @@ interface WeatherForecast {
   "Mô tả": string;
 }
 
+interface FlightData {
+  base_price_vnd: string;
+  cabin: string;
+  fare_basis: string;
+  outbound_flight_code: string;
+  outbound_time: string;
+  total_price_vnd: string;
+}
+
+interface HotelData {
+  animates: string;
+  description: string;
+  hotel_class: string;
+  img_origin: string;
+  link: string;
+  location_rating: string;
+  name: string;
+  name_nearby_place: string;
+  price: string;
+}
+
 interface ScheduleData {
   schedule: {
     schedule: Array<{
       day: string;
       itinerary: Array<{
-        food?: {
+        type: string;
+        details: {
           title: string;
           description: string;
           address: string;
           rating: number;
           img: string;
         };
-        place?: {
-          title: string;
-          description: string;
-          address: string;
-          rating: number;
-          img: string;
-        };
+        time: string; // Thêm trường time từ API
       }>;
     }>;
     province: string;
@@ -80,6 +95,8 @@ interface ScheduleData {
   weather_forecast: {
     forecast: WeatherForecast[];
   };
+  flight: FlightData;
+  hotel: HotelData;
 }
 
 interface DestinationCard {
@@ -130,7 +147,7 @@ const HomePage: React.FC<{
 // Main Component
 export default function Plan() {
   const [showHomePage, setShowHomePage] = useState(false);
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(1);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0); // Đổi từ 1 sang 0
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
     null
   );
@@ -150,8 +167,11 @@ export default function Plan() {
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [activities, setActivities] = useState<DayPlan[]>([]);
   const [weatherForecast, setWeatherForecast] = useState<WeatherForecast[]>([]);
+  const [flight, setFlight] = useState<FlightData | null>(null);
+  const [hotel, setHotel] = useState<HotelData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentHotelImageIndex, setCurrentHotelImageIndex] = useState(0);
 
   // Load data from localStorage
   useEffect(() => {
@@ -167,6 +187,18 @@ export default function Plan() {
         }
 
         const parsedData: ScheduleData = JSON.parse(scheduleData);
+
+        // Set state cho flight và hotel
+        setFlight(parsedData.flight);
+        if (parsedData.hotel) {
+          setHotel({
+            ...parsedData.hotel,
+            img_origin: parsedData.hotel.img_origin
+              .split(",")
+              .map((img) => img.trim()),
+          });
+        }
+
         if (
           !parsedData ||
           !parsedData.schedule ||
@@ -184,33 +216,17 @@ export default function Plan() {
               dayItem.day.match(/\((.*?)\)/);
             const date = dateMatch ? dateMatch[1] : dayItem.day;
 
-            const dayActivities = dayItem.itinerary.flatMap((slot) => {
-              const activities: Activity[] = [];
-              if (slot.food) {
-                activities.push({
-                  type: "food",
-                  title: slot.food.title || "Không có tiêu đề",
-                  description: slot.food.description || "",
-                  location: slot.food.address || "Không có địa chỉ",
-                  rating: slot.food.rating || 0,
-                  image: slot.food.img || "",
-                  startTime: "12:00",
-                  endTime: "13:30",
-                });
-              }
-              if (slot.place) {
-                activities.push({
-                  type: "place",
-                  title: slot.place.title || "Không có tiêu đề",
-                  description: slot.place.description || "",
-                  location: slot.place.address || "Không có địa chỉ",
-                  rating: slot.place.rating || 0,
-                  image: slot.place.img || "",
-                  startTime: "09:00",
-                  endTime: "11:00",
-                });
-              }
-              return activities;
+            const dayActivities = dayItem.itinerary.map((slot) => {
+              const details = slot.details;
+              return {
+                type: slot.type,
+                title: details.title || "Không có tiêu đề",
+                description: details.description || "",
+                location: details.address || "Không có địa chỉ",
+                rating: details.rating || 0,
+                image: details.img || "",
+                time: slot.time || "Chưa có thời gian", // Lấy trường time từ API
+              };
             });
 
             return {
@@ -292,9 +308,7 @@ export default function Plan() {
           date_str: day.date,
           itinerary: day.activities.map((activity, actIndex) => {
             const item: any = {
-              timeslot: `${activity.startTime || "08:00"} - ${
-                activity.endTime || "09:00"
-              }`,
+              timeslot: activity.time || "08:00 - 09:00", // Sử dụng time từ activity
               order: actIndex + 1,
             };
             if (activity.type === "food") {
@@ -388,21 +402,6 @@ export default function Plan() {
     toast.success(`Hoạt động đã được chuyển sang Ngày ${targetDayIndex + 1}`);
   };
 
-  const handleTimeChange = (
-    dayIndex: number,
-    activityIndex: number,
-    startTime: string,
-    endTime: string
-  ) => {
-    const newActivities = [...activities];
-    newActivities[dayIndex].activities[activityIndex] = {
-      ...newActivities[dayIndex].activities[activityIndex],
-      startTime,
-      endTime,
-    };
-    setActivities(newActivities);
-  };
-
   const toggleHomePage = (dayIndex: number) => {
     setSelectedDayIndex(dayIndex);
     setShowHomePage(!showHomePage);
@@ -417,8 +416,7 @@ export default function Plan() {
       image: destination.img || "",
       location: destination.address || "",
       rating: destination.rating,
-      startTime: "09:00",
-      endTime: "11:00",
+      time: "09:00 - 11:00", // Giá trị mặc định cho time
     });
     setActivities(newActivities);
     setShowHomePage(false);
@@ -451,7 +449,7 @@ export default function Plan() {
 
   return (
     <div className="min-h-screen bg-[#fef9f3]">
-      <Toaster /> {/* Toaster từ react-hot-toast */}
+      <Toaster />
       {/* Login Modal */}
       <AnimatePresence>
         {showLoginModal && (
@@ -714,6 +712,112 @@ export default function Plan() {
           </div>
         </div>
 
+        {/* Flight and Hotel Information */}
+        <div className="mt-10 mb-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {flight && (
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Thông tin chuyến bay
+              </h2>
+              <div className="space-y-3">
+                <p>
+                  <strong>Mã chuyến bay:</strong> {flight.outbound_flight_code}
+                </p>
+                <p>
+                  <strong>Thời gian khởi hành:</strong>{" "}
+                  {new Date(flight.outbound_time).toLocaleString()}
+                </p>
+                <p>
+                  <strong>Khoang hành lý:</strong> {flight.cabin}
+                </p>
+                <p>
+                  <strong>Giá cơ bản:</strong> {flight.base_price_vnd}
+                </p>
+                <p>
+                  <strong>Tổng giá:</strong> {flight.total_price_vnd}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {hotel && (
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Thông tin khách sạn
+              </h2>
+              <div className="space-y-3">
+                <p>
+                  <strong>Tên khách sạn:</strong> {hotel.name}
+                </p>
+                <p>
+                  <strong>Mô tả:</strong> {hotel.description}
+                </p>
+                <p>
+                  <strong>Đánh giá vị trí:</strong> {hotel.location_rating}
+                </p>
+                <p>
+                  <strong>Tiện nghi:</strong> {hotel.animates}
+                </p>
+                <p>
+                  <strong>Giá:</strong> {hotel.price} VNĐ
+                </p>
+                <p>
+                  <strong>Liên kết:</strong>{" "}
+                  <a
+                    href={hotel.link}
+                    className="text-blue-500 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {hotel.link}
+                  </a>
+                </p>
+                {hotel.img_origin && hotel.img_origin.length > 0 && (
+                  <div className="mt-4 relative">
+                    <div className="w-full h-[445px] overflow-hidden rounded-lg">
+                      <Image
+                        src={hotel.img_origin[currentHotelImageIndex]}
+                        alt={`${hotel.name} - Image ${
+                          currentHotelImageIndex + 1
+                        }`}
+                        width={1380}
+                        height={445}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    {hotel.img_origin.length > 1 && (
+                      <div className="absolute top-1/2 left-0 right-0 flex justify-between px-4 transform -translate-y-1/2">
+                        <button
+                          onClick={() =>
+                            setCurrentHotelImageIndex(
+                              (prev) =>
+                                (prev - orge - 1 + hotel.img_origin.length) %
+                                hotel.img_origin.length
+                            )
+                          }
+                          className="bg-white p-2 rounded-full shadow-md"
+                        >
+                          <FaArrowLeft className="text-gray-600" />
+                        </button>
+                        <button
+                          onClick={() =>
+                            setCurrentHotelImageIndex(
+                              (prev) => (prev + 1) % hotel.img_origin.length
+                            )
+                          }
+                          className="bg-white p-2 rounded-full shadow-md"
+                        >
+                          <FaArrowRight className="text-gray-600" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Travel Tips */}
         <TravelTips />
 
@@ -764,7 +868,7 @@ function DaySelector({
     if (description.includes("mây"))
       return <FaCloud className="text-gray-500" />;
     if (description.includes("mưa"))
-      return <FaCloudRain className="text-blue- Kỳ500" />;
+      return <FaCloudRain className="text-blue-500" />;
     return <FaWind className="text-gray-400" />;
   };
 
@@ -781,7 +885,7 @@ function DaySelector({
             onClick={() => onSelectDay(index)}
             className={`w-full text-left p-4 rounded-xl transition-all duration-300 ${
               selectedDayIndex === index
-                ? "bg-[#1a936f] text-white shadow-md"
+                ? "bg-[#1a936f] text-gray-800 shadow-md"
                 : "bg-gray-50 hover:bg-gray-100 text-gray-800"
             }`}
           >
@@ -803,7 +907,7 @@ function DaySelector({
 
             <div
               className={`text-xs mt-2 ${
-                selectedDayIndex === index ? "text-white/80" : "text-gray-500"
+                selectedDayIndex === index ? "text-gray-800" : "text-gray-500"
               }`}
             >
               {day.activities.length} hoạt động
@@ -881,9 +985,7 @@ function ActivityCardSimple({
 
           <div className="flex items-center gap-1 text-gray-600 text-sm mb-2">
             <FaClock className="text-[#1a936f]" />
-            <span>
-              {activity.startTime || "08:00"} - {activity.endTime || "09:00"}
-            </span>
+            <span>{activity.time || "Chưa có thời gian"}</span>
           </div>
 
           {activity.location && (
@@ -919,54 +1021,6 @@ function ActivityCardSimple({
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// TimePicker Component
-function TimePicker({
-  startTime,
-  endTime,
-  onChange,
-}: {
-  startTime: string;
-  endTime: string;
-  onChange: (startTime: string, endTime: string) => void;
-}) {
-  return (
-    <div className="bg-gray-50 p-3 rounded-xl flex flex-wrap gap-2 items-center justify-between mb-3">
-      <div className="flex items-center gap-2 text-sm">
-        <FaClock className="text-[#1a936f]" />
-        <span className="font-medium text-gray-700">Thời gian:</span>
-      </div>
-
-      <div className="flex items-center gap-2 text-sm">
-        <div className="flex flex-col">
-          <label htmlFor="startTime" className="text-xs text-gray-500 mb-1">
-            Bắt đầu
-          </label>
-          <input
-            id="startTime"
-            type="time"
-            value={startTime}
-            onChange={(e) => onChange(e.target.value, endTime)}
-            className="border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1a936f] text-sm w-24"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label htmlFor="endTime" className="text-xs text-gray-500 mb-1">
-            Kết thúc
-          </label>
-          <input
-            id="endTime"
-            type="time"
-            value={endTime}
-            onChange={(e) => onChange(startTime, e.target.value)}
-            className="border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1a936f] text-sm w-24"
-          />
         </div>
       </div>
     </div>
@@ -1128,12 +1182,11 @@ function ActivityDetailModal({
 
         {/* Content */}
         <div className="p-6 overflow-y-auto flex-grow">
-          {activity.startTime && activity.endTime && (
-            <TimePicker
-              startTime={activity.startTime}
-              endTime={activity.endTime}
-              onChange={() => {}} // Read-only in the modal
-            />
+          {activity.time && (
+            <div className="flex items-center gap-2 text-gray-600 mb-4">
+              <FaClock className="text-[#1a936f]" />
+              <span>{activity.time}</span>
+            </div>
           )}
 
           {activity.location && (
