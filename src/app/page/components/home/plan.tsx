@@ -38,7 +38,7 @@ interface Activity {
   image?: string;
   location?: string;
   rating?: number;
-  time?: string; // Thêm trường time
+  time?: string;
 }
 
 interface DayPlan {
@@ -87,7 +87,7 @@ interface ScheduleData {
           rating: number;
           img: string;
         };
-        time: string; // Thêm trường time từ API
+        time: string;
       }>;
     }>;
     province: string;
@@ -106,6 +106,19 @@ interface DestinationCard {
   address?: string;
   rating: number;
 }
+
+// Hàm chuyển đổi thời gian sang phút để so sánh
+const timeToMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+// Hàm kiểm tra giao thoa thời gian
+const isTimeOverlap = (time1: string, time2: string): boolean => {
+  const [start1, end1] = time1.split(" - ").map(timeToMinutes);
+  const [start2, end2] = time2.split(" - ").map(timeToMinutes);
+  return start1 <= end2 && start2 <= end1;
+};
 
 // HomePage Component (Mocked for simplicity)
 const HomePage: React.FC<{
@@ -147,7 +160,7 @@ const HomePage: React.FC<{
 // Main Component
 export default function Plan() {
   const [showHomePage, setShowHomePage] = useState(false);
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0); // Đổi từ 1 sang 0
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
     null
   );
@@ -188,7 +201,6 @@ export default function Plan() {
 
         const parsedData: ScheduleData = JSON.parse(scheduleData);
 
-        // Set state cho flight và hotel
         setFlight(parsedData.flight);
         if (parsedData.hotel) {
           setHotel({
@@ -225,7 +237,7 @@ export default function Plan() {
                 location: details.address || "Không có địa chỉ",
                 rating: details.rating || 0,
                 image: details.img || "",
-                time: slot.time || "Chưa có thời gian", // Lấy trường time từ API
+                time: slot.time || "Chưa có thời gian",
               };
             });
 
@@ -308,7 +320,7 @@ export default function Plan() {
           date_str: day.date,
           itinerary: day.activities.map((activity, actIndex) => {
             const item: any = {
-              timeslot: activity.time || "08:00 - 09:00", // Sử dụng time từ activity
+              timeslot: activity.time || "08:00 - 09:00",
               order: actIndex + 1,
             };
             if (activity.type === "food") {
@@ -391,9 +403,33 @@ export default function Plan() {
       return;
     }
 
+    // Kiểm tra trùng thời gian (giao thoa)
+    const targetDayActivities = activities[targetDayIndex].activities;
+    const isTimeConflict = targetDayActivities.some((act) =>
+      isTimeOverlap(
+        act.time || "00:00 - 00:00",
+        activity.time || "00:00 - 00:00"
+      )
+    );
+
+    if (isTimeConflict) {
+      toast.error(
+        "Thời gian của hoạt động này giao thoa với một hoạt động đã có trong ngày đích. Vui lòng điều chỉnh thời gian."
+      );
+      return;
+    }
+
+    // Nếu không giao thoa, thực hiện di chuyển và sắp xếp lại
     const newActivities = [...activities];
     newActivities[dayIndex].activities.splice(activityIndex, 1);
     newActivities[targetDayIndex].activities.push(activity);
+
+    // Sắp xếp lại hoạt động trong ngày đích theo thời gian bắt đầu
+    newActivities[targetDayIndex].activities.sort((a, b) => {
+      const startA = timeToMinutes(a.time?.split(" - ")[0] || "00:00");
+      const startB = timeToMinutes(b.time?.split(" - ")[0] || "00:00");
+      return startA - startB;
+    });
 
     setActivities(newActivities);
     setShowMoveModal(false);
@@ -416,7 +452,7 @@ export default function Plan() {
       image: destination.img || "",
       location: destination.address || "",
       rating: destination.rating,
-      time: "09:00 - 11:00", // Giá trị mặc định cho time
+      time: "09:00 - 11:00",
     });
     setActivities(newActivities);
     setShowHomePage(false);
@@ -511,6 +547,18 @@ export default function Plan() {
           <ActivityDetailModal
             activity={selectedActivity}
             onClose={() => setShowActivityModal(false)}
+            onSave={(newTime) => {
+              const newActivities = [...activities];
+              const dayIndex = activities.findIndex((day) =>
+                day.activities.includes(selectedActivity)
+              );
+              const activityIndex = newActivities[
+                dayIndex
+              ].activities.findIndex((act) => act === selectedActivity);
+              newActivities[dayIndex].activities[activityIndex].time = newTime;
+              setActivities(newActivities);
+              setSelectedActivity({ ...selectedActivity, time: newTime });
+            }}
           />
         )}
       </AnimatePresence>
@@ -791,7 +839,7 @@ export default function Plan() {
                           onClick={() =>
                             setCurrentHotelImageIndex(
                               (prev) =>
-                                (prev - orge - 1 + hotel.img_origin.length) %
+                                (prev - 1 + hotel.img_origin.length) %
                                 hotel.img_origin.length
                             )
                           }
@@ -956,6 +1004,16 @@ function ActivityCardSimple({
     );
   };
 
+  const handleDeleteClick = () => {
+    // Hiển thị thông báo xác nhận
+    const confirmDelete = window.confirm(
+      `Bạn có chắc chắn muốn xóa hoạt động "${activity.title}" không?`
+    );
+    if (confirmDelete) {
+      onDeleteActivity(); // Nếu người dùng xác nhận, gọi hàm xóa
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 h-full">
       <div className="relative">
@@ -1013,7 +1071,7 @@ function ActivityCardSimple({
               </button>
 
               <button
-                onClick={onDeleteActivity}
+                onClick={handleDeleteClick} // Sử dụng hàm mới để xác nhận trước khi xóa
                 className="flex items-center gap-1 text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
               >
                 <FaTrash size={12} />
@@ -1104,10 +1162,15 @@ function MoveActivityModal({
 function ActivityDetailModal({
   activity,
   onClose,
+  onSave,
 }: {
   activity: Activity;
   onClose: () => void;
+  onSave: (newTime: string) => void;
 }) {
+  const [editedTime, setEditedTime] = useState(activity.time || "");
+  const [isEditing, setIsEditing] = useState(false);
+
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "food":
@@ -1117,6 +1180,16 @@ function ActivityDetailModal({
       default:
         return <FaMapMarkerAlt className="text-blue-500" />;
     }
+  };
+
+  const handleTimeChange = (newTime: string) => {
+    setEditedTime(newTime);
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    onSave(editedTime);
+    onClose();
   };
 
   return (
@@ -1185,7 +1258,12 @@ function ActivityDetailModal({
           {activity.time && (
             <div className="flex items-center gap-2 text-gray-600 mb-4">
               <FaClock className="text-[#1a936f]" />
-              <span>{activity.time}</span>
+              <input
+                type="text"
+                value={editedTime}
+                onChange={(e) => handleTimeChange(e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1"
+              />
             </div>
           )}
 
@@ -1233,10 +1311,10 @@ function ActivityDetailModal({
         {/* Footer */}
         <div className="p-4 border-t border-gray-100">
           <button
-            onClick={onClose}
+            onClick={isEditing ? handleSave : onClose}
             className="w-full bg-[#1a936f] hover:bg-[#114b5f] text-white px-4 py-2 rounded"
           >
-            Đóng
+            {isEditing ? "Lưu và đóng" : "Đóng"}
           </button>
         </div>
       </motion.div>
