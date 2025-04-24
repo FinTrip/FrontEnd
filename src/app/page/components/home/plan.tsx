@@ -38,8 +38,7 @@ interface Activity {
   image?: string;
   location?: string;
   rating?: number;
-  startTime?: string;
-  endTime?: string;
+  time?: string; // Thêm trường time
 }
 
 interface DayPlan {
@@ -88,6 +87,7 @@ interface ScheduleData {
           rating: number;
           img: string;
         };
+        time: string; // Thêm trường time từ API
       }>;
     }>;
     province: string;
@@ -147,7 +147,7 @@ const HomePage: React.FC<{
 // Main Component
 export default function Plan() {
   const [showHomePage, setShowHomePage] = useState(false);
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(1);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0); // Đổi từ 1 sang 0
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
     null
   );
@@ -225,8 +225,7 @@ export default function Plan() {
                 location: details.address || "Không có địa chỉ",
                 rating: details.rating || 0,
                 image: details.img || "",
-                startTime: slot.type === "food" ? "12:00" : "09:00",
-                endTime: slot.type === "food" ? "13:30" : "11:00",
+                time: slot.time || "Chưa có thời gian", // Lấy trường time từ API
               };
             });
 
@@ -309,9 +308,7 @@ export default function Plan() {
           date_str: day.date,
           itinerary: day.activities.map((activity, actIndex) => {
             const item: any = {
-              timeslot: `${activity.startTime || "08:00"} - ${
-                activity.endTime || "09:00"
-              }`,
+              timeslot: activity.time || "08:00 - 09:00", // Sử dụng time từ activity
               order: actIndex + 1,
             };
             if (activity.type === "food") {
@@ -405,21 +402,6 @@ export default function Plan() {
     toast.success(`Hoạt động đã được chuyển sang Ngày ${targetDayIndex + 1}`);
   };
 
-  const handleTimeChange = (
-    dayIndex: number,
-    activityIndex: number,
-    startTime: string,
-    endTime: string
-  ) => {
-    const newActivities = [...activities];
-    newActivities[dayIndex].activities[activityIndex] = {
-      ...newActivities[dayIndex].activities[activityIndex],
-      startTime,
-      endTime,
-    };
-    setActivities(newActivities);
-  };
-
   const toggleHomePage = (dayIndex: number) => {
     setSelectedDayIndex(dayIndex);
     setShowHomePage(!showHomePage);
@@ -434,8 +416,7 @@ export default function Plan() {
       image: destination.img || "",
       location: destination.address || "",
       rating: destination.rating,
-      startTime: "09:00",
-      endTime: "11:00",
+      time: "09:00 - 11:00", // Giá trị mặc định cho time
     });
     setActivities(newActivities);
     setShowHomePage(false);
@@ -810,7 +791,7 @@ export default function Plan() {
                           onClick={() =>
                             setCurrentHotelImageIndex(
                               (prev) =>
-                                (prev - 1 + hotel.img_origin.length) %
+                                (prev - orge - 1 + hotel.img_origin.length) %
                                 hotel.img_origin.length
                             )
                           }
@@ -1004,9 +985,7 @@ function ActivityCardSimple({
 
           <div className="flex items-center gap-1 text-gray-600 text-sm mb-2">
             <FaClock className="text-[#1a936f]" />
-            <span>
-              {activity.startTime || "08:00"} - {activity.endTime || "09:00"}
-            </span>
+            <span>{activity.time || "Chưa có thời gian"}</span>
           </div>
 
           {activity.location && (
@@ -1042,54 +1021,6 @@ function ActivityCardSimple({
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// TimePicker Component
-function TimePicker({
-  startTime,
-  endTime,
-  onChange,
-}: {
-  startTime: string;
-  endTime: string;
-  onChange: (startTime: string, endTime: string) => void;
-}) {
-  return (
-    <div className="bg-gray-50 p-3 rounded-xl flex flex-wrap gap-2 items-center justify-between mb-3">
-      <div className="flex items-center gap-2 text-sm">
-        <FaClock className="text-[#1a936f]" />
-        <span className="font-medium text-gray-700">Thời gian:</span>
-      </div>
-
-      <div className="flex items-center gap-2 text-sm">
-        <div className="flex flex-col">
-          <label htmlFor="startTime" className="text-xs text-gray-500 mb-1">
-            Bắt đầu
-          </label>
-          <input
-            id="startTime"
-            type="time"
-            value={startTime}
-            onChange={(e) => onChange(e.target.value, endTime)}
-            className="border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1a936f] text-sm w-24"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label htmlFor="endTime" className="text-xs text-gray-500 mb-1">
-            Kết thúc
-          </label>
-          <input
-            id="endTime"
-            type="time"
-            value={endTime}
-            onChange={(e) => onChange(startTime, e.target.value)}
-            className="border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1a936f] text-sm w-24"
-          />
         </div>
       </div>
     </div>
@@ -1251,12 +1182,11 @@ function ActivityDetailModal({
 
         {/* Content */}
         <div className="p-6 overflow-y-auto flex-grow">
-          {activity.startTime && activity.endTime && (
-            <TimePicker
-              startTime={activity.startTime}
-              endTime={activity.endTime}
-              onChange={() => {}} // Read-only in the modal
-            />
+          {activity.time && (
+            <div className="flex items-center gap-2 text-gray-600 mb-4">
+              <FaClock className="text-[#1a936f]" />
+              <span>{activity.time}</span>
+            </div>
           )}
 
           {activity.location && (
