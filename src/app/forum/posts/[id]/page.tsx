@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback } from "@/app/page/components/ui/avatar"
 import { Separator } from "@/app/page/components/ui/separator"
 import { Textarea } from "@/app/page/components/ui/textarea"
-import { MapPin, Calendar, User, ThumbsUp, MessageSquare, Share2, Bookmark, ArrowLeft, Eye, Loader2, X } from "lucide-react"
+import { MapPin, Calendar, User, ThumbsUp, MessageSquare, ArrowLeft, Eye, Loader2 } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import EditPostForm from "./EditPostForm"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface Post {
   id: number
@@ -58,15 +60,13 @@ export default function PostPage({ params }: { params: { id: string } }) {
 
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const commentSectionRef = useRef<HTMLDivElement>(null);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showImagesModal, setShowImagesModal] = useState(false);
-  const [modalImages, setModalImages] = useState<string[]>([]);
 
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const router = useRouter();
 
   const fetchComments = async () => {
     try {
@@ -368,6 +368,44 @@ export default function PostPage({ params }: { params: { id: string } }) {
     commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
+  const handleDeletePost = async () => {
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để xoá bài viết");
+      return;
+    }
+    toast(
+      "Bạn có chắc chắn muốn xoá bài viết này?",
+      {
+        action: {
+          label: "Xoá bài viết",
+          onClick: async () => {
+            try {
+              const res = await fetch(`http://localhost:8081/indentity/api/blog/delete/${params.id}`, {
+                method: "DELETE",
+                headers: {
+                  "Authorization": `Bearer ${token}`
+                }
+              });
+              const data = await res.json();
+              if (res.ok && data.code === 200) {
+                toast.success("Đã xoá bài viết thành công!");
+                router.push("/forum");
+              } else {
+                toast.error(data.message || "Không thể xoá bài viết");
+              }
+            } catch (err) {
+              toast.error("Có lỗi xảy ra khi xoá bài viết");
+            }
+          },
+        },
+        cancel: {
+          label: "Huỷ",
+        },
+        duration: 10000,
+      }
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -419,7 +457,10 @@ export default function PostPage({ params }: { params: { id: string } }) {
                 </div>
                 {/* Nút chỉnh sửa chỉ hiện với tác giả */}
                 {user?.id === post.authorId && (
-                  <Button onClick={() => setShowEditModal(true)} className="ml-auto bg-[#00B4DB] text-white">Chỉnh sửa</Button>
+                  <>
+                    <Button onClick={() => setShowEditModal(true)} className="ml-auto bg-[#00B4DB] text-white">Chỉnh sửa</Button>
+                    <Button onClick={handleDeletePost} className="ml-2 bg-red-500 text-white hover:bg-red-600">Xoá bài viết</Button>
+                  </>
                 )}
               </div>
             </CardHeader>

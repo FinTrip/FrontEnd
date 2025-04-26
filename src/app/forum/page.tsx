@@ -27,6 +27,7 @@ import {
   DialogContent,
 } from "@/app/page/components/ui/dialog"
 import CreatePostForm from "@/app/page/components/Forum/create-post-form"
+import { useRouter } from "next/navigation"
 
 interface Post {
   id: number
@@ -220,6 +221,8 @@ export default function ForumHome() {
   // Thêm state để quản lý việc mở rộng danh sách nhóm
   const [isGroupListExpanded, setIsGroupListExpanded] = useState(false);
   const [isFriendsListExpanded, setIsFriendsListExpanded] = useState(false);
+
+  const router = useRouter();
 
   // --- Define fetch functions ---
   const fetchFriends = useCallback(async () => {
@@ -1363,21 +1366,13 @@ export default function ForumHome() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleFriendClick(friend)}>
-                                  Nhắn tin
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => alert(`Xem trang cá nhân của ${friend.fullName}`)}>
+                                <DropdownMenuItem onClick={() => router.push(`/forum/user/${friend.id}`)}>
                                   Xem trang cá nhân
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleBlockUser(friend.id)}>
-                                  Chặn người dùng
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-100/80" onClick={() => handleRemoveFriend(friend.id)}>
                                   Hủy kết bạn
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleToggleFavorite(friend.id)}>
-                                  {friend.isFavorite ? 'Bỏ bạn thân' : 'Đánh dấu bạn thân'}
-                                </DropdownMenuItem>
+                                
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
