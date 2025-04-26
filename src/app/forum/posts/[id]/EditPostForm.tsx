@@ -79,23 +79,22 @@ export default function EditPostForm({ post, onClose, onUpdated }: EditPostFormP
       return;
     }
     try {
-      // Upload file ảnh mới nếu có
-      let uploadedImageLinks: string[] = [];
+      // Chuẩn bị FormData
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", title);
+      formDataToSend.append("content", content);
+      images.forEach((img) => formDataToSend.append("images", img));
       if (selectedFiles.length > 0) {
-        uploadedImageLinks = await Promise.all(selectedFiles.map(file => uploadFile(file)));
+        selectedFiles.forEach((file) => {
+          formDataToSend.append("files", file);
+        });
       }
-      const allImages = [...images, ...uploadedImageLinks];
       const response = await fetch(`http://localhost:8081/indentity/api/blog/update/${post.id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          title,
-          content,
-          images: allImages
-        })
+        body: formDataToSend
       });
       const data = await response.json();
       if (data.code === 200) {
@@ -103,7 +102,7 @@ export default function EditPostForm({ post, onClose, onUpdated }: EditPostFormP
           ...post,
           title,
           content,
-          images: allImages,
+          images: data.result?.images || images,
         });
       } else {
         setError(data.message || "Không thể cập nhật bài viết");
