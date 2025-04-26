@@ -83,12 +83,13 @@ export default function EditPostForm({ post, onClose, onUpdated }: EditPostFormP
       const formDataToSend = new FormData();
       formDataToSend.append("title", title);
       formDataToSend.append("content", content);
-      images.forEach((img) => formDataToSend.append("images", img));
+      formDataToSend.append("images", images.join(","));
       if (selectedFiles.length > 0) {
         selectedFiles.forEach((file) => {
           formDataToSend.append("files", file);
         });
       }
+      console.log("Images gửi lên backend:", images);
       const response = await fetch(`http://localhost:8081/indentity/api/blog/update/${post.id}`, {
         method: "PUT",
         headers: {
