@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/app/page/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/page/components/ui/card"
 import { Separator } from "@/app/page/components/ui/separator"
-import { Calendar, User, ThumbsUp, MessageSquare, Eye, Flame, UserPlus, Users, Search, MoreHorizontal, CheckCircle, Clock } from "lucide-react"
+import { Calendar, User, ThumbsUp, MessageSquare, Eye, Flame, UserPlus, Users, Search, MoreHorizontal, CheckCircle, Clock, ChevronUp, ChevronDown, Plus } from "lucide-react"
 import { useEffect, useState, useCallback, useMemo } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/page/components/ui/avatar"
 import { Input } from "@/app/page/components/ui/input"
@@ -216,6 +216,10 @@ export default function ForumHome() {
   const [privateMessages, setPrivateMessages] = useState<{ [key: number]: PrivateMessageResponse[] }>({});
 
   const [isCreatePostDialogOpen, setIsCreatePostDialogOpen] = useState(false);
+
+  // Thêm state để quản lý việc mở rộng danh sách nhóm
+  const [isGroupListExpanded, setIsGroupListExpanded] = useState(false);
+  const [isFriendsListExpanded, setIsFriendsListExpanded] = useState(false);
 
   // --- Define fetch functions ---
   const fetchFriends = useCallback(async () => {
@@ -895,6 +899,49 @@ export default function ForumHome() {
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   };
 
+  // Thêm hàm xử lý rời nhóm
+  const handleLeaveGroup = useCallback(async (groupId: number, groupName: string) => {
+    if (!token) return toast.error("Vui lòng đăng nhập");
+
+    // Show confirmation toast
+    toast("Xác nhận rời nhóm", {
+      description: `Bạn có chắc chắn muốn rời khỏi nhóm "${groupName}"?`,
+      action: {
+        label: "Rời nhóm",
+        onClick: async () => {
+          try {
+            const response = await fetch(`http://localhost:8081/indentity/api/chatrooms/${groupId}/leave`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            const data = await response.json();
+            if (response.ok && data.code === 200) {
+              toast.success("Đã rời nhóm thành công");
+              // Refresh danh sách nhóm
+              fetchGroups();
+              // Đóng chat nếu đang mở
+              if (selectedGroupChat?.id === groupId) {
+                handleCloseChat();
+              }
+            } else {
+              throw new Error(data.message || "Không thể rời nhóm");
+            }
+          } catch (error) {
+            console.error("Lỗi khi rời nhóm:", error);
+            toast.error("Không thể rời nhóm. Vui lòng thử lại sau.");
+          }
+        },
+      },
+      cancel: {
+        label: "Hủy",
+      },
+      duration: 5000,
+    });
+  }, [token, fetchGroups, selectedGroupChat, handleCloseChat]);
+
   // --- Phần JSX --- 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe]">
@@ -1101,32 +1148,51 @@ export default function ForumHome() {
                 </div>
               )}
 
-              {/* Tin nhắn nhóm gần đây */}
+              {/* Danh sách nhóm */}
               {!searchQuery && (
                 <div className="p-4 border-b">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium flex items-center gap-2 text-gray-800">
-                      <MessageSquare className="h-4 w-4" /> Danh sách nhóm
+                    <h3 className="text-sm font-medium flex items-center justify-between mb-3">
+                      <span className="flex items-center gap-2 text-gray-800">
+                        <MessageSquare className="h-4 w-4" /> Danh sách nhóm
+                        {groups.length > 0 && (
+                          <Badge variant="secondary" className="ml-2">
+                            {groups.length}
+                          </Badge>
+                        )}
+                      </span>
+                      {groups.length > 0 && (
+                        <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#00B4DB] hover:bg-[#00B4DB]/10">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </CreateGroupDialog>
+                      )}
                     </h3>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {isLoadingGroups ? (
                       <p className="text-sm text-center text-gray-500 py-2">Đang tải danh sách nhóm...</p>
                     ) : groups.length === 0 ? (
-                      <p className="text-sm text-center text-gray-500 py-2">Bạn chưa tham gia nhóm nào.</p>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500 mb-3">Bạn chưa tham gia nhóm nào.</p>
+                        <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#00B4DB] hover:bg-[#00B4DB]/10">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </CreateGroupDialog>
+                      </div>
                     ) : (
                       <>
-                        {groups.map((group) => (
+                        {(isGroupListExpanded ? groups : groups.slice(0, 2)).map((group) => (
                           <div 
                             key={group.id} 
-                            className="group hover:bg-[#00B4DB]/5 p-2 rounded-lg transition-colors"
+                            className="group hover:bg-[#00B4DB]/5 p-2 rounded-lg transition-colors cursor-pointer"
+                            onClick={() => handleGroupClick(group)}
                           >
                             <div className="flex items-center justify-between">
-                              <div 
-                                className="flex items-center gap-3 flex-1 cursor-pointer"
-                                onClick={() => handleGroupClick(group)}
-                              >
-                                <Avatar className="h-10 w-10 ring-2 ring-[#00B4DB]/20">
+                              <div className="flex items-center gap-3 flex-1">
+                                <Avatar className="h-9 w-9 ring-2 ring-[#00B4DB]/20">
                                   <AvatarImage src={group.avatarUrl} />
                                   <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
                                     {group.name.substring(0, 2).toUpperCase()}
@@ -1134,6 +1200,7 @@ export default function ForumHome() {
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-medium text-sm text-gray-800 truncate">{group.name}</h4>
+                                  <p className="text-xs text-gray-500">{group.memberCount} thành viên</p>
                                 </div>
                               </div>
                               <DropdownMenu>
@@ -1144,29 +1211,30 @@ export default function ForumHome() {
                                     className="h-8 w-8 p-0 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <span className="sr-only">Mở menu nhóm</span>
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => handleGroupClick(group)}>
+                                    <MessageSquare className="h-4 w-4 mr-2" />
                                     Nhắn tin
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => alert(`Xem thông tin nhóm ${group.name}`)}>
-                                    Xem thông tin nhóm
-                                  </DropdownMenuItem>
                                   {group.isAdmin && (
-                                    <DropdownMenuItem onClick={() => alert(`Quản lý nhóm ${group.name}`)}>
-                                      Quản lý nhóm
+                                    <DropdownMenuItem onClick={() => setAddMembersDialogState({
+                                      isOpen: true,
+                                      roomId: group.id
+                                    })}>
+                                      <UserPlus className="h-4 w-4 mr-2" />
+                                      Thêm thành viên
                                     </DropdownMenuItem>
                                   )}
-                                  <DropdownMenuItem onClick={() => setAddMembersDialogState({
-                                    isOpen: true,
-                                    roomId: group.id
-                                  })}>
-                                    Thêm thành viên
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-100/80" onClick={() => alert(`Rời nhóm ${group.name}`)}>
+                                  <DropdownMenuItem 
+                                    className="text-red-600 focus:text-red-600 focus:bg-red-50" 
+                                    onClick={() => handleLeaveGroup(group.id, group.name)}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                                    </svg>
                                     Rời nhóm
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -1174,7 +1242,19 @@ export default function ForumHome() {
                             </div>
                           </div>
                         ))}
-                        <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup} />
+                        {groups.length > 2 && (
+                          <Button 
+                            variant="ghost" 
+                            className="w-full text-sm text-[#00B4DB] hover:bg-[#00B4DB]/5"
+                            onClick={() => setIsGroupListExpanded(!isGroupListExpanded)}
+                          >
+                            {isGroupListExpanded ? (
+                              <>Thu gọn <ChevronUp className="h-4 w-4 ml-2" /></>
+                            ) : (
+                              <>Xem thêm {groups.length - 2} nhóm <ChevronDown className="h-4 w-4 ml-2" /></>
+                            )}
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>
@@ -1239,6 +1319,11 @@ export default function ForumHome() {
                   <div>
                     <h3 className="text-sm font-medium mb-3 flex items-center gap-2 text-gray-800">
                       <Users className="h-4 w-4" /> Danh sách bạn bè
+                      {filteredFriends.length > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {filteredFriends.length}
+                        </Badge>
+                      )}
                     </h3>
                     {isLoadingFriends ? (
                       <p className="text-sm text-center text-gray-500 py-4">Đang tải danh sách bạn bè...</p>
@@ -1246,7 +1331,7 @@ export default function ForumHome() {
                       <p className="text-sm text-center text-gray-500 py-4">Bạn chưa có bạn bè nào.</p>
                     ) : (
                       <div className="space-y-3">
-                        {filteredFriends.map((friend: Friend) => (
+                        {(isFriendsListExpanded ? filteredFriends : filteredFriends.slice(0, 3)).map((friend: Friend) => (
                           <div key={friend.id} className="flex items-center justify-between group hover:bg-[#00B4DB]/5 p-1.5 -m-1.5 rounded-md transition-colors duration-150">
                             <div 
                               className="flex items-center gap-2 flex-1 cursor-pointer"
@@ -1297,6 +1382,19 @@ export default function ForumHome() {
                             </DropdownMenu>
                           </div>
                         ))}
+                        {filteredFriends.length > 3 && (
+                          <Button 
+                            variant="ghost" 
+                            className="w-full text-sm text-[#00B4DB] hover:bg-[#00B4DB]/5"
+                            onClick={() => setIsFriendsListExpanded(!isFriendsListExpanded)}
+                          >
+                            {isFriendsListExpanded ? (
+                              <>Thu gọn <ChevronUp className="h-4 w-4 ml-2" /></>
+                            ) : (
+                              <>Xem thêm {filteredFriends.length - 3} bạn bè <ChevronDown className="h-4 w-4 ml-2" /></>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>

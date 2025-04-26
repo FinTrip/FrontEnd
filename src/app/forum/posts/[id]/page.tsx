@@ -9,6 +9,7 @@ import { Textarea } from "@/app/page/components/ui/textarea"
 import { MapPin, Calendar, User, ThumbsUp, MessageSquare, Share2, Bookmark, ArrowLeft, Eye, Loader2, X } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/hooks/useAuth"
+import EditPostForm from "./EditPostForm"
 
 interface Post {
   id: number
@@ -58,6 +59,14 @@ export default function PostPage({ params }: { params: { id: string } }) {
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const commentSectionRef = useRef<HTMLDivElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showImagesModal, setShowImagesModal] = useState(false);
+  const [modalImages, setModalImages] = useState<string[]>([]);
+
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const fetchComments = async () => {
     try {
@@ -389,7 +398,9 @@ export default function PostPage({ params }: { params: { id: string } }) {
         <div className="lg:col-span-2">
           <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
             <CardHeader className="border-b">
-              <CardTitle className="text-3xl text-gray-800">{post.title}</CardTitle>
+              <CardTitle className="text-3xl text-gray-800">
+                {post.title}
+              </CardTitle>
               <CardDescription className="flex items-center gap-2 text-base text-[#00B4DB]">
                 <MapPin className="h-4 w-4" /> Đà Nẵng
               </CardDescription>
@@ -406,6 +417,10 @@ export default function PostPage({ params }: { params: { id: string } }) {
                   <Eye className="h-4 w-4 text-[#00B4DB]" />
                   <span>{post.views || 0} Lượt xem</span>
                 </div>
+                {/* Nút chỉnh sửa chỉ hiện với tác giả */}
+                {user?.id === post.authorId && (
+                  <Button onClick={() => setShowEditModal(true)} className="ml-auto bg-[#00B4DB] text-white">Chỉnh sửa</Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -452,23 +467,36 @@ export default function PostPage({ params }: { params: { id: string } }) {
 
               <div className="space-y-4">
                 {post.images && post.images.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {post.images.map((imageUrl, index) => (
-                      <div 
-                        key={index} 
-                        className="relative aspect-video cursor-pointer group"
-                        onClick={() => setSelectedImage(imageUrl)}
-                      >
-                        <img
-                          src={imageUrl}
-                          alt={`Ảnh ${index + 1} của bài viết`}
-                          className="rounded-lg object-cover w-full h-full shadow-md transition-transform duration-200 group-hover:scale-[1.02]"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
-                          <Eye className="w-6 h-6 text-white" />
+                  <div className="mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {post.images.slice(0, 2).map((imageUrl, index) => (
+                        <div
+                          key={index}
+                          className="relative aspect-video cursor-pointer group"
+                          onClick={() => {
+                            setImageViewerImages(post.images!);
+                            setCurrentImageIndex(index);
+                            setShowImageViewer(true);
+                          }}
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={`Ảnh ${index + 1} của bài viết`}
+                            className="rounded-lg object-cover w-full h-full shadow-md transition-transform duration-200 group-hover:scale-[1.02]"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                            <Eye className="w-6 h-6 text-white" />
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                    {post.images.length > 2 && (
+                      <div className="mt-2 text-center">
+                        <Button variant="outline" className="text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10" onClick={() => { setImageViewerImages(post.images!); setCurrentImageIndex(0); setShowImageViewer(true); }}>
+                          Xem thêm {post.images.length - 2} ảnh
+                        </Button>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
                 <p className="text-gray-700 leading-relaxed">{post.content}</p>
@@ -743,6 +771,54 @@ export default function PostPage({ params }: { params: { id: string } }) {
           </Card>
         </div>
       </div>
+
+      {/* Modal chỉnh sửa bài viết */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="relative w-full max-w-xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+              <EditPostForm
+                post={post}
+                onClose={() => setShowEditModal(false)}
+                onUpdated={(updatedPost) => {
+                  setPost(updatedPost);
+                  setShowEditModal(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xem ảnh chi tiết */}
+      {showImageViewer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <button className="absolute top-4 right-4 text-white text-2xl z-10" onClick={() => setShowImageViewer(false)}>×</button>
+          <div className="flex items-center gap-4 w-full max-w-2xl px-4">
+            <button
+              className="text-white text-3xl px-2 py-1 bg-black/30 rounded-full disabled:opacity-30"
+              onClick={() => setCurrentImageIndex(i => Math.max(0, i - 1))}
+              disabled={currentImageIndex === 0}
+              aria-label="Trước"
+            >&#8592;</button>
+            <img
+              src={imageViewerImages[currentImageIndex]}
+              alt={`Ảnh ${currentImageIndex + 1}`}
+              className="rounded-lg object-contain max-h-[80vh] max-w-full mx-auto"
+              style={{ background: '#eee' }}
+            />
+            <button
+              className="text-white text-3xl px-2 py-1 bg-black/30 rounded-full disabled:opacity-30"
+              onClick={() => setCurrentImageIndex(i => Math.min(imageViewerImages.length - 1, i + 1))}
+              disabled={currentImageIndex === imageViewerImages.length - 1}
+              aria-label="Sau"
+            >&#8594;</button>
+          </div>
+          <div className="absolute bottom-6 left-0 right-0 text-center text-white">
+            {currentImageIndex + 1} / {imageViewerImages.length}
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
