@@ -41,6 +41,7 @@ const TodoList: React.FC = () => {
       setLoading(false);
       return;
     }
+    setError(null); // Xóa lỗi trước khi fetch
     setLoading(true);
     try {
       const response = await fetch(`http://127.0.0.1:8000/recommend/todolist-get/?user_id=${user.id}`);
