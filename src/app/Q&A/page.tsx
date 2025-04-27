@@ -14,14 +14,12 @@ import {
   FaLandmark,
   FaPlane,
   FaHotel,
+  FaArrowLeft,
 } from "react-icons/fa";
 import "../../app/styles/Q&A.css";
 
 const QA = () => {
-  const [currentQuestion, setCurrentQuestion] = useState(() => {
-    const savedQuestion = localStorage.getItem("currentQuestion");
-    return savedQuestion ? parseInt(savedQuestion, 10) : 0;
-  });
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
     start: "",
@@ -32,81 +30,85 @@ const QA = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const router = useRouter();
 
-  // Load data from localStorage and travelSession on mount
   useEffect(() => {
     const loadData = () => {
-      // Load travelSession first to restore dateRange and selectedCities
+      if (typeof window === "undefined") return;
+
+      const savedQuestion = localStorage.getItem("currentQuestion");
       const sessionData = localStorage.getItem("travelSession");
-      if (sessionData) {
-        const session = JSON.parse(sessionData);
-        if (session.dates) {
-          setDateRange({
-            start: session.dates.start_day || "",
-            end: session.dates.end_day || "",
-          });
-        }
-        if (session.province) {
-          setSelectedCities([session.province]);
-        }
-      }
-
-      // Load selectedCities from localStorage as fallback
-      const savedCities = localStorage.getItem("selectedCities");
-      if (savedCities) {
-        const parsedCities = JSON.parse(savedCities);
-        if (Array.isArray(parsedCities) && parsedCities.length > 0) {
-          setSelectedCities(parsedCities);
-        }
-      }
-
-      // Load dateRange from localStorage as fallback
-      const savedDateRange = localStorage.getItem("dateRange");
-      if (savedDateRange) {
-        const parsedDateRange = JSON.parse(savedDateRange);
-        if (parsedDateRange.start || parsedDateRange.end) {
-          setDateRange({
-            start: parsedDateRange.start || "",
-            end: parsedDateRange.end || "",
-          });
-        }
-      }
-
-      // Load completed step
       const completedStep = localStorage.getItem("completedStep");
+
+      // Kiểm tra completedStep trước
       if (completedStep === "flight") {
         setCurrentQuestion(3);
         localStorage.removeItem("completedStep");
       } else if (completedStep === "hotel") {
         setCurrentQuestion(4);
         localStorage.removeItem("completedStep");
+      } else if (savedQuestion) {
+        setCurrentQuestion(parseInt(savedQuestion, 10));
+      }
+
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          if (session.dates) {
+            setDateRange({
+              start: session.dates.start_day || "",
+              end: session.dates.end_day || "",
+            });
+          }
+          if (session.province) {
+            setSelectedCities([session.province]);
+          }
+          if (session.hotel) {
+            setCurrentQuestion(4); // Chuyển sang câu hỏi xác nhận nếu đã chọn khách sạn
+          } else if (session.flight) {
+            setCurrentQuestion(3); // Chuyển sang câu hỏi về khách sạn nếu đã chọn chuyến bay
+          }
+        } catch (error) {
+          console.error("Error parsing travelSession:", error);
+        }
+      }
+
+      const savedCities = localStorage.getItem("selectedCities");
+      if (savedCities) {
+        try {
+          const parsedCities = JSON.parse(savedCities);
+          if (Array.isArray(parsedCities) && parsedCities.length > 0) {
+            setSelectedCities(parsedCities);
+          }
+        } catch (error) {
+          console.error("Error parsing selectedCities:", error);
+        }
+      }
+
+      const savedDateRange = localStorage.getItem("dateRange");
+      if (savedDateRange) {
+        try {
+          const parsedDateRange = JSON.parse(savedDateRange);
+          if (parsedDateRange.start || parsedDateRange.end) {
+            setDateRange({
+              start: parsedDateRange.start || "",
+              end: parsedDateRange.end || "",
+            });
+          }
+        } catch (error) {
+          error;
+          console.error("Error parsing dateRange:", error);
+        }
       }
     };
 
-    // Load initial data
     loadData();
-
-    // Listen for changes in localStorage
-    const handleStorageChange = (event: StorageEvent) => {
-      if (
-        event.key === "selectedCities" ||
-        event.key === "dateRange" ||
-        event.key === "travelSession"
-      ) {
-        loadData();
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
   }, []);
 
-  // Save data to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("currentQuestion", currentQuestion.toString());
-    localStorage.setItem("selectedCities", JSON.stringify(selectedCities));
-    localStorage.setItem("dateRange", JSON.stringify(dateRange));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("currentQuestion", currentQuestion.toString());
+      localStorage.setItem("selectedCities", JSON.stringify(selectedCities));
+      localStorage.setItem("dateRange", JSON.stringify(dateRange));
+    }
   }, [currentQuestion, selectedCities, dateRange]);
 
   const vietnamProvinces = [
@@ -248,9 +250,9 @@ const QA = () => {
         const sessionData = localStorage.getItem("travelSession");
         const updatedSession = sessionData
           ? {
-              ...JSON.parse(sessionData),
-              dates: { start_day: dateRange.start, end_day: dateRange.end },
-            }
+            ...JSON.parse(sessionData),
+            dates: { start_day: dateRange.start, end_day: dateRange.end },
+          }
           : { dates: { start_day: dateRange.start, end_day: dateRange.end } };
         localStorage.setItem("travelSession", JSON.stringify(updatedSession));
       } catch (error) {
@@ -276,9 +278,9 @@ const QA = () => {
         const sessionData = localStorage.getItem("travelSession");
         const updatedSession = sessionData
           ? {
-              ...JSON.parse(sessionData),
-              province: province.toLowerCase(),
-            }
+            ...JSON.parse(sessionData),
+            province: province.toLowerCase(),
+          }
           : { province: province.toLowerCase() };
         localStorage.setItem("travelSession", JSON.stringify(updatedSession));
       } catch (error) {
@@ -288,6 +290,12 @@ const QA = () => {
 
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
     }
   };
 
@@ -357,8 +365,10 @@ const QA = () => {
       if (!response.ok) throw new Error("Failed to fetch travel schedule");
 
       const data = await response.json();
-      localStorage.setItem("travelSchedule", JSON.stringify(data));
-      // Xóa dữ liệu sau khi hoàn thành và điều hướng
+      const cleanData = JSON.parse(JSON.stringify(data, (key, value) =>
+        typeof value === "number" && isNaN(value) ? null : value
+      ));
+      localStorage.setItem("travelSchedule", JSON.stringify(cleanData));
       localStorage.removeItem("currentQuestion");
       localStorage.removeItem("selectedCities");
       localStorage.removeItem("dateRange");
@@ -414,7 +424,7 @@ const QA = () => {
 
       {floatingElements.map((element, index) => (
         <motion.div
-          key={index}
+          key={`floating-${index}`}
           className={element.className}
           initial={{ y: 0 }}
           animate={{
@@ -463,7 +473,7 @@ const QA = () => {
 
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentQuestion}
+            key={`question-${currentQuestion}`}
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -50, opacity: 0 }}
@@ -496,9 +506,7 @@ const QA = () => {
                     <input
                       type="date"
                       value={dateRange.start}
-                      onChange={(e) =>
-                        handleDateChange("start", e.target.value)
-                      }
+                      onChange={(e) => handleDateChange("start", e.target.value)}
                       min={new Date().toISOString().split("T")[0]}
                     />
                     <span className="input-icon">
@@ -516,10 +524,7 @@ const QA = () => {
                       type="date"
                       value={dateRange.end}
                       onChange={(e) => handleDateChange("end", e.target.value)}
-                      min={
-                        dateRange.start ||
-                        new Date().toISOString().split("T")[0]
-                      }
+                      min={dateRange.start || new Date().toISOString().split("T")[0]}
                     />
                     <span className="input-icon">
                       <FaCalendarAlt />
@@ -562,9 +567,9 @@ const QA = () => {
                   </div>
                   {cityInput && (
                     <div className="suggestions-dropdown">
-                      {filteredCities.map((city) => (
+                      {filteredCities.map((city, index) => (
                         <motion.div
-                          key={city}
+                          key={`city-suggestion-${index}`}
                           className="suggestion-item"
                           onClick={() => handleCitySelect(city)}
                           whileHover={{
@@ -580,9 +585,9 @@ const QA = () => {
                 </motion.div>
                 <motion.div className="selected-cities" variants={itemVariants}>
                   <AnimatePresence>
-                    {selectedCities.map((city) => (
+                    {selectedCities.map((city, index) => (
                       <motion.span
-                        key={city}
+                        key={`selected-city-${index}`}
                         className="city-badge"
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -600,17 +605,30 @@ const QA = () => {
                     ))}
                   </AnimatePresence>
                 </motion.div>
-                {selectedCities.length > 0 && (
-                  <motion.button
-                    className="next-button"
-                    onClick={handleNextQuestion}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    variants={itemVariants}
-                  >
-                    Tiếp theo <FaArrowRight />
-                  </motion.button>
-                )}
+                <div className="flex gap-4">
+                  {currentQuestion > 0 && (
+                    <motion.button
+                      className="back-button"
+                      onClick={handlePreviousQuestion}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      variants={itemVariants}
+                    >
+                      <FaArrowLeft /> Quay lại
+                    </motion.button>
+                  )}
+                  {selectedCities.length > 0 && (
+                    <motion.button
+                      className="next-button"
+                      onClick={handleNextQuestion}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      variants={itemVariants}
+                    >
+                      Tiếp theo <FaArrowRight />
+                    </motion.button>
+                  )}
+                </div>
               </motion.div>
             ) : questions[currentQuestion].type === "transport" ||
               questions[currentQuestion].type === "hotel" ? (
@@ -620,9 +638,9 @@ const QA = () => {
                 initial="hidden"
                 animate="visible"
               >
-                {questions[currentQuestion].options?.map((option) => (
+                {questions[currentQuestion].options?.map((option, index) => (
                   <motion.button
-                    key={option}
+                    key={`option-${index}`}
                     onClick={() => handleOptionSelect(option)}
                     whileHover={{ scale: 1.03, x: 5 }}
                     whileTap={{ scale: 0.97 }}
@@ -632,6 +650,17 @@ const QA = () => {
                     <span>{option}</span>
                   </motion.button>
                 ))}
+                {currentQuestion > 0 && (
+                  <motion.button
+                    className="back-button"
+                    onClick={handlePreviousQuestion}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    variants={itemVariants}
+                  >
+                    <FaArrowLeft /> Quay lại
+                  </motion.button>
+                )}
               </motion.div>
             ) : questions[currentQuestion].type === "confirm" ? (
               <motion.div
@@ -646,8 +675,13 @@ const QA = () => {
                     {(() => {
                       const sessionData = localStorage.getItem("travelSession");
                       if (sessionData) {
-                        const { dates } = JSON.parse(sessionData);
-                        return dates?.start_day || "Chưa chọn";
+                        try {
+                          const { dates } = JSON.parse(sessionData);
+                          return dates?.start_day || "Chưa chọn";
+                        } catch (error) {
+                          console.error("Error parsing sessionData:", error);
+                          return "Chưa chọn";
+                        }
                       }
                       return dateRange.start || "Chưa chọn";
                     })()}
@@ -657,8 +691,13 @@ const QA = () => {
                     {(() => {
                       const sessionData = localStorage.getItem("travelSession");
                       if (sessionData) {
-                        const { dates } = JSON.parse(sessionData);
-                        return dates?.end_day || "Chưa chọn";
+                        try {
+                          const { dates } = JSON.parse(sessionData);
+                          return dates?.end_day || "Chưa chọn";
+                        } catch (error) {
+                          console.error("Error parsing sessionData:", error);
+                          return "Chưa chọn";
+                        }
                       }
                       return dateRange.end || "Chưa chọn";
                     })()}
@@ -668,8 +707,13 @@ const QA = () => {
                     {(() => {
                       const sessionData = localStorage.getItem("travelSession");
                       if (sessionData) {
-                        const { province } = JSON.parse(sessionData);
-                        return province || "Chưa chọn";
+                        try {
+                          const { province } = JSON.parse(sessionData);
+                          return province || "Chưa chọn";
+                        } catch (error) {
+                          console.error("Error parsing sessionData:", error);
+                          return "Chưa chọn";
+                        }
                       }
                       return selectedCities.length > 0
                         ? selectedCities.join(", ")
@@ -679,37 +723,55 @@ const QA = () => {
                   {(() => {
                     const sessionData = localStorage.getItem("travelSession");
                     if (sessionData) {
-                      const { flight, hotel } = JSON.parse(sessionData);
-                      return (
-                        <>
-                          {flight && (
-                            <p>
-                              <strong>Chuyến bay:</strong>{" "}
-                              {flight.outbound_flight_code} - {flight.cabin} -{" "}
-                              {flight.total_price_vnd}
-                            </p>
-                          )}
-                          {hotel && (
-                            <p>
-                              <strong>Khách sạn:</strong> {hotel.name} -{" "}
-                              {hotel.price}
-                            </p>
-                          )}
-                        </>
-                      );
+                      try {
+                        const { flight, hotel } = JSON.parse(sessionData);
+                        return (
+                          <>
+                            {flight && (
+                              <p>
+                                <strong>Chuyến bay:</strong>{" "}
+                                {flight.outbound_flight_code} - {flight.cabin} -{" "}
+                                {flight.total_price_vnd}
+                              </p>
+                            )}
+                            {hotel && (
+                              <p>
+                                <strong>Khách sạn:</strong> {hotel.name} -{" "}
+                                {hotel.price}
+                              </p>
+                            )}
+                          </>
+                        );
+                      } catch (error) {
+                        console.error("Error parsing sessionData:", error);
+                        return null;
+                      }
                     }
                     return null;
                   })()}
                 </motion.div>
-                <motion.button
-                  className="complete-button"
-                  onClick={handleComplete}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  variants={itemVariants}
-                >
-                  Hoàn thành <FaCheck />
-                </motion.button>
+                <div className="flex gap-4">
+                  {currentQuestion > 0 && (
+                    <motion.button
+                      className="back-button"
+                      onClick={handlePreviousQuestion}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      variants={itemVariants}
+                    >
+                      <FaArrowLeft /> Quay lại
+                    </motion.button>
+                  )}
+                  <motion.button
+                    className="complete-button"
+                    onClick={handleComplete}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    variants={itemVariants}
+                  >
+                    Hoàn thành <FaCheck />
+                  </motion.button>
+                </div>
               </motion.div>
             ) : null}
           </motion.div>
@@ -718,14 +780,8 @@ const QA = () => {
         <div className="progress-indicator">
           {questions.map((_, index) => (
             <div
-              key={index}
-              className={`progress-dot ${
-                index === currentQuestion
-                  ? "active"
-                  : index < currentQuestion
-                  ? "completed"
-                  : ""
-              }`}
+              key={`progress-dot-${index}`}
+              className={`progress-dot ${index === currentQuestion ? "active" : index < currentQuestion ? "completed" : ""}`}
             />
           ))}
         </div>

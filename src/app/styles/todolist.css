@@ -148,6 +148,8 @@
   border-radius: 10px;
   font-size: 1rem;
   transition: all 0.3s ease;
+  background-color: #fff; /* Thêm nền trắng */
+  color: #333; /* Thêm chữ đen */
 }
 
 .todo-input {
