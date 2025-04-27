@@ -32,7 +32,7 @@ export default function WeatherSearch({ onSearch, defaultValue = "" }: WeatherSe
 
   return (
     <div className="relative">
-      <form onSubmit={handleSubmit} className="flex w-full max-w-3xl mx-auto">
+      <form onSubmit={handleSubmit} className="flex w-full max-w-3xl mx-auto gap-2">
         <div className="relative flex-grow">
           <Input
             type="text"
@@ -47,7 +47,7 @@ export default function WeatherSearch({ onSearch, defaultValue = "" }: WeatherSe
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
-        <Button type="submit" className="rounded-l-none bg-teal-600 hover:bg-teal-700 text-white px-6">
+        <Button type="submit" className="rounded-l-none bg-teal-600 hover:bg-teal-700 text-white px-6 py-6">
           Tìm kiếm
         </Button>
       </form>

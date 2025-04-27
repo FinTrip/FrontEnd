@@ -12,8 +12,7 @@ export default function WeatherPage() {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl md:text-4xl font-bold text-white text-center mb-8">Thời Tiết Việt Nam</h1>
         <p className="text-white text-center mb-12 max-w-3xl mx-auto">
-          Theo dõi thời tiết tại các điểm du lịch Việt Nam để lên kế hoạch chuyến đi của bạn tốt hơn. Cập nhật hàng giờ
-          và dự báo 5 ngày.
+          Theo dõi thời tiết tại các điểm du lịch Việt Nam để lên kế hoạch chuyến đi của bạn tốt hơn.
         </p>
 
         <WeatherDashboard />

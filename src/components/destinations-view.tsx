@@ -19,12 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 // Define the type for destinations based on API response
 type Destination = {
@@ -43,9 +37,6 @@ export default function DestinationsView() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6); // 6 destinations per page
-  const [editingHotel, setEditingHotel] = useState<Destination | null>(null);
-  const [formData, setFormData] = useState<Destination | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Fetch hotel data from API when component mounts
   useEffect(() => {
@@ -72,13 +63,6 @@ export default function DestinationsView() {
     };
     fetchHotels();
   }, []);
-
-  // Update formData when editingHotel changes
-  useEffect(() => {
-    if (editingHotel) {
-      setFormData({ ...editingHotel });
-    }
-  }, [editingHotel]);
 
   // Get unique provinces for filter options
   const uniqueProvinces = [...new Set(destinations.map((d) => d.province))];
@@ -143,35 +127,6 @@ export default function DestinationsView() {
         console.error("Lỗi khi xóa hotel:", error);
         alert("Đã xảy ra lỗi khi xóa hotel.");
       }
-    }
-  };
-
-  // Handle save action for updating hotel
-  const handleSave = async () => {
-    if (!formData) return;
-    setIsSaving(true);
-    try {
-      const response = await fetch("http://127.0.0.1:8000/recommend/update-hotel/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      if (response.ok) {
-        // Update the destinations state
-        setDestinations(destinations.map(dest =>
-          dest.name === formData.name ? formData : dest
-        ));
-        setEditingHotel(null);
-      } else {
-        alert("Failed to update hotel. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error updating hotel:", error);
-      alert("An error occurred while updating the hotel.");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -248,7 +203,6 @@ export default function DestinationsView() {
                 variant="outline"
                 size="sm"
                 className="text-blue-500 hover:text-blue-600"
-                onClick={() => setEditingHotel(destination)}
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -291,65 +245,6 @@ export default function DestinationsView() {
           </Button>
         </div>
       )}
-
-      {/* Edit Hotel Dialog */}
-      <Dialog open={!!editingHotel} onOpenChange={(open) => !open && setEditingHotel(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Hotel</DialogTitle>
-          </DialogHeader>
-          {formData && (
-            <form className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <Input value={formData.name} disabled />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Province</label>
-                <Input
-                  value={formData.province}
-                  onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Location Rating</label>
-                <Input
-                  type="number"
-                  value={formData.location_rating}
-                  onChange={(e) => setFormData({ ...formData, location_rating: parseFloat(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Image URL</label>
-                <Input
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-            </form>
-          )}
-          <div className="mt-4 flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setEditingHotel(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving...' : 'Save'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

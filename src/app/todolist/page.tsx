@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import "../../app/styles/todolist.css"; // Giả sử bạn có file CSS này
+import "../../app/styles/todolist.css"; // Ensure this path is correct
 
 interface TodoItem {
   activity_id: number;
@@ -14,8 +14,16 @@ interface TodoItem {
   date_plan: string;
 }
 
+interface User {
+  id: string | number;
+}
+
+interface AuthContext {
+  user: User | null;
+}
+
 const TodoList: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuth() as AuthContext;
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +35,8 @@ const TodoList: React.FC = () => {
   const [isDateConfirmed, setIsDateConfirmed] = useState(false);
 
   // **Lấy danh sách công việc từ backend**
-  const fetchTodos = async () => {
-    if (!user?.id) {
+  const fetchTodos = useCallback(async () => {
+    if (!user || !user.id) {
       setError("Bạn cần đăng nhập để xem danh sách công việc.");
       setLoading(false);
       return;
@@ -47,12 +55,20 @@ const TodoList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   // **Thêm công việc mới**
   const addTodo = async () => {
-    if (!noteActivities.trim() || !dateActivities || !description.trim()) {
-      alert("Vui lòng điền đầy đủ thông tin.");
+    if (!noteActivities.trim()) {
+      alert("Vui lòng nhập tiêu đề ghi chú.");
+      return;
+    }
+    if (!dateActivities) {
+      alert("Vui lòng chọn ngày thực hiện.");
+      return;
+    }
+    if (!description.trim()) {
+      alert("Vui lòng nhập mô tả chi tiết.");
       return;
     }
     const newTodo = {
@@ -60,7 +76,7 @@ const TodoList: React.FC = () => {
       description: description,
       date_activities: dateActivities,
       status: 0,
-      date_plan: startDate || new Date().toISOString().split("T")[0], // Mặc định ngày hiện tại nếu không có startDate
+      date_plan: startDate || new Date().toISOString().split("T")[0],
     };
     try {
       const response = await fetch("http://127.0.0.1:8000/recommend/todolist-create/", {
@@ -81,7 +97,7 @@ const TodoList: React.FC = () => {
       setNoteActivities("");
       setDateActivities("");
       setDescription("");
-      fetchTodos(); // Cập nhật danh sách
+      fetchTodos();
     } catch (err) {
       console.error("Lỗi khi thêm:", err);
       alert(err instanceof Error ? err.message : "Có lỗi xảy ra khi thêm công việc.");
@@ -112,6 +128,8 @@ const TodoList: React.FC = () => {
 
   // **Xóa công việc**
   const deleteTodo = async (activity_id: number) => {
+    const previousTodos = todos;
+    setTodos((prevTodos) => prevTodos.filter((todo) => todo.activity_id !== activity_id));
     try {
       const response = await fetch("http://127.0.0.1:8000/recommend/todolist-delete/", {
         method: "POST",
@@ -125,10 +143,10 @@ const TodoList: React.FC = () => {
       if (!response.ok) {
         throw new Error(responseData.error || "Xóa công việc thất bại.");
       }
-      setTodos((prevTodos) => prevTodos.filter((todo) => todo.activity_id !== activity_id));
       alert("Xóa công việc thành công!");
     } catch (err) {
       console.error("Lỗi khi xóa:", err);
+      setTodos(previousTodos);
       alert(err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa công việc.");
     }
   };
@@ -155,7 +173,7 @@ const TodoList: React.FC = () => {
   // **Gọi fetchTodos khi component mount hoặc user thay đổi**
   useEffect(() => {
     fetchTodos();
-  }, [user]);
+  }, [fetchTodos]);
 
   // **Xác nhận ngày bắt đầu**
   const confirmDate = () => {
