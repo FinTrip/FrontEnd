@@ -47,7 +47,7 @@ export default function WeatherSearch({ onSearch, defaultValue = "" }: WeatherSe
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 py-6" />
         </div>
-        <Button type="submit" className="rounded-l-none bg-teal-600 hover:bg-teal-700 text-white px-6 py-6">
+        <Button type="submit" className="rounded-l-none bg-teal-600 hover:bg-teal-700 text-white px-6 py-3">
           Tìm kiếm
         </Button>
       </form>
