@@ -1,24 +1,148 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import "../../app/styles/todolist.css";
+import { useAuth } from "@/hooks/useAuth";
+import "../../app/styles/todolist.css"; // Giả sử bạn có file CSS này
 
 interface TodoItem {
-  id: number;
-  text: string;
-  time: string;
-  completed: boolean;
+  activity_id: number;
+  itinerary_id: number | null;
+  note_activities: string;
+  description: string;
+  date_activities: string;
+  status: number;
+  date_plan: string;
 }
 
 const TodoList: React.FC = () => {
+  const { user } = useAuth();
   const [todos, setTodos] = useState<TodoItem[]>([]);
-  const [inputText, setInputText] = useState("");
-  const [inputTime, setInputTime] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [noteActivities, setNoteActivities] = useState("");
+  const [dateActivities, setDateActivities] = useState("");
+  const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isDateConfirmed, setIsDateConfirmed] = useState(false);
 
-  // Calculate countdown when start date changes
+  // **Lấy danh sách công việc từ backend**
+  const fetchTodos = async () => {
+    if (!user?.id) {
+      setError("Bạn cần đăng nhập để xem danh sách công việc.");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/recommend/todolist-get/?user_id=${user.id}`);
+      if (!response.ok) {
+        throw new Error("Không thể tải danh sách công việc.");
+      }
+      const data = await response.json();
+      console.log("Dữ liệu từ API GET /todolist-get:", data);
+      setTodos(data.activities || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Có lỗi xảy ra khi tải danh sách.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // **Thêm công việc mới**
+  const addTodo = async () => {
+    if (!noteActivities.trim() || !dateActivities || !description.trim()) {
+      alert("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+    const newTodo = {
+      note_activities: noteActivities,
+      description: description,
+      date_activities: dateActivities,
+      status: 0,
+      date_plan: startDate || new Date().toISOString().split("T")[0], // Mặc định ngày hiện tại nếu không có startDate
+    };
+    try {
+      const response = await fetch("http://127.0.0.1:8000/recommend/todolist-create/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: user?.id,
+          activities: [newTodo],
+        }),
+      });
+      const responseData = await response.json();
+      console.log("Phản hồi từ API POST /todolist-create:", responseData);
+      if (!response.ok) {
+        throw new Error(responseData.error || "Thêm công việc thất bại.");
+      }
+      setNoteActivities("");
+      setDateActivities("");
+      setDescription("");
+      fetchTodos(); // Cập nhật danh sách
+    } catch (err) {
+      console.error("Lỗi khi thêm:", err);
+      alert(err instanceof Error ? err.message : "Có lỗi xảy ra khi thêm công việc.");
+    }
+  };
+
+  // **Cập nhật công việc**
+  const updateTodo = async (todo: TodoItem) => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/recommend/todolist-update/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...todo, user_id: user?.id }),
+      });
+      const responseData = await response.json();
+      console.log("Phản hồi từ API POST /todolist-update:", responseData);
+      if (!response.ok) {
+        throw new Error(responseData.error || "Cập nhật công việc thất bại.");
+      }
+      alert("Cập nhật công việc thành công!");
+    } catch (err) {
+      console.error("Lỗi khi cập nhật:", err);
+      alert(err instanceof Error ? err.message : "Có lỗi xảy ra khi cập nhật công việc.");
+    }
+  };
+
+  // **Xóa công việc**
+  const deleteTodo = async (activity_id: number) => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/recommend/todolist-delete/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ activity_id, user_id: user?.id }),
+      });
+      const responseData = await response.json();
+      console.log("Phản hồi từ API POST /todolist-delete:", responseData);
+      if (!response.ok) {
+        throw new Error(responseData.error || "Xóa công việc thất bại.");
+      }
+      setTodos((prevTodos) => prevTodos.filter((todo) => todo.activity_id !== activity_id));
+      alert("Xóa công việc thành công!");
+    } catch (err) {
+      console.error("Lỗi khi xóa:", err);
+      alert(err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa công việc.");
+    }
+  };
+
+  // **Xử lý thay đổi input**
+  const handleInputChange = (id: number, field: keyof TodoItem, value: string | number) => {
+    setTodos((prevTodos) =>
+      prevTodos.map((todo) =>
+        todo.activity_id === id ? { ...todo, [field]: value } : todo
+      )
+    );
+  };
+
+  // **Tính toán đếm ngược**
   useEffect(() => {
     if (startDate) {
       const tripDate = new Date(startDate).getTime();
@@ -28,60 +152,28 @@ const TodoList: React.FC = () => {
     }
   }, [startDate]);
 
-  // Add new todo
-  const addTodo = () => {
-    if (inputText.trim() !== "" && inputTime !== "") {
-      const newTodo: TodoItem = {
-        id: Date.now(),
-        text: inputText,
-        time: inputTime,
-        completed: false,
-      };
-      setTodos([...todos, newTodo]);
-      setInputText("");
-      setInputTime("");
-    }
-  };
+  // **Gọi fetchTodos khi component mount hoặc user thay đổi**
+  useEffect(() => {
+    fetchTodos();
+  }, [user]);
 
-  // Delete todo
-  const deleteTodo = (id: number) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
-  };
-
-  // Toggle todo completion
-  const toggleComplete = (id: number) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
-  };
-
-  // Confirm start date
+  // **Xác nhận ngày bắt đầu**
   const confirmDate = () => {
     if (startDate) {
       setIsDateConfirmed(true);
     }
   };
 
-  // Save plan
-  const savePlan = () => {
-    alert(
-      "Kế hoạch của bạn đã được lưu thành công! Chúc bạn có chuyến đi vui vẻ! 🎉"
-    );
-  };
+  if (loading) return <div>Đang tải danh sách công việc...</div>;
+  if (error) return <div>Lỗi: {error}</div>;
 
   return (
     <div className="todo-container">
-      <h1 className="main-title">
-        Chào mừng bạn đến với ToDiList cùng FinTrip
-      </h1>
+      <h1 className="main-title">Quản lý ToDoList cùng FinTrip</h1>
 
+      {/* Phần chọn ngày bắt đầu và đếm ngược */}
       <div className="date-section">
-        <p className="date-guide">
-          ✨ Chuyến đi mơ ước bắt đầu ngày nào ta? Xác nhận để chuẩn bị đếm
-          ngược thôi nào!
-        </p>
+        <p className="date-guide">✨ Chọn ngày bắt đầu chuyến đi của bạn:</p>
         <div className="date-input-container">
           <input
             type="date"
@@ -96,28 +188,35 @@ const TodoList: React.FC = () => {
         {isDateConfirmed && countdown !== null && (
           <div className="countdown">
             <span className="countdown-number">{countdown}</span>
-            <span className="countdown-text">
-              ngày nữa đến chuyến đi của bạn!
-            </span>
+            <span className="countdown-text"> ngày nữa đến chuyến đi!</span>
           </div>
         )}
       </div>
 
+      {/* Phần nội dung chính */}
       <div className="content-container">
+        {/* Cột trái: Thêm và hiển thị Todo */}
         <div className="left-column">
           <div className="add-todo">
             <input
               type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Nhập công việc cần làm..."
+              value={noteActivities}
+              onChange={(e) => setNoteActivities(e.target.value)}
+              placeholder="Tiêu đề ghi chú"
               className="todo-input"
             />
             <input
-              type="time"
-              value={inputTime}
-              onChange={(e) => setInputTime(e.target.value)}
+              type="date"
+              value={dateActivities}
+              onChange={(e) => setDateActivities(e.target.value)}
               className="time-input"
+            />
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Mô tả chi tiết"
+              className="todo-input"
             />
             <button onClick={addTodo} className="add-button">
               +
@@ -125,43 +224,77 @@ const TodoList: React.FC = () => {
           </div>
 
           <ul className="todo-list">
-            {todos.map((todo) => (
-              <li
-                key={todo.id}
-                className={`todo-item ${todo.completed ? "completed" : ""}`}
-              >
-                <div className="todo-content">
-                  <span className="todo-text">{todo.text}</span>
-                  <span className="todo-time">{todo.time}</span>
-                </div>
-                <div className="todo-actions">
-                  <label className="toggle">
+            {todos.length > 0 ? (
+              todos.map((todo) => (
+                <li key={todo.activity_id} className="todo-item">
+                  <div className="todo-content">
                     <input
-                      type="checkbox"
-                      checked={todo.completed}
-                      onChange={() => toggleComplete(todo.id)}
+                      type="text"
+                      value={todo.note_activities}
+                      onChange={(e) =>
+                        handleInputChange(todo.activity_id, "note_activities", e.target.value)
+                      }
+                      placeholder="Tiêu đề ghi chú"
+                      className="todo-input"
                     />
-                    <span className="toggle-slider"></span>
-                    <span className="toggle-text">
-                      {todo.completed ? "Đã làm" : "Chưa làm"}
-                    </span>
-                  </label>
-                  <button
-                    onClick={() => deleteTodo(todo.id)}
-                    className="delete-button"
-                  >
-                    🗑
-                  </button>
-                </div>
-              </li>
-            ))}
+                    <input
+                      type="date"
+                      value={todo.date_activities}
+                      onChange={(e) =>
+                        handleInputChange(todo.activity_id, "date_activities", e.target.value)
+                      }
+                      className="time-input"
+                    />
+                    <input
+                      type="text"
+                      value={todo.description}
+                      onChange={(e) =>
+                        handleInputChange(todo.activity_id, "description", e.target.value)
+                      }
+                      placeholder="Mô tả chi tiết"
+                      className="todo-input"
+                    />
+                    <label className="toggle">
+                      <input
+                        type="checkbox"
+                        checked={todo.status === 1}
+                        onChange={() =>
+                          handleInputChange(
+                            todo.activity_id,
+                            "status",
+                            todo.status === 0 ? 1 : 0
+                          )
+                        }
+                      />
+                      <span className="toggle-slider"></span>
+                      <span className="toggle-text">
+                        {todo.status === 1 ? "Đã làm" : "Chưa làm"}
+                      </span>
+                    </label>
+                  </div>
+                  <div className="todo-actions">
+                    <button onClick={() => updateTodo(todo)} className="save-button">
+                      Lưu
+                    </button>
+                    <button
+                      onClick={() => deleteTodo(todo.activity_id)}
+                      className="delete-button"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <p>Không có công việc nào để hiển thị</p>
+            )}
           </ul>
         </div>
 
+        {/* Cột phải: Gợi ý công việc */}
         <div className="right-column">
           <div className="suggestion-note">
             <h3>Gợi ý công việc khi đi du lịch</h3>
-
             <div className="suggestion-item">
               <h4>✈️ Đặt phương tiện di chuyển chính</h4>
               <p>
@@ -169,7 +302,6 @@ const TodoList: React.FC = () => {
                 phương tiện để không lỡ chuyến phiêu lưu nha!"
               </p>
             </div>
-
             <div className="suggestion-item">
               <h4>🏨 Đặt nơi lưu trú</h4>
               <p>
@@ -177,7 +309,6 @@ const TodoList: React.FC = () => {
                 Đặt chỗ nghỉ xịn xò ngay đi nào!"
               </p>
             </div>
-
             <div className="suggestion-item">
               <h4>🌦️ Kiểm tra thời tiết điểm đến</h4>
               <p>
@@ -185,7 +316,6 @@ const TodoList: React.FC = () => {
                 mang áo mưa đi dưới nắng nhé!"
               </p>
             </div>
-
             <div className="suggestion-item">
               <h4>🧳 Lên danh sách hành lý</h4>
               <p>
@@ -193,7 +323,6 @@ const TodoList: React.FC = () => {
                 để đi du hí thật chill nào~"
               </p>
             </div>
-
             <div className="suggestion-item">
               <h4>🛂 Chuẩn bị giấy tờ cần thiết</h4>
               <p>
@@ -204,10 +333,6 @@ const TodoList: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <button onClick={savePlan} className="save-button">
-        Lưu kế hoạch
-      </button>
     </div>
   );
 };

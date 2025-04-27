@@ -270,20 +270,62 @@ const Flight = () => {
     }
   };
 
-  const handleFlightSelect = async (flight: Flight) => {
-    const sessionData = localStorage.getItem("travelSession");
-    const updatedSession = sessionData
-      ? { ...JSON.parse(sessionData), flight }
-      : { flight };
-    localStorage.setItem("travelSession", JSON.stringify(updatedSession));
+  // const handleFlightSelect = async (flight: Flight) => {
+  //   const sessionData = localStorage.getItem("travelSession");
+  //   const updatedSession = sessionData
+  //     ? { ...JSON.parse(sessionData), flight }
+  //     : { flight };
+  //   localStorage.setItem("travelSession", JSON.stringify(updatedSession));
 
+  //   try {
+  //     const response = await fetch(
+  //       "http://127.0.0.1:8000/recommend/select-flight/",
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ flight_info: flight }), // Sửa ở đây
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error("Không thể lưu lựa chọn chuyến bay");
+  //     }
+
+  //     localStorage.setItem("completedStep", "flight");
+  //     router.push("/Q&A");
+  //   } catch (error) {
+  //     console.error("Lỗi khi lưu chuyến bay:", error);
+  //     localStorage.setItem("completedStep", "flight");
+  //     router.push("/Q&A");
+  //   }
+  // };
+
+  const handleFlightSelect = async (flight: Flight) => {
     try {
+      // Lấy và parse travelSession
+      const sessionData = localStorage.getItem("travelSession");
+      let updatedSession;
+      if (sessionData) {
+        try {
+          updatedSession = { ...JSON.parse(sessionData), flight };
+        } catch (error) {
+          console.error("Lỗi khi parse travelSession:", error);
+          updatedSession = { flight };
+        }
+      } else {
+        updatedSession = { flight };
+      }
+
+      // Lưu vào localStorage
+      localStorage.setItem("travelSession", JSON.stringify(updatedSession));
+
+      // Gọi API để lưu chuyến bay
       const response = await fetch(
         "http://127.0.0.1:8000/recommend/select-flight/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ flight_info: flight }), // Sửa ở đây
+          body: JSON.stringify({ flight_info: flight }),
         }
       );
 
@@ -291,7 +333,10 @@ const Flight = () => {
         throw new Error("Không thể lưu lựa chọn chuyến bay");
       }
 
+      // Đánh dấu bước hoàn thành
       localStorage.setItem("completedStep", "flight");
+
+      // Điều hướng về /Q&A
       router.push("/Q&A");
     } catch (error) {
       console.error("Lỗi khi lưu chuyến bay:", error);
