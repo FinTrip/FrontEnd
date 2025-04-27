@@ -45,7 +45,7 @@ export default function WeatherSearch({ onSearch, defaultValue = "" }: WeatherSe
             onFocus={() => setShowSuggestions(true)}
             className="pl-10 py-6 text-base rounded-l-lg border-r-0 focus-visible:ring-teal-500"
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 py-6" />
         </div>
         <Button type="submit" className="rounded-l-none bg-teal-600 hover:bg-teal-700 text-white px-6 py-6">
           Tìm kiếm
