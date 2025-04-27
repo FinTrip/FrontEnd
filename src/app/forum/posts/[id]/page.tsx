@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback } from "@/app/page/components/ui/avatar"
 import { Separator } from "@/app/page/components/ui/separator"
 import { Textarea } from "@/app/page/components/ui/textarea"
-import { MapPin, Calendar, User, ThumbsUp, MessageSquare, ArrowLeft, Eye, Loader2 } from "lucide-react"
+import { MapPin, Calendar, User, ThumbsUp, MessageSquare, ArrowLeft, Eye, Loader2, Flag } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import EditPostForm from "./EditPostForm"
@@ -67,6 +67,16 @@ export default function PostPage({ params }: { params: { id: string } }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const router = useRouter();
+
+  // State cho báo cáo bài viết
+  const [showPostReportBox, setShowPostReportBox] = useState(false);
+  const [postReportReason, setPostReportReason] = useState("");
+  const [isReportingPost, setIsReportingPost] = useState(false);
+
+  // State cho báo cáo user từ comment/reply
+  const [showUserReportBox, setShowUserReportBox] = useState<{[key:number]: boolean}>({});
+  const [userReportReason, setUserReportReason] = useState<{[key:number]: string}>({});
+  const [isReportingUser, setIsReportingUser] = useState<{[key:number]: boolean}>({});
 
   const fetchComments = async () => {
     try {
@@ -406,6 +416,84 @@ export default function PostPage({ params }: { params: { id: string } }) {
     );
   };
 
+  // Hàm gửi báo cáo
+  const handleSendReport = async (type: 'POST_REPORT'|'USER_REPORT'|'COMMENT_REPORT'|'REPLY_REPORT', targetId: number, reason: string, onDone: () => void) => {
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để báo cáo");
+      return;
+    }
+    if (!reason.trim()) {
+      toast.error("Vui lòng nhập nội dung báo cáo");
+      return;
+    }
+    const body: Record<string, unknown> = { reportType: type, reason };
+    if (type === 'POST_REPORT') body.reportedPostId = targetId;
+    else if (type === 'USER_REPORT') body.reportedUserId = targetId;
+    else if (type === 'COMMENT_REPORT') body.reportedCommentId = targetId;
+    else if (type === 'REPLY_REPORT') body.reportedReplyId = targetId;
+    try {
+      if (type === 'POST_REPORT') setIsReportingPost(true);
+      if (type === 'COMMENT_REPORT') setIsReportingComment((prev) => ({...prev, [targetId]: true}));
+      if (type === 'REPLY_REPORT') setIsReportingReply((prev) => ({...prev, [targetId]: true}));
+      const res = await fetch("http://localhost:8081/indentity/api/reports/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok && data.code === 200) {
+        toast.success("Gửi báo cáo thành công!");
+        onDone();
+      } else {
+        toast.error(data.message || "Không thể gửi báo cáo");
+      }
+    } catch {
+      toast.error("Có lỗi xảy ra khi gửi báo cáo");
+    } finally {
+      if (type === 'POST_REPORT') setIsReportingPost(false);
+      if (type === 'COMMENT_REPORT') setIsReportingComment((prev) => ({...prev, [targetId]: false}));
+      if (type === 'REPLY_REPORT') setIsReportingReply((prev) => ({...prev, [targetId]: false}));
+    }
+  };
+
+  // Hàm gửi báo cáo user
+  const handleSendUserReport = async (userId: number, reason: string, onDone: () => void) => {
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để báo cáo");
+      return;
+    }
+    if (!reason.trim()) {
+      toast.error("Vui lòng nhập nội dung báo cáo");
+      return;
+    }
+    const body: Record<string, unknown> = { reportType: 'USER_REPORT', reason, reportedUserId: userId };
+    try {
+      setIsReportingUser((prev) => ({...prev, [userId]: true}));
+      const res = await fetch("http://localhost:8081/indentity/api/reports/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok && data.code === 200) {
+        toast.success("Gửi báo cáo thành công!");
+        onDone();
+      } else {
+        toast.error(data.message || "Không thể gửi báo cáo");
+      }
+    } catch {
+      toast.error("Có lỗi xảy ra khi gửi báo cáo");
+    } finally {
+      setIsReportingUser((prev) => ({...prev, [userId]: false}));
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -493,14 +581,15 @@ export default function PostPage({ params }: { params: { id: string } }) {
                   </Button>
                 </div>
                 <div className="flex gap-2">
-                  {/* <Button variant="ghost" size="sm" className="flex items-center gap-1 text-gray-500 hover:text-[#00B4DB]">
-                    <Share2 className="h-4 w-4" />
-                    <span>Chia sẻ</span>
-                  </Button> */}
-                  {/* <Button variant="ghost" size="sm" className="flex items-center gap-1 text-gray-500 hover:text-[#00B4DB]">
-                    <Bookmark className="h-4 w-4" />
-                    <span>Lưu</span>
-                  </Button> */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1 text-red-500 border-red-300 hover:bg-red-50"
+                    onClick={() => setShowPostReportBox((v) => !v)}
+                  >
+                    <Flag className="h-4 w-4" />
+                    <span>Báo cáo</span>
+                  </Button>
                 </div>
               </div>
 
@@ -634,14 +723,39 @@ export default function PostPage({ params }: { params: { id: string } }) {
                             </span>
                           </div>
                           <p className="mt-1 text-gray-700">{comment.content}</p>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="mt-2 text-gray-500 hover:text-[#00B4DB]"
-                            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                          >
-                            Trả lời
-                          </Button>
+                          <div className="flex gap-2 mt-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-gray-500 hover:text-[#00B4DB]"
+                              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                            >
+                              Trả lời
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-600"
+                              onClick={() => setShowUserReportBox(prev => ({...prev, [comment.id]: !prev[comment.id]}))}
+                            >
+                              <Flag className="h-4 w-4" /> Báo cáo
+                            </Button>
+                          </div>
+                          {showUserReportBox[comment.id] && (
+                            <div className="my-2 p-3 border border-red-200 bg-red-50 rounded-lg">
+                              <label className="block font-medium mb-1">Nội dung báo cáo người dùng:</label>
+                              <Textarea
+                                value={userReportReason[comment.id] || ""}
+                                onChange={e => setUserReportReason(prev => ({...prev, [comment.id]: e.target.value}))}
+                                placeholder="Nhập nội dung báo cáo..."
+                                disabled={isReportingUser[comment.id]}
+                              />
+                              <div className="flex gap-2 mt-2 justify-end">
+                                <Button variant="outline" onClick={() => setShowUserReportBox(prev => ({...prev, [comment.id]: false}))} disabled={isReportingUser[comment.id]}>Hủy</Button>
+                                <Button onClick={() => handleSendUserReport(comment.id, userReportReason[comment.id] || "", () => { setShowUserReportBox(prev => ({...prev, [comment.id]: false})); setUserReportReason(prev => ({...prev, [comment.id]: ""})); })} disabled={isReportingUser[comment.id]} className="bg-red-500 text-white hover:bg-red-600">{isReportingUser[comment.id] ? 'Đang gửi...' : 'Xác minh'}</Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -705,16 +819,41 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                       </span>
                                     </div>
                                     <p className="mt-1 text-gray-700">{reply.content}</p>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="mt-2 text-gray-500 hover:text-[#00B4DB]"
-                                      onClick={() => setReplyingToReply(
-                                        replyingToReply?.replyId === reply.id ? null : { commentId: comment.id, replyId: reply.id }
-                                      )}
-                                    >
-                                      Trả lời
-                                    </Button>
+                                    <div className="flex gap-2 mt-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="text-gray-500 hover:text-[#00B4DB]"
+                                        onClick={() => setReplyingToReply(
+                                          replyingToReply?.replyId === reply.id ? null : { commentId: comment.id, replyId: reply.id }
+                                        )}
+                                      >
+                                        Trả lời
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-500 hover:text-red-600"
+                                        onClick={() => setShowUserReportBox(prev => ({...prev, [reply.id]: !prev[reply.id]}))}
+                                      >
+                                        <Flag className="h-4 w-4" /> Báo cáo
+                                      </Button>
+                                    </div>
+                                    {showUserReportBox[reply.id] && (
+                                      <div className="my-2 p-3 border border-red-200 bg-red-50 rounded-lg">
+                                        <label className="block font-medium mb-1">Nội dung báo cáo người dùng:</label>
+                                        <Textarea
+                                          value={userReportReason[reply.id] || ""}
+                                          onChange={e => setUserReportReason(prev => ({...prev, [reply.id]: e.target.value}))}
+                                          placeholder="Nhập nội dung báo cáo..."
+                                          disabled={isReportingUser[reply.id]}
+                                        />
+                                        <div className="flex gap-2 mt-2 justify-end">
+                                          <Button variant="outline" onClick={() => setShowUserReportBox(prev => ({...prev, [reply.id]: false}))} disabled={isReportingUser[reply.id]}>Hủy</Button>
+                                          <Button onClick={() => handleSendUserReport(reply.id, userReportReason[reply.id] || "", () => { setShowUserReportBox(prev => ({...prev, [reply.id]: false})); setUserReportReason(prev => ({...prev, [reply.id]: ""})); })} disabled={isReportingUser[reply.id]} className="bg-red-500 text-white hover:bg-red-600">{isReportingUser[reply.id] ? 'Đang gửi...' : 'Xác minh'}</Button>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -857,6 +996,30 @@ export default function PostPage({ params }: { params: { id: string } }) {
           </div>
           <div className="absolute bottom-6 left-0 right-0 text-center text-white">
             {currentImageIndex + 1} / {imageViewerImages.length}
+          </div>
+        </div>
+      )}
+
+      {/* Modal báo cáo bài viết */}
+      {showPostReportBox && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="relative w-full max-w-xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h2 className="text-2xl font-semibold mb-4">Báo cáo bài viết</h2>
+                <label className="block font-medium mb-1">Nội dung báo cáo bài viết:</label>
+                <Textarea
+                  value={postReportReason}
+                  onChange={e => setPostReportReason(e.target.value)}
+                  placeholder="Nhập nội dung báo cáo..."
+                  disabled={isReportingPost}
+                />
+                <div className="flex gap-2 mt-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowPostReportBox(false)} disabled={isReportingPost}>Hủy</Button>
+                  <Button onClick={() => handleSendReport('POST_REPORT', post!.id, postReportReason, () => { setShowPostReportBox(false); setPostReportReason(""); })} disabled={isReportingPost} className="bg-red-500 text-white hover:bg-red-600">{isReportingPost ? 'Đang gửi...' : 'Xác minh'}</Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

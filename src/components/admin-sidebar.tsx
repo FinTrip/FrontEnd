@@ -10,6 +10,7 @@ import {
   // LogOut,
   ChevronLeft,
   ChevronRight,
+  FileWarning,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -42,6 +43,12 @@ export default function AdminSidebar() {
       icon: BarChart3,
       href: "admin/statistics",
       active: pathname === "admin/statistics",
+    },
+    {
+      title: "Report",
+      icon: FileWarning,
+      href: "/admin/report",
+      active: pathname === "/admin/report",
     },
   ];
 
