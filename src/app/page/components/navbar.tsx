@@ -209,19 +209,8 @@ export function Navbar() {
 
         {/* Center Section */}
         <div className="hidden md:flex items-center gap-2">
-          <Link
-            href="/forum"
-            onClick={handleNavigation}
-            className={cn(
-              "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
-              pathname === "/forum"
-                ? "text-foreground bg-accent"
-                : "text-muted-foreground"
-            )}
-          >
-            Forum
-          </Link>
-          <Link
+
+          {/* <Link
             href="/findFH"
             onClick={handleNavigation}
             className={cn(
@@ -232,7 +221,7 @@ export function Navbar() {
             )}
           >
             Flight & Hotel
-          </Link>
+          </Link> */}
           <Link
             href="/homepage"
             onClick={handleNavigation}
@@ -246,16 +235,16 @@ export function Navbar() {
             Home
           </Link>
           <Link
-            href="/plan"
+            href="/Q&A"
             onClick={handleNavigation}
             className={cn(
               "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
-              pathname === "/plan"
+              pathname === "/Q&A"
                 ? "text-foreground bg-accent"
                 : "text-muted-foreground"
             )}
           >
-            Plan
+            Q&A
           </Link>
           <Link
             href="/weather"
@@ -280,6 +269,18 @@ export function Navbar() {
             )}
           >
             To do list
+          </Link>
+          <Link
+            href="/forum"
+            onClick={handleNavigation}
+            className={cn(
+              "px-6 py-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-accent",
+              pathname === "/forum"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground"
+            )}
+          >
+            Forum
           </Link>
         </div>
 

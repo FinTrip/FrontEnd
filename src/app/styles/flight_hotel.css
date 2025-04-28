@@ -1,3 +1,8 @@
+/* Định nghĩa biến CSS */
+:root {
+  --navbar-height: 84px; /* Thay bằng chiều cao thực tế của navbar */
+}
+
 /* Base Styles */
 .flight-hotel-container {
   max-width: 100%;
@@ -157,7 +162,8 @@
 /* Search Container */
 .search-container {
   max-width: 1000px;
-  margin: -80px auto 60px;
+  /* margin: -80px auto 60px; */
+  margin: var(--navbar-height) auto 60px; /* Sử dụng biến CSS */
   background: white;
   border-radius: 1rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -203,8 +209,25 @@
 
 .search-row {
   display: flex;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 1rem;
+  margin: 0;
+}
+
+.form-control {
+  height: 48px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+.date-input,
+.search-button {
+  height: 48px;
 }
 
 .search-row:last-child {
