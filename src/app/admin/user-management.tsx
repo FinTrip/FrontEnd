@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Pencil,
   Trash2,
@@ -39,33 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
-// Mock data for users
-const initialUsers = [
-  {
-    id: 1,
-    fullName: "John Doe",
-    email: "john@example.com",
-    role: "Admin",
-    status: "active",
-  },
-  {
-    id: 2,
-    fullName: "Jane Smith",
-    email: "jane@example.com",
-    role: "User",
-    status: "active",
-  },
-  {
-    id: 3,
-    fullName: "Bob Johnson",
-    email: "bob@example.com",
-    role: "Editor",
-    status: "inactive",
-  },
-];
-
 export default function UserManagement() {
-  // const [users, setUsers] = useState(initialUsers);
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -82,7 +55,7 @@ export default function UserManagement() {
       try {
         const token = localStorage.getItem("token"); // Lấy token từ localStorage
         const response = await fetch(
-          "http://localhost:8080/indentity/api/user",
+          "http://127.0.0.1:8000/recommend/user-management/",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -91,8 +64,16 @@ export default function UserManagement() {
         );
 
         const data = await response.json();
-        if (response.ok && data.code === 200) {
-          setUsers(data.result);
+        if (response.ok) {
+          // Ánh xạ dữ liệu từ API sang cấu trúc hiện tại
+          const transformedUsers = data.users.map((user) => ({
+            id: user.id,
+            fullName: user.full_name,
+            email: user.email,
+            role: user.role_name,
+            status: user.status,
+          }));
+          setUsers(transformedUsers);
         } else {
           console.error("Failed to fetch users:", data.message);
         }
@@ -182,9 +163,8 @@ export default function UserManagement() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="Admin">Admin</SelectItem>
-              <SelectItem value="Editor">Editor</SelectItem>
-              <SelectItem value="User">User</SelectItem>
+              <SelectItem value="ADMIN">Admin</SelectItem>
+              <SelectItem value="USER">User</SelectItem>
             </SelectContent>
           </Select>
 

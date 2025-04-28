@@ -64,35 +64,10 @@ export default function AdminSidebar() {
 
   return (
     <div
-      className={`h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
-        state === "expanded" ? "w-64" : "w-20"
-      }`}
+      className={`h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${state === "expanded" ? "w-64" : "w-20"
+        }`}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <Link href="/" className="flex items-center space-x-2 overflow-hidden">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
-            <span className="text-lg font-bold">F</span>
-          </div>
-          {/*{state === "expanded" && (*/}
-          {/*  <span className="text-xl font-bold text-blue-600 transition-opacity duration-300">*/}
-          {/*    FinTrip*/}
-          {/*  </span>*/}
-          {/*)}*/}
-        </Link>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={toggleSidebar}
-          className="h-8 w-8 rounded-full hover:bg-gray-100"
-        >
-          {state === "expanded" ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
+
 
       {/* Menu */}
       <div className="py-4">
@@ -101,14 +76,12 @@ export default function AdminSidebar() {
             <li key={item.title}>
               <Link
                 href={item.href}
-                className={`flex items-center rounded-md px-3 py-2 transition-colors hover:bg-gray-100 ${
-                  item.active ? "bg-blue-50 text-blue-600" : "text-gray-700"
-                }`}
+                className={`flex items-center rounded-md px-3 py-2 transition-colors hover:bg-gray-100 ${item.active ? "bg-blue-50 text-blue-600" : "text-gray-700"
+                  }`}
               >
                 <item.icon
-                  className={`h-5 w-5 ${
-                    item.active ? "text-blue-600" : "text-gray-500"
-                  }`}
+                  className={`h-5 w-5 ${item.active ? "text-blue-600" : "text-gray-500"
+                    }`}
                 />
                 {state === "expanded" && (
                   <span className="ml-3 transition-opacity duration-300">
