@@ -1098,8 +1098,8 @@ export default function ForumHome() {
   // --- Phần JSX ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe]">
-      <div className="container mx-auto px-4 py-8 md:px-6 lg:px-8 flex">
-        <div className="flex-grow lg:pr-8">
+      <div className="w-full max-w-screen-xl mx-auto px-2 md:px-6 lg:px-8 py-8 flex flex-row overflow-x-hidden">
+        <div className="flex-grow min-w-0 lg:pr-8">
           {/* Header */}
           <header className="mb-8 text-center relative overflow-hidden rounded-xl bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
             <div className="relative py-12 px-8">
@@ -1245,9 +1245,7 @@ export default function ForumHome() {
             )}
           </section>
         </div>
-
-        {/* Sidebar */}
-        <div className="w-80 flex-shrink-0 lg:pl-8 hidden lg:block">
+        <div className="w-80 flex-shrink-0 pl-0 lg:pl-8 block">
           <div className="sticky top-6 bg-white/80 backdrop-blur-sm border-0 rounded-xl overflow-hidden h-[calc(100vh-3rem)] flex flex-col shadow-lg">
             <div className="p-4 border-b bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
               <h2 className="text-xl font-semibold flex items-center gap-2.5 text-white">
@@ -1340,29 +1338,19 @@ export default function ForumHome() {
               )}
 
               {/* Danh sách nhóm */}
-              {/* Danh sách nhóm */}
               {!searchQuery && (
                 <div className="p-4 border-b">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium flex items-center justify-between mb-3">
-                      <span className="flex items-center gap-2 text-gray-800">
-                        <MessageSquare className="h-4 w-4" /> Danh sách nhóm
-                        {groups.length > 0 && (
-                          <Badge variant="secondary" className="ml-2">
-                            {groups.length}
-                          </Badge>
-                        )}
-                      </span>
+                    <h3 className="text-sm font-medium flex items-center gap-2 text-gray-800">
+                      <MessageSquare className="h-4 w-4" /> Danh sách nhóm
                       {groups.length > 0 && (
-                        <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#00B4DB] hover:bg-[#00B4DB]/10">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </CreateGroupDialog>
+                        <Badge variant="secondary" className="ml-2">
+                          {groups.length}
+                        </Badge>
                       )}
                     </h3>
+                    <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup} />
                   </div>
-                  <div className="space-y-2">
                   <div className="space-y-2">
                     {isLoadingGroups ? (
                       <p className="text-sm text-center text-gray-500 py-2">
@@ -1371,11 +1359,7 @@ export default function ForumHome() {
                     ) : groups.length === 0 ? (
                       <div className="text-center">
                         <p className="text-sm text-gray-500 mb-3">Bạn chưa tham gia nhóm nào.</p>
-                        <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#00B4DB] hover:bg-[#00B4DB]/10">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </CreateGroupDialog>
+                        <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup} />
                       </div>
                     ) : (
                       <>
@@ -1551,11 +1535,6 @@ export default function ForumHome() {
                           {filteredFriends.length}
                         </Badge>
                       )}
-                      {filteredFriends.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                          {filteredFriends.length}
-                        </Badge>
-                      )}
                     </h3>
                     {isLoadingFriends ? (
                       <p className="text-sm text-center text-gray-500 py-4">
@@ -1622,7 +1601,6 @@ export default function ForumHome() {
                                 <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-100/80" onClick={() => handleRemoveFriend(friend.id)}>
                                   Hủy kết bạn
                                 </DropdownMenuItem>
-                                
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
