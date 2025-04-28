@@ -46,6 +46,8 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [editUser, setEditUser] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const usersPerPage = 10;
 
@@ -53,7 +55,7 @@ export default function UserManagement() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const token = localStorage.getItem("token"); // Lấy token từ localStorage
+        const token = localStorage.getItem("token");
         const response = await fetch(
           "http://127.0.0.1:8000/recommend/user-management/",
           {
@@ -65,7 +67,6 @@ export default function UserManagement() {
 
         const data = await response.json();
         if (response.ok) {
-          // Ánh xạ dữ liệu từ API sang cấu trúc hiện tại
           const transformedUsers = data.users.map((user) => ({
             id: user.id,
             fullName: user.full_name,
@@ -117,17 +118,66 @@ export default function UserManagement() {
     }
   };
 
+  // Handle edit user
+  const handleEditClick = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://127.0.0.1:8000/recommend/user/${userId}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setEditUser(data.user); // Lưu thông tin người dùng từ API
+        setIsEditModalOpen(true); // Mở modal chỉnh sửa
+      } else {
+        console.error("Failed to fetch user details:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
+  };
+
+  const handleEditSubmit = async (updatedUser) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://127.0.0.1:8000/recommend/update-user/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedUser),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        // Cập nhật lại danh sách người dùng
+        setUsers(users.map((user) =>
+          user.id === updatedUser.id ? {
+            id: updatedUser.id,
+            fullName: updatedUser.full_name,
+            email: updatedUser.email,
+            role: updatedUser.role_name,
+            status: updatedUser.status,
+          } : user
+        ));
+        setIsEditModalOpen(false); // Đóng modal
+      } else {
+        console.error("Failed to update user:", data.message);
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+    }
+  };
+
   // Render status badge with appropriate color
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return (
-          <Badge className="bg-green-500 hover:bg-green-600">Active</Badge>
-        );
+        return <Badge className="bg-green-500 hover:bg-green-600">Active</Badge>;
       case "inactive":
-        return (
-          <Badge className="bg-yellow-500 hover:bg-yellow-600">Inactive</Badge>
-        );
+        return <Badge className="bg-yellow-500 hover:bg-yellow-600">Inactive</Badge>;
       case "banned":
         return <Badge className="bg-red-500 hover:bg-red-600">Banned</Badge>;
       default:
@@ -198,18 +248,10 @@ export default function UserManagement() {
             {currentUsers.length > 0 ? (
               currentUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="text-gray-800 font-medium">
-                    {user.id}
-                  </TableCell>
-                  <TableCell className="text-gray-800 font-medium">
-                    {user.fullName}
-                  </TableCell>
-                  <TableCell className="text-gray-800 font-medium">
-                    {user.email}
-                  </TableCell>
-                  <TableCell className="text-gray-800 font-medium">
-                    {user.role}
-                  </TableCell>
+                  <TableCell className="text-gray-800 font-medium">{user.id}</TableCell>
+                  <TableCell className="text-gray-800 font-medium">{user.fullName}</TableCell>
+                  <TableCell className="text-gray-800 font-medium">{user.email}</TableCell>
+                  <TableCell className="text-gray-800 font-medium">{user.role}</TableCell>
                   <TableCell>{renderStatusBadge(user.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
@@ -217,6 +259,7 @@ export default function UserManagement() {
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 text-blue-500 hover:text-blue-600"
+                        onClick={() => handleEditClick(user.id)}
                       >
                         <Pencil className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
@@ -268,9 +311,7 @@ export default function UserManagement() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
             >
               <ChevronRight className="h-4 w-4" />
@@ -300,6 +341,60 @@ export default function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit User Modal */}
+      {isEditModalOpen && (
+        <AlertDialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Edit User</AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Full Name"
+                value={editUser?.full_name || ""}
+                onChange={(e) => setEditUser({ ...editUser, full_name: e.target.value })}
+              />
+              <Input
+                placeholder="Email"
+                value={editUser?.email || ""}
+                onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
+              />
+              <Select
+                value={editUser?.role_name || ""}
+                onValueChange={(value) => setEditUser({ ...editUser, role_name: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                  <SelectItem value="USER">User</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={editUser?.status || ""}
+                onValueChange={(value) => setEditUser({ ...editUser, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="banned">Banned</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <AlertDialogFooter className="mt-4">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleEditSubmit(editUser)}>
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

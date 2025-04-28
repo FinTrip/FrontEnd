@@ -19,14 +19,30 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Toaster, toast } from "react-hot-toast";
 
-// Define the type for destinations based on API response
+// Define the type for destinations based on full API response
 type Destination = {
   name: string;
-  province: string;
-  location_rating: number;
-  image: string;
+  link: string;
   description: string;
+  price: string;
+  name_nearby_place: string;
+  hotel_class: string;
+  img_origin: string;
+  location_rating: string; // Use string as per API response
+  province: string;
+  animates: string;
+  image?: string; // Optional, derived field for display
 };
 
 export default function DestinationsView() {
@@ -37,6 +53,8 @@ export default function DestinationsView() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6); // 6 destinations per page
+  const [editHotel, setEditHotel] = useState<Destination | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Fetch hotel data from API when component mounts
   useEffect(() => {
@@ -47,10 +65,16 @@ export default function DestinationsView() {
         const data = await response.json();
         const transformedHotels = data.hotels.map((hotel: any) => ({
           name: hotel.name,
-          province: hotel.province,
-          location_rating: parseFloat(hotel.location_rating),
-          image: hotel.img_origin.split(",")[0].trim(),
+          link: hotel.link,
           description: hotel.description,
+          price: hotel.price,
+          name_nearby_place: hotel.name_nearby_place,
+          hotel_class: hotel.hotel_class,
+          img_origin: hotel.img_origin,
+          location_rating: hotel.location_rating,
+          province: hotel.province,
+          animates: hotel.animates,
+          image: hotel.img_origin.split(",")[0].trim(), // For display
         }));
         setDestinations(transformedHotels);
         setError(null);
@@ -86,47 +110,116 @@ export default function DestinationsView() {
   // Calculate total pages
   const totalPages = Math.ceil(filteredDestinations.length / itemsPerPage);
 
+  // Handle edit click to fetch hotel details and store full data
+  const handleEditClick = async (hotelName: string) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/recommend/hotels/${hotelName}/`);
+      const data = await response.json();
+      if (response.ok) {
+        const hotel = data.hotel;
+        setEditHotel({
+          name: hotel.name,
+          link: hotel.link,
+          description: hotel.description,
+          price: hotel.price,
+          name_nearby_place: hotel.name_nearby_place,
+          hotel_class: hotel.hotel_class,
+          img_origin: hotel.img_origin,
+          location_rating: hotel.location_rating,
+          province: hotel.province,
+          animates: hotel.animates,
+          image: hotel.img_origin.split(",")[0].trim(), // For display
+        });
+        setIsEditModalOpen(true);
+      } else {
+        console.error("Failed to fetch hotel details:", data.message);
+        toast.error("Không thể lấy thông tin hotel.");
+      }
+    } catch (error) {
+      console.error("Error fetching hotel details:", error);
+      toast.error("Đã xảy ra lỗi khi lấy thông tin hotel.");
+    }
+  };
+
+  // Handle edit submission to update hotel with full data
+  const handleEditSubmit = async () => {
+    if (!editHotel) return;
+    try {
+      const response = await fetch("http://127.0.0.1:8000/recommend/update-hotel/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editHotel.name,
+          link: editHotel.link,
+          description: editHotel.description,
+          price: editHotel.price,
+          name_nearby_place: editHotel.name_nearby_place,
+          hotel_class: editHotel.hotel_class,
+          img_origin: editHotel.img_origin,
+          location_rating: editHotel.location_rating,
+          province: editHotel.province,
+          animates: editHotel.animates,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setDestinations(destinations.map((dest) =>
+          dest.name === editHotel.name
+            ? { ...editHotel, image: editHotel.img_origin.split(",")[0].trim() }
+            : dest
+        ));
+        setIsEditModalOpen(false);
+        toast.success(`Cập nhật ${editHotel.name} thành công!`);
+      } else {
+        console.error("Lỗi từ server:", data);
+        toast.error(`Cập nhật hotel thất bại: ${data.message || "Vui lòng thử lại."}`);
+      }
+    } catch (error) {
+      console.error("Lỗi khi gửi yêu cầu:", error);
+      toast.error("Cập nhật hotel thất bại. Vui lòng thử lại.");
+    }
+  };
+
   // Handle delete action
   const handleDelete = async (name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${name} không?`)) {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/recommend/delete-hotel/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name }),
+    try {
+      const response = await fetch("http://127.0.0.1:8000/recommend/delete-hotel/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      });
+      if (response.ok) {
+        const newDestinations = destinations.filter((dest) => dest.name !== name);
+        setDestinations(newDestinations);
+
+        const newFiltered = newDestinations.filter((destination) => {
+          const matchesSearch = destination.name
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
+          const matchesProvince = provinceFilter && provinceFilter !== "all"
+            ? destination.province === provinceFilter
+            : true;
+          return matchesSearch && matchesProvince;
         });
-        if (response.ok) {
-          // Cập nhật danh sách destinations sau khi xóa
-          const newDestinations = destinations.filter((dest) => dest.name !== name);
-          setDestinations(newDestinations);
+        const newTotalPages = Math.ceil(newFiltered.length / itemsPerPage);
 
-          // Tính lại danh sách lọc và số trang
-          const newFiltered = newDestinations.filter((destination) => {
-            const matchesSearch = destination.name
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase());
-            const matchesProvince = provinceFilter && provinceFilter !== "all"
-              ? destination.province === provinceFilter
-              : true;
-            return matchesSearch && matchesProvince;
-          });
-          const newTotalPages = Math.ceil(newFiltered.length / itemsPerPage);
-
-          // Điều chỉnh trang hiện tại nếu cần
-          if (currentPage > newTotalPages && newTotalPages > 0) {
-            setCurrentPage(newTotalPages);
-          } else if (newTotalPages === 0) {
-            setCurrentPage(1);
-          }
-        } else {
-          alert("Xóa hotel thất bại. Vui lòng thử lại.");
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(newTotalPages);
+        } else if (newTotalPages === 0) {
+          setCurrentPage(1);
         }
-      } catch (error) {
-        console.error("Lỗi khi xóa hotel:", error);
-        alert("Đã xảy ra lỗi khi xóa hotel.");
+
+        toast.success(`Xóa ${name} thành công!`);
+      } else {
+        toast.error("Xóa hotel thất bại. Vui lòng thử lại.");
       }
+    } catch (error) {
+      console.error("Lỗi khi xóa hotel:", error);
+      toast.error("Đã xảy ra lỗi khi xóa hotel.");
     }
   };
 
@@ -136,19 +229,16 @@ export default function DestinationsView() {
 
   return (
     <div className="space-y-6 w-full">
+      <Toaster position="top-right" reverseOrder={false} />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Destinations</h1>
-        {/* <Button className="bg-blue-500 hover:bg-blue-600">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Destination
-        </Button> */}
       </div>
 
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
-            placeholder="Tìm kiếm điểm đến..."
+            placeholder="Tìm kiếm..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -203,6 +293,7 @@ export default function DestinationsView() {
                 variant="outline"
                 size="sm"
                 className="text-blue-500 hover:text-blue-600"
+                onClick={() => handleEditClick(destination.name)}
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -226,6 +317,58 @@ export default function DestinationsView() {
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <AlertDialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Chỉnh sửa Hotel</AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Tên Hotel"
+                value={editHotel?.name || ""}
+                onChange={(e) => setEditHotel({ ...editHotel!, name: e.target.value })}
+              />
+              <Input
+                placeholder="Tỉnh"
+                value={editHotel?.province || ""}
+                onChange={(e) => setEditHotel({ ...editHotel!, province: e.target.value })}
+              />
+              <Input
+                type="number"
+                step="0.1"
+                placeholder="Điểm đánh giá vị trí"
+                value={editHotel?.location_rating || ""}
+                onChange={(e) => setEditHotel({ ...editHotel!, location_rating: e.target.value })}
+              />
+              <Input
+                placeholder="URL Hình ảnh"
+                value={editHotel?.image || ""}
+                onChange={(e) =>
+                  setEditHotel({
+                    ...editHotel!,
+                    image: e.target.value,
+                    img_origin: e.target.value + editHotel!.img_origin.slice(editHotel!.img_origin.indexOf(",")),
+                  })
+                }
+              />
+              <Input
+                placeholder="Mô tả"
+                value={editHotel?.description || ""}
+                onChange={(e) => setEditHotel({ ...editHotel!, description: e.target.value })}
+              />
+            </div>
+            <AlertDialogFooter className="mt-4">
+              <AlertDialogCancel>Hủy</AlertDialogCancel>
+              <AlertDialogAction onClick={handleEditSubmit}>
+                Xác nhận
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       {/* Pagination controls */}
       {filteredDestinations.length > 0 && (

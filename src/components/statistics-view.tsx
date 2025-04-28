@@ -22,6 +22,8 @@ import {
   ChartLine,
   ChartBar,
 } from "@/components/ui/chart";
+import { CampaignVisitors } from "@/components/Charts/campaign-visitors";
+import { UsedDevices } from "@/components/Charts/used-devices";
 
 // Mock data for travel trends
 const travelTrendsData = [
@@ -204,6 +206,28 @@ export default function StatisticsView() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Thêm các biểu đồ mới từ page.tsx */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Used Devices</CardTitle>
+            <CardDescription>Devices used to access the platform</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[400px]">
+            <UsedDevices timeFrame="monthly" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Campaign Visitors</CardTitle>
+            <CardDescription>Visitors from marketing campaigns</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[400px]">
+            <CampaignVisitors />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

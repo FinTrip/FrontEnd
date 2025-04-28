@@ -285,7 +285,11 @@ body {
 .question-icon-wrapper {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  );
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -406,7 +410,11 @@ input[type="number"]:focus {
 .next-button,
 .complete-button {
   padding: 16px 28px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
   color: white;
   border: none;
   border-radius: var(--border-radius-md);
@@ -437,7 +445,11 @@ input[type="number"]:focus {
 }
 
 .complete-button {
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+  background: linear-gradient(
+    135deg,
+    var(--color-accent),
+    var(--color-accent-dark)
+  );
   box-shadow: 0 4px 12px rgba(0, 108, 79, 0.2);
   animation: pulseButton 2s infinite;
 }
@@ -528,7 +540,11 @@ input[type="number"]:focus {
 }
 
 .city-badge {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
   color: white;
   padding: 8px 16px;
   border-radius: 20px;
@@ -591,7 +607,11 @@ input[type="number"]:focus {
   left: 0;
   width: 4px;
   height: 100%;
-  background: linear-gradient(to bottom, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(
+    to bottom,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -662,7 +682,11 @@ input[type="number"]:focus {
   bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+  background: linear-gradient(
+    135deg,
+    var(--color-accent),
+    var(--color-accent-dark)
+  );
   color: white;
   padding: 1.25rem 2rem;
   border-radius: var(--border-radius-md);
@@ -753,3 +777,21 @@ input[type="number"]:focus {
   }
 }
 
+.confirm-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.complete-button-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 20px; /* Khoảng cách giữa nút "Quay lại" và "Hoàn thành" */
+}

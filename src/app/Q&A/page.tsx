@@ -614,7 +614,7 @@ const QA = () => {
                       whileTap={{ scale: 0.97 }}
                       variants={itemVariants}
                     >
-                      <FaArrowLeft /> Quay lại
+                      <FaArrowLeft />
                     </motion.button>
                   )}
                   {selectedCities.length > 0 && (
@@ -658,7 +658,7 @@ const QA = () => {
                     whileTap={{ scale: 0.97 }}
                     variants={itemVariants}
                   >
-                    <FaArrowLeft /> Quay lại
+                    <FaArrowLeft />
                   </motion.button>
                 )}
               </motion.div>
@@ -759,7 +759,7 @@ const QA = () => {
                       whileTap={{ scale: 0.97 }}
                       variants={itemVariants}
                     >
-                      <FaArrowLeft /> Quay lại
+                      <FaArrowLeft />
                     </motion.button>
                   )}
                   <motion.button

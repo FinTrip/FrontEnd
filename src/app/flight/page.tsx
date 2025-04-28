@@ -558,7 +558,7 @@ const Flight = () => {
                 </div>
 
                 <div className="flight-footer">
-                  <div className="flight-price">{flight.total_price_vnd}</div>
+                  {/* <div className="flight-price">{flight.total_price_vnd}</div> */}
                   <button
                     className="select-button"
                     onClick={() => handleFlightSelect(flight)}
