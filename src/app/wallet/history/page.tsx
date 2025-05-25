@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/page/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/page/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/page/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, Calendar, Wallet, Filter, CreditCard, TrendingUp, Search } from "lucide-react";
@@ -35,6 +35,15 @@ interface Transaction {
   createdAt: string;
 }
 
+// Định nghĩa kiểu dữ liệu cho response API
+interface TransactionApiItem {
+  createdAt: string;
+  status: string;
+  amount: number;
+  description: string;
+  payosOrderId: string;
+}
+
 export default function TransactionHistoryPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,69 +68,35 @@ export default function TransactionHistoryPage() {
   const fetchTransactions = async () => {
     setIsLoading(true);
     try {
-      // Trong thực tế, sẽ gọi API từ backend
-      // const response = await fetch(`http://localhost:8081/indentity/api/wallet/transactions?page=${currentPage}&type=${filter}`, {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`
-      //   }
-      // });
-      // const data = await response.json();
-      // if (data.code === 200) {
-      //   setTransactions(data.result.transactions || []);
-      //   setTotalPages(data.result.totalPages || 1);
-      // } else {
-      //   toast.error("Không thể lấy lịch sử giao dịch");
-      // }
-
-      // Dữ liệu mẫu
-      setTimeout(() => {
-        const mockTransactions: Transaction[] = [
-          {
-            id: 1,
-            amount: 500000,
-            type: "deposit",
-            status: "completed",
-            description: "Nạp tiền vào tài khoản",
-            createdAt: "2025-05-20T10:30:00Z"
-          },
-          {
-            id: 2,
-            amount: 200000,
-            type: "payment",
-            status: "completed",
-            description: "Thanh toán đặt phòng khách sạn",
-            createdAt: "2025-05-19T14:20:00Z"
-          },
-          {
-            id: 3,
-            amount: 100000,
-            type: "deposit",
-            status: "pending",
-            description: "Nạp tiền vào tài khoản",
-            createdAt: "2025-05-19T09:45:00Z"
-          },
-          {
-            id: 4,
-            amount: 150000,
-            type: "payment",
-            status: "failed",
-            description: "Thanh toán đặt vé máy bay",
-            createdAt: "2025-05-18T16:15:00Z"
-          },
-          {
-            id: 5,
-            amount: 50000,
-            type: "withdraw",
-            status: "completed",
-            description: "Rút tiền",
-            createdAt: "2025-05-17T11:10:00Z"
-          }
-        ];
-
+      // Gọi API thực từ backend
+      const response = await fetch("http://localhost:8081/indentity/api/payment/history", {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.code === 200) {
+        // Chuyển đổi dữ liệu API thành định dạng mà giao diện cần
+        const formattedTransactions: Transaction[] = data.result.map((item: TransactionApiItem, index: number) => ({
+          id: item.payosOrderId || index + 1,
+          amount: item.amount,
+          type: item.description.toLowerCase().includes("nạp tiền") ? "deposit" : "payment",
+          status: item.status === "SUCCESS" ? "completed" : "failed",
+          description: item.description,
+          createdAt: item.createdAt
+        }));
+        
         // Lọc theo loại giao dịch nếu cần
-        let filteredTransactions = mockTransactions;
+        let filteredTransactions = formattedTransactions;
         if (filter !== "all") {
-          filteredTransactions = mockTransactions.filter(t => t.type === filter);
+          filteredTransactions = formattedTransactions.filter(t => t.type === filter);
         }
 
         // Lọc theo tìm kiếm
@@ -131,15 +106,17 @@ export default function TransactionHistoryPage() {
             t.id.toString().includes(searchTerm)
           );
         }
-
+        
         setTransactions(filteredTransactions);
-        setTotalPages(2); // Giả sử có 2 trang
-        setIsLoading(false);
-      }, 800);
-
+        setTotalPages(Math.ceil(formattedTransactions.length / 10) || 1); // Giả sử mỗi trang 10 giao dịch
+        
+      } else {
+        toast.error("Không thể lấy lịch sử giao dịch");
+      }
     } catch (error) {
       console.error("Lỗi khi lấy lịch sử giao dịch:", error);
       toast.error("Đã xảy ra lỗi khi tải lịch sử giao dịch");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -150,7 +127,7 @@ export default function TransactionHistoryPage() {
       case "completed":
         return <Badge className="bg-green-500 hover:bg-green-600">Thành công</Badge>;
       case "pending":
-        return <Badge className="bg-amber-500 hover:bg-amber-600">Đang xử lý</Badge>;
+        return <Badge className="bg-red-500 hover:bg-red-600">Giao dịch bị huỷ</Badge>;
       case "failed":
         return <Badge className="bg-red-500 hover:bg-red-600">Thất bại</Badge>;
       default:

@@ -8,12 +8,33 @@ import RechargeForm from "./components/RechargeForm";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Wallet, ArrowRight, CreditCard, PiggyBank, Clock, TrendingUp, DollarSign } from "lucide-react";
+import { Badge } from "@/app/page/components/ui/badge";
+
+// Định nghĩa kiểu dữ liệu cho giao dịch
+interface TransactionApiItem {
+  createdAt: string;
+  status: string;
+  amount: number;
+  description: string;
+  payosOrderId: string;
+}
+
+interface RecentTransaction {
+  id: string;
+  type: "deposit" | "payment";
+  amount: number;
+  date: string;
+  description: string;
+  status: string;
+}
 
 export default function WalletPage() {
   const [balance, setBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const { token } = useAuth();
   const router = useRouter();
+  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [quickActions] = useState([
     { 
       title: "Nạp tiền", 
@@ -66,6 +87,11 @@ export default function WalletPage() {
   useEffect(() => {
     // Fetch số dư tài khoản khi component mount và khi token thay đổi
     fetchBalance();
+    
+    // Fetch recent transactions
+    if (token) {
+      fetchRecentTransactions();
+    }
   }, [token]);
 
   // Xử lý khi nạp tiền thành công
@@ -77,15 +103,60 @@ export default function WalletPage() {
     // Lưu ý: Số dư thực tế sẽ cập nhật sau khi thanh toán hoàn tất
     setTimeout(() => {
       fetchBalance();
+      fetchRecentTransactions();
     }, 2000);
   };
 
-  // Mock recent transactions for demonstration
-  const recentTransactions = [
-    { id: 1, type: "deposit", amount: 200000, date: "10/06/2023", description: "Nạp tiền vào tài khoản" },
-    { id: 2, type: "payment", amount: 150000, date: "08/06/2023", description: "Thanh toán khách sạn" },
-    { id: 3, type: "deposit", amount: 500000, date: "01/06/2023", description: "Nạp tiền vào tài khoản" }
-  ];
+  // Fetch lịch sử giao dịch gần đây
+  const fetchRecentTransactions = async () => {
+    setTransactionsLoading(true);
+    try {
+      const response = await fetch("http://localhost:8081/indentity/api/payment/history", {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.code === 200) {
+        // Lấy 3 giao dịch gần nhất
+        const formattedTransactions = data.result
+          .slice(0, 3)
+          .map((item: TransactionApiItem) => ({
+            id: item.payosOrderId,
+            type: item.description.toLowerCase().includes("nạp tiền") ? "deposit" : "payment",
+            amount: item.amount,
+            date: new Date(item.createdAt).toLocaleDateString("vi-VN"),
+            description: item.description,
+            status: item.status
+          }));
+        
+        setRecentTransactions(formattedTransactions);
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy giao dịch gần đây:", error);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
+  // Hiển thị badge cho trạng thái giao dịch
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "SUCCESS":
+        return <Badge className="bg-green-500 hover:bg-green-600">Thành công</Badge>;
+      case "PENDING":
+        return <Badge className="bg-red-500 hover:bg-red-600">Giao dịch bị huỷ</Badge>;
+      default:
+        return <Badge className="bg-red-500 hover:bg-red-600">Thất bại</Badge>;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] via-[#e6f7ff] to-[#e0f2fe] py-8 px-4 sm:px-6 lg:px-8">
@@ -193,7 +264,11 @@ export default function WalletPage() {
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="divide-y">
-                    {recentTransactions.length > 0 ? (
+                    {transactionsLoading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00B4DB]"></div>
+                      </div>
+                    ) : recentTransactions.length > 0 ? (
                       recentTransactions.map((transaction) => (
                         <div key={transaction.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex items-center space-x-4">
@@ -206,7 +281,10 @@ export default function WalletPage() {
                             </div>
                             <div>
                               <h4 className="font-medium text-gray-800">{transaction.description}</h4>
-                              <p className="text-sm text-gray-500">{transaction.date}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <p className="text-sm text-gray-500">{transaction.date}</p>
+                                {getStatusBadge(transaction.status)}
+                              </div>
                             </div>
                           </div>
                           <span className={`font-medium ${
