@@ -648,13 +648,13 @@ export default function Plan() {
                   {activities[selectedDayIndex]?.date}
                 </h2>
 
-                <button
+                {/* <button
                   onClick={() => toggleHomePage(selectedDayIndex)}
                   className="bg-[#1a936f] hover:bg-[#114b5f] text-white px-4 py-2 rounded flex items-center"
                 >
                   <FaPlus className="mr-2" />
                   Thêm hoạt động
-                </button>
+                </button> */}
               </div>
 
               {activities[selectedDayIndex]?.activities.length > 0 ? (
