@@ -21,7 +21,6 @@ export default function EditPostForm({ post, onClose, onUpdated }: EditPostFormP
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
   const [images, setImages] = useState<string[]>(post.images || []);
-  const [newImageUrl, setNewImageUrl] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState("");
@@ -45,27 +44,12 @@ export default function EditPostForm({ post, onClose, onUpdated }: EditPostFormP
       setImages(prev => prev.filter((_, i) => i !== index));
     } else {
       setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-      setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+      setPreviewUrls(prev => {
+        const newUrls = [...prev];
+        URL.revokeObjectURL(newUrls[index]); // Clean up object URL
+        return newUrls.filter((_, i) => i !== index);
+      });
     }
-  };
-
-  // Thêm ảnh từ link
-  const handleAddImage = () => {
-    if (newImageUrl.trim()) {
-      setImages([...images, newImageUrl.trim()]);
-      setNewImageUrl("");
-    }
-  };
-
-  // Upload file lên server, trả về link ảnh (giả lập, cần thay bằng API thực tế nếu có)
-  const uploadFile = async (file: File): Promise<string> => {
-    // TODO: Thay thế bằng API upload thực tế nếu có
-    // Hiện tại chỉ trả về URL local để demo
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(URL.createObjectURL(file));
-      }, 500);
-    });
   };
 
   // Submit form
@@ -78,18 +62,23 @@ export default function EditPostForm({ post, onClose, onUpdated }: EditPostFormP
       setIsLoading(false);
       return;
     }
+    
     try {
       // Chuẩn bị FormData
       const formDataToSend = new FormData();
       formDataToSend.append("title", title);
       formDataToSend.append("content", content);
+      
+      // Gửi danh sách ảnh hiện tại (sau khi đã xóa các ảnh không cần)
       formDataToSend.append("images", images.join(","));
-      if (selectedFiles.length > 0) {
-        selectedFiles.forEach((file) => {
-          formDataToSend.append("files", file);
-        });
-      }
+      
+      // Thêm các file mới được chọn
+      selectedFiles.forEach((file) => {
+        formDataToSend.append("files", file);
+      });
+
       console.log("Images gửi lên backend:", images);
+      
       const response = await fetch(`http://localhost:8081/indentity/api/blog/update/${post.id}`, {
         method: "PUT",
         headers: {
@@ -97,8 +86,12 @@ export default function EditPostForm({ post, onClose, onUpdated }: EditPostFormP
         },
         body: formDataToSend
       });
+      
       const data = await response.json();
       if (data.code === 200) {
+        // Cleanup preview URLs
+        previewUrls.forEach(url => URL.revokeObjectURL(url));
+        
         onUpdated({
           ...post,
           title,
@@ -108,7 +101,8 @@ export default function EditPostForm({ post, onClose, onUpdated }: EditPostFormP
       } else {
         setError(data.message || "Không thể cập nhật bài viết");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Có lỗi xảy ra khi cập nhật bài viết");
     } finally {
       setIsLoading(false);
