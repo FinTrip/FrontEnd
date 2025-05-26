@@ -163,7 +163,7 @@ const SquishySearchCard = ({
     >
       <div className="search-card-decoration decoration-1"></div>
       <div className="search-card-decoration decoration-2"></div>
-      
+
       <div className="search-card-content">
         <motion.span
           initial={{ opacity: 0, y: -10 }}
@@ -606,9 +606,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
               exit={{ opacity: 0 }}
               transition={{ duration: 1 }}
             >
-              <div 
-                className="hero-slide-bg" 
-                style={{ 
+              <div
+                className="hero-slide-bg"
+                style={{
                   backgroundImage: `url(${heroSlides[activeSlide].image})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
@@ -683,7 +683,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
       </section>
 
       {/* Search Container */}
-      <motion.div
+      {/* <motion.div
         className="search-container"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -705,7 +705,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
             Tìm kiếm
           </button>
         </div>
-      </motion.div>
+      </motion.div> */}
 
       {/* Explore Section */}
       {/* <motion.section
@@ -753,10 +753,10 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           </motion.div>
         </motion.div>
       </motion.section> */}
-      
+
 
       {/* Add after explore-section and before destinations-section */}
-      <motion.section 
+      <motion.section
         className="plan-assistance-section"
         initial="hidden"
         whileInView="visible"
@@ -765,25 +765,25 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
       >
         <div className="plan-assistance-decoration decoration-1"></div>
         <div className="plan-assistance-decoration decoration-2"></div>
-        
-        <motion.div 
+
+        <motion.div
           className="plan-assistance-container"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <motion.div 
+          <motion.div
             className="plan-assistance-content"
             variants={slideUp}
           >
             <h2 className="plan-assistance-title">Sẵn sàng cho chuyến đi của bạn?</h2>
             <p className="plan-assistance-text">
-              Hãy để chúng tôi giúp bạn lập kế hoạch cho một chuyến đi hoàn hảo. 
+              Hãy để chúng tôi giúp bạn lập kế hoạch cho một chuyến đi hoàn hảo.
               Từ việc chọn điểm đến, đặt chỗ ở đến lịch trình chi tiết - tất cả đều được cá nhân hóa theo sở thích của bạn.
             </p>
             <Link href="/Q&A">
-              <motion.div 
+              <motion.div
                 className="plan-assistance-button"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -793,13 +793,13 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
               </motion.div>
             </Link>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             className="plan-assistance-image"
             variants={slideRight}
           >
-            <img 
-              src="https://i.pinimg.com/736x/33/df/4c/33df4cda6c650782b67d2e53d717cc05.jpg" 
+            <img
+              src="https://i.pinimg.com/736x/33/df/4c/33df4cda6c650782b67d2e53d717cc05.jpg"
               alt="Plan your trip"
               className="rounded-lg shadow-xl"
               style={{ maxWidth: "400px", width: "100%" }}
@@ -809,7 +809,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
       </motion.section>
 
       {/* Add after plan-assistance-section and before destinations-section */}
-      <motion.section 
+      <motion.section
         className="search-banner"
         initial="hidden"
         whileInView="visible"
@@ -818,15 +818,15 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
       >
         <div className="search-banner-pattern"></div>
         <div className="search-banner-border"></div>
-        
-        <motion.div 
+
+        <motion.div
           className="search-banner-container"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <motion.div 
+          <motion.div
             className="search-banner-content"
             variants={slideUp}
           >
@@ -834,7 +834,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
             <p className="search-banner-text">
               Khám phá vẻ đẹp Việt Nam với những điểm đến đầy mê hoặc. Từ những bãi biển xanh ngắt đến ruộng bậc thang mùa lúa chín, hay những phố cổ đậm chất lịch sử - chúng tôi sẽ giúp bạn tìm ra điểm đến hoàn hảo.
             </p>
-            <motion.div 
+            <motion.div
               className="search-banner-button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -844,15 +844,15 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
               <span>Khám phá điểm đến</span>
             </motion.div>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             className="search-banner-image"
             variants={slideRight}
           >
             <div className="lantern lantern-1"></div>
             <div className="lantern lantern-2"></div>
-            <img 
-              src="https://i.pinimg.com/736x/97/b2/11/97b211143649cfadb5622e6e6db2a2d6.jpg" 
+            <img
+              src="https://i.pinimg.com/736x/97/b2/11/97b211143649cfadb5622e6e6db2a2d6.jpg"
               alt="Bản đồ Việt Nam"
               className="floating-map"
             />
@@ -876,7 +876,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
       >
         <div className="search-card-decoration decoration-1"></div>
         <div className="search-card-decoration decoration-2"></div>
-        
+
         <div className="search-card-content">
           <motion.span
             initial={{ opacity: 0, y: -10 }}
@@ -965,9 +965,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                 onDragEnd={(e: React.DragEvent<HTMLDivElement>) => handleDragEnd(e)}
               >
                 <div className="card-image-container">
-                  <img 
-                    src={dest.img || "/placeholder.svg"} 
-                    alt={dest.title} 
+                  <img
+                    src={dest.img || "/placeholder.svg"}
+                    alt={dest.title}
                     onError={handleImageError}
                     className="card-image"
                   />
@@ -1025,9 +1025,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           {topDestinations.map((dest: any, index) => (
             <motion.div key={dest.id || index} className="destination-card" variants={slideUp}>
               <div className="card-image-container">
-                <img 
-                  src={dest.img || "/placeholder.svg"} 
-                  alt={dest.title} 
+                <img
+                  src={dest.img || "/placeholder.svg"}
+                  alt={dest.title}
                   onError={handleImageError}
                   className="card-image"
                 />
@@ -1084,9 +1084,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           {mustVisitCities.map((dest: any, index) => (
             <motion.div key={dest.id || index} className="destination-card featured-card" variants={slideUp}>
               <div className="card-image-container">
-                <img 
-                  src={dest.img || "/placeholder.svg"} 
-                  alt={dest.title} 
+                <img
+                  src={dest.img || "/placeholder.svg"}
+                  alt={dest.title}
                   onError={handleImageError}
                   className="card-image"
                 />
@@ -1140,8 +1140,8 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
             transition={{ type: "spring", damping: 25 }}
           >
             <div className="detail-image-container">
-              <img 
-                src={selectedDestination.img || selectedDestination.image} 
+              <img
+                src={selectedDestination.img || selectedDestination.image}
                 alt={selectedDestination.title}
                 onError={handleImageError}
               />
@@ -1191,8 +1191,8 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
             transition={{ type: "spring", damping: 25 }}
           >
             <div className="detail-image-container">
-              <img 
-                src={selectedHotel.img_origin || "/placeholder.svg"} 
+              <img
+                src={selectedHotel.img_origin || "/placeholder.svg"}
                 alt={selectedHotel.name}
                 onError={handleImageError}
               />
@@ -1284,8 +1284,8 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           </motion.div>
 
           <motion.div className="newsletter-image" variants={slideUp}>
-            <img 
-              src="/images/Đảo Bình Ba.jpg" 
+            <img
+              src="/images/Đảo Bình Ba.jpg"
               alt="Newsletter"
               onError={handleImageError}
             />
