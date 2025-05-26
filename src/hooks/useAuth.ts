@@ -18,6 +18,7 @@ export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   useEffect(() => {
     // Kiểm tra authentication khi component mount
@@ -75,11 +76,18 @@ export function useAuth() {
     setIsAuthenticated(true)
     setUser(userData)
     setToken(token)
+    
     // Dispatch custom event to notify other components
     window.dispatchEvent(new Event('authStateChanged'))
+    
+    // Nếu có đường dẫn chuyển hướng, thì chuyển hướng người dùng sau khi đăng nhập
+    if (redirectPath) {
+      router.push(redirectPath);
+      setRedirectPath(null);
+    }
   }
 
-  const logout = () => {
+  const logout = (redirectToLogin = true) => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     
@@ -89,10 +97,28 @@ export function useAuth() {
     setIsAuthenticated(false)
     setUser(null)
     setToken(null)
+    
     // Dispatch custom event to notify other components
     window.dispatchEvent(new Event('authStateChanged'))
-    router.push('/page/auth/login')
+    
+    if (redirectToLogin) {
+      router.push('/page/auth/login')
+    }
   }
 
-  return { isAuthenticated, user, token, login, logout, checkAuth }
+  // Hàm xử lý khi token hết hạn
+  const handleTokenExpired = () => {
+    // Lưu đường dẫn hiện tại để sau khi đăng nhập quay lại
+    if (typeof window !== 'undefined') {
+      setRedirectPath(window.location.pathname + window.location.search);
+    }
+    
+    // Hiển thị thông báo cho người dùng
+    alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    
+    // Đăng xuất và chuyển hướng đến trang đăng nhập
+    logout(true);
+  }
+
+  return { isAuthenticated, user, token, login, logout, checkAuth, handleTokenExpired }
 }

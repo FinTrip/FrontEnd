@@ -1,56 +1,33 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/app/page/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/app/page/components/ui/card";
-import { Separator } from "@/app/page/components/ui/separator";
-import {
-  Calendar,
-  User,
-  ThumbsUp,
-  MessageSquare,
-  Eye,
-  Flame,
-  UserPlus,
-  Users,
-  Search,
-  MoreHorizontal,
-  CheckCircle,
-  Clock,
-  ChevronUp,
-  ChevronDown,
-  Plus,
-} from "lucide-react";
-import { useEffect, useState, useCallback, useMemo } from "react";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/app/page/components/ui/avatar";
-import { Input } from "@/app/page/components/ui/input";
-import { Badge } from "@/app/page/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
+import Link from "next/link"
+import { Button } from "@/app/page/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/page/components/ui/card"
+import { Separator } from "@/app/page/components/ui/separator"
+import { Calendar, User, ThumbsUp, MessageSquare, Eye, Flame, UserPlus, Users, Search, MoreHorizontal, CheckCircle, Clock, ChevronUp, ChevronDown, Plus } from "lucide-react"
+import { useEffect, useState, useCallback, useMemo } from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/page/components/ui/avatar"
+import { Input } from "@/app/page/components/ui/input"
+import { Badge } from "@/app/page/components/ui/badge"
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/app/page/components/ui/dropdown-menu";
-import { debounce } from "lodash";
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
-import React from "react";
-import { toast } from "sonner"; // Corrected import if it's a package
-import { BoxChat } from "@/app/page/components/Forum/message";
-import { CreateGroupDialog } from "./components/create-group-dialog";
-import { AddMembersDialog } from "./components/add-members-dialog";
-import { Dialog, DialogContent } from "@/app/page/components/ui/dialog";
-import CreatePostForm from "@/app/page/components/Forum/create-post-form";
+} from "@/app/page/components/ui/dropdown-menu"
+import { debounce } from 'lodash';
+import { useAuth } from '@/hooks/useAuth'; // Import useAuth
+import React from "react"
+import { toast } from 'sonner'; // Corrected import if it's a package
+import { BoxChat } from "@/app/page/components/Forum/message"
+import { CreateGroupDialog } from "./components/create-group-dialog"
+import { AddMembersDialog } from "./components/add-members-dialog"
+import {
+  Dialog,
+  DialogContent,
+} from "@/app/page/components/ui/dialog"
+import CreatePostForm from "@/app/page/components/Forum/create-post-form"
+import { useRouter } from "next/navigation"
 
 interface Post {
   id: number;
@@ -253,6 +230,8 @@ export default function ForumHome() {
   // Thêm state để quản lý việc mở rộng danh sách nhóm
   const [isGroupListExpanded, setIsGroupListExpanded] = useState(false);
   const [isFriendsListExpanded, setIsFriendsListExpanded] = useState(false);
+
+  const router = useRouter();
 
   // --- Define fetch functions ---
   const fetchFriends = useCallback(async () => {
@@ -1074,59 +1053,53 @@ export default function ForumHome() {
   };
 
   // Thêm hàm xử lý rời nhóm
-  const handleLeaveGroup = useCallback(
-    async (groupId: number, groupName: string) => {
-      if (!token) return toast.error("Vui lòng đăng nhập");
+  const handleLeaveGroup = useCallback(async (groupId: number, groupName: string) => {
+    if (!token) return toast.error("Vui lòng đăng nhập");
 
-      // Show confirmation toast
-      toast("Xác nhận rời nhóm", {
-        description: `Bạn có chắc chắn muốn rời khỏi nhóm "${groupName}"?`,
-        action: {
-          label: "Rời nhóm",
-          onClick: async () => {
-            try {
-              const response = await fetch(
-                `http://localhost:8081/indentity/api/chatrooms/${groupId}/leave`,
-                {
-                  method: "DELETE",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
-
-              const data = await response.json();
-              if (response.ok && data.code === 200) {
-                toast.success("Đã rời nhóm thành công");
-                // Refresh danh sách nhóm
-                fetchGroups();
-                // Đóng chat nếu đang mở
-                if (selectedGroupChat?.id === groupId) {
-                  handleCloseChat();
-                }
-              } else {
-                throw new Error(data.message || "Không thể rời nhóm");
+    // Show confirmation toast
+    toast("Xác nhận rời nhóm", {
+      description: `Bạn có chắc chắn muốn rời khỏi nhóm "${groupName}"?`,
+      action: {
+        label: "Rời nhóm",
+        onClick: async () => {
+          try {
+            const response = await fetch(`http://localhost:8081/indentity/api/chatrooms/${groupId}/leave`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
               }
-            } catch (error) {
-              console.error("Lỗi khi rời nhóm:", error);
-              toast.error("Không thể rời nhóm. Vui lòng thử lại sau.");
+            });
+
+            const data = await response.json();
+            if (response.ok && data.code === 200) {
+              toast.success("Đã rời nhóm thành công");
+              // Refresh danh sách nhóm
+              fetchGroups();
+              // Đóng chat nếu đang mở
+              if (selectedGroupChat?.id === groupId) {
+                handleCloseChat();
+              }
+            } else {
+              throw new Error(data.message || "Không thể rời nhóm");
             }
-          },
+          } catch (error) {
+            console.error("Lỗi khi rời nhóm:", error);
+            toast.error("Không thể rời nhóm. Vui lòng thử lại sau.");
+          }
         },
-        cancel: {
-          label: "Hủy",
-        },
-        duration: 5000,
-      });
-    },
-    [token, fetchGroups, selectedGroupChat, handleCloseChat]
-  );
+      },
+      cancel: {
+        label: "Hủy",
+      },
+      duration: 5000,
+    });
+  }, [token, fetchGroups, selectedGroupChat, handleCloseChat]);
 
   // --- Phần JSX ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe]">
-      <div className="container mx-auto px-4 py-8 md:px-6 lg:px-8 flex">
-        <div className="flex-grow lg:pr-8">
+      <div className="w-full max-w-screen-xl mx-auto px-2 md:px-6 lg:px-8 py-8 flex flex-row overflow-x-hidden">
+        <div className="flex-grow min-w-0 lg:pr-8">
           {/* Header */}
           <header className="mb-8 text-center relative overflow-hidden rounded-xl bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
             <div className="relative py-12 px-8">
@@ -1272,9 +1245,7 @@ export default function ForumHome() {
             )}
           </section>
         </div>
-
-        {/* Sidebar */}
-        <div className="w-80 flex-shrink-0 lg:pl-8 hidden lg:block">
+        <div className="w-80 flex-shrink-0 pl-0 lg:pl-8 block">
           <div className="sticky top-6 bg-white/80 backdrop-blur-sm border-0 rounded-xl overflow-hidden h-[calc(100vh-3rem)] flex flex-col shadow-lg">
             <div className="p-4 border-b bg-gradient-to-r from-[#00B4DB] to-[#0083B0]">
               <h2 className="text-xl font-semibold flex items-center gap-2.5 text-white">
@@ -1370,30 +1341,15 @@ export default function ForumHome() {
               {!searchQuery && (
                 <div className="p-4 border-b">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium flex items-center justify-between mb-3">
-                      <span className="flex items-center gap-2 text-gray-800">
-                        <MessageSquare className="h-4 w-4" /> Danh sách nhóm
-                        {groups.length > 0 && (
-                          <Badge variant="secondary" className="ml-2">
-                            {groups.length}
-                          </Badge>
-                        )}
-                      </span>
+                    <h3 className="text-sm font-medium flex items-center gap-2 text-gray-800">
+                      <MessageSquare className="h-4 w-4" /> Danh sách nhóm
                       {groups.length > 0 && (
-                        <CreateGroupDialog
-                          friends={friends}
-                          onCreateGroup={handleCreateGroup}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-[#00B4DB] hover:bg-[#00B4DB]/10"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </CreateGroupDialog>
+                        <Badge variant="secondary" className="ml-2">
+                          {groups.length}
+                        </Badge>
                       )}
                     </h3>
+                    <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup} />
                   </div>
                   <div className="space-y-2">
                     {isLoadingGroups ? (
@@ -1402,30 +1358,14 @@ export default function ForumHome() {
                       </p>
                     ) : groups.length === 0 ? (
                       <div className="text-center">
-                        <p className="text-sm text-gray-500 mb-3">
-                          Bạn chưa tham gia nhóm nào.
-                        </p>
-                        <CreateGroupDialog
-                          friends={friends}
-                          onCreateGroup={handleCreateGroup}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-[#00B4DB] hover:bg-[#00B4DB]/10"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </CreateGroupDialog>
+                        <p className="text-sm text-gray-500 mb-3">Bạn chưa tham gia nhóm nào.</p>
+                        <CreateGroupDialog friends={friends} onCreateGroup={handleCreateGroup} />
                       </div>
                     ) : (
                       <>
-                        {(isGroupListExpanded
-                          ? groups
-                          : groups.slice(0, 2)
-                        ).map((group) => (
-                          <div
-                            key={group.id}
+                        {(isGroupListExpanded ? groups : groups.slice(0, 2)).map((group) => (
+                          <div 
+                            key={group.id} 
                             className="group hover:bg-[#00B4DB]/5 p-2 rounded-lg transition-colors cursor-pointer"
                             onClick={() => handleGroupClick(group)}
                           >
@@ -1438,12 +1378,8 @@ export default function ForumHome() {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-sm text-gray-800 truncate">
-                                    {group.name}
-                                  </h4>
-                                  <p className="text-xs text-gray-500">
-                                    {group.memberCount} thành viên
-                                  </p>
+                                  <h4 className="font-medium text-sm text-gray-800 truncate">{group.name}</h4>
+                                  <p className="text-xs text-gray-500">{group.memberCount} thành viên</p>
                                 </div>
                               </div>
                               <DropdownMenu>
@@ -1458,44 +1394,25 @@ export default function ForumHome() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => handleGroupClick(group)}
-                                  >
+                                  <DropdownMenuItem onClick={() => handleGroupClick(group)}>
                                     <MessageSquare className="h-4 w-4 mr-2" />
                                     Nhắn tin
                                   </DropdownMenuItem>
                                   {group.isAdmin && (
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        setAddMembersDialogState({
-                                          isOpen: true,
-                                          roomId: group.id,
-                                        })
-                                      }
-                                    >
+                                    <DropdownMenuItem onClick={() => setAddMembersDialogState({
+                                      isOpen: true,
+                                      roomId: group.id
+                                    })}>
                                       <UserPlus className="h-4 w-4 mr-2" />
                                       Thêm thành viên
                                     </DropdownMenuItem>
                                   )}
-                                  <DropdownMenuItem
-                                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                                    onClick={() =>
-                                      handleLeaveGroup(group.id, group.name)
-                                    }
+                                  <DropdownMenuItem 
+                                    className="text-red-600 focus:text-red-600 focus:bg-red-50" 
+                                    onClick={() => handleLeaveGroup(group.id, group.name)}
                                   >
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      strokeWidth={1.5}
-                                      stroke="currentColor"
-                                      className="w-4 h-4 mr-2"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
-                                      />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                                     </svg>
                                     Rời nhóm
                                   </DropdownMenuItem>
@@ -1505,22 +1422,15 @@ export default function ForumHome() {
                           </div>
                         ))}
                         {groups.length > 2 && (
-                          <Button
-                            variant="ghost"
+                          <Button 
+                            variant="ghost" 
                             className="w-full text-sm text-[#00B4DB] hover:bg-[#00B4DB]/5"
-                            onClick={() =>
-                              setIsGroupListExpanded(!isGroupListExpanded)
-                            }
+                            onClick={() => setIsGroupListExpanded(!isGroupListExpanded)}
                           >
                             {isGroupListExpanded ? (
-                              <>
-                                Thu gọn <ChevronUp className="h-4 w-4 ml-2" />
-                              </>
+                              <>Thu gọn <ChevronUp className="h-4 w-4 ml-2" /></>
                             ) : (
-                              <>
-                                Xem thêm {groups.length - 2} nhóm{" "}
-                                <ChevronDown className="h-4 w-4 ml-2" />
-                              </>
+                              <>Xem thêm {groups.length - 2} nhóm <ChevronDown className="h-4 w-4 ml-2" /></>
                             )}
                           </Button>
                         )}
@@ -1636,15 +1546,9 @@ export default function ForumHome() {
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {(isFriendsListExpanded
-                          ? filteredFriends
-                          : filteredFriends.slice(0, 3)
-                        ).map((friend: Friend) => (
-                          <div
-                            key={friend.id}
-                            className="flex items-center justify-between group hover:bg-[#00B4DB]/5 p-1.5 -m-1.5 rounded-md transition-colors duration-150"
-                          >
-                            <div
+                        {(isFriendsListExpanded ? filteredFriends : filteredFriends.slice(0, 3)).map((friend: Friend) => (
+                          <div key={friend.id} className="flex items-center justify-between group hover:bg-[#00B4DB]/5 p-1.5 -m-1.5 rounded-md transition-colors duration-150">
+                            <div 
                               className="flex items-center gap-2 flex-1 cursor-pointer"
                               onClick={() => handleFriendClick(friend)}
                             >
@@ -1691,61 +1595,26 @@ export default function ForumHome() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handleFriendClick(friend)}
-                                >
-                                  Nhắn tin
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    alert(
-                                      `Xem trang cá nhân của ${friend.fullName}`
-                                    )
-                                  }
-                                >
+                                <DropdownMenuItem onClick={() => router.push(`/forum/user/${friend.id}`)}>
                                   Xem trang cá nhân
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleBlockUser(friend.id)}
-                                >
-                                  Chặn người dùng
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-red-600 focus:text-red-600 focus:bg-red-100/80"
-                                  onClick={() => handleRemoveFriend(friend.id)}
-                                >
+                                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-100/80" onClick={() => handleRemoveFriend(friend.id)}>
                                   Hủy kết bạn
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleToggleFavorite(friend.id)
-                                  }
-                                >
-                                  {friend.isFavorite
-                                    ? "Bỏ bạn thân"
-                                    : "Đánh dấu bạn thân"}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
                         ))}
                         {filteredFriends.length > 3 && (
-                          <Button
-                            variant="ghost"
+                          <Button 
+                            variant="ghost" 
                             className="w-full text-sm text-[#00B4DB] hover:bg-[#00B4DB]/5"
-                            onClick={() =>
-                              setIsFriendsListExpanded(!isFriendsListExpanded)
-                            }
+                            onClick={() => setIsFriendsListExpanded(!isFriendsListExpanded)}
                           >
                             {isFriendsListExpanded ? (
-                              <>
-                                Thu gọn <ChevronUp className="h-4 w-4 ml-2" />
-                              </>
+                              <>Thu gọn <ChevronUp className="h-4 w-4 ml-2" /></>
                             ) : (
-                              <>
-                                Xem thêm {filteredFriends.length - 3} bạn bè{" "}
-                                <ChevronDown className="h-4 w-4 ml-2" />
-                              </>
+                              <>Xem thêm {filteredFriends.length - 3} bạn bè <ChevronDown className="h-4 w-4 ml-2" /></>
                             )}
                           </Button>
                         )}

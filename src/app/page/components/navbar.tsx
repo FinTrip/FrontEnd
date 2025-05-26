@@ -347,6 +347,16 @@ export function Navbar() {
                             <span>Profile</span>
                           </DropdownMenuItem>
                         </Link>
+                        <Link href="/wallet">
+                          <DropdownMenuItem>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
+                              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                            </svg>
+                            <span>My Wallet</span>
+                          </DropdownMenuItem>
+                        </Link>
                         <Link href="/settings">
                           <DropdownMenuItem>
                             <Settings className="mr-2 h-4 w-4" />
@@ -423,6 +433,19 @@ export function Navbar() {
                             className="w-full justify-start"
                           >
                             Hồ sơ cá nhân
+                          </Button>
+                        </Link>
+                        <Link href="/wallet">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
+                              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                            </svg>
+                            Nạp tiền
                           </Button>
                         </Link>
                         <Link href="/my-posts">

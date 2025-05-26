@@ -6,9 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback } from "@/app/page/components/ui/avatar"
 import { Separator } from "@/app/page/components/ui/separator"
 import { Textarea } from "@/app/page/components/ui/textarea"
-import { MapPin, Calendar, User, ThumbsUp, MessageSquare, Share2, Bookmark, ArrowLeft, Eye, Loader2, X } from "lucide-react"
+import { MapPin, Calendar, User, ThumbsUp, MessageSquare, ArrowLeft, Eye, Loader2, Flag } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/hooks/useAuth"
+import EditPostForm from "./EditPostForm"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface Post {
   id: number
@@ -26,6 +29,7 @@ interface Comment {
   id: number
   content: string
   authorName: string
+  authorId: number
   createdAt: string
   replies?: Reply[]
 }
@@ -34,6 +38,7 @@ interface Reply {
   id: number
   content: string
   authorName: string
+  authorId: number
   createdAt: string
   replies?: Reply[]
 }
@@ -57,7 +62,23 @@ export default function PostPage({ params }: { params: { id: string } }) {
 
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const commentSectionRef = useRef<HTMLDivElement>(null);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const router = useRouter();
+
+  // State cho báo cáo bài viết
+  const [showPostReportBox, setShowPostReportBox] = useState(false);
+  const [postReportReason, setPostReportReason] = useState("");
+  const [isReportingPost, setIsReportingPost] = useState(false);
+
+  // State cho báo cáo user từ comment/reply
+  const [showUserReportBox, setShowUserReportBox] = useState<{[key:string]: boolean}>({});
+  const [userReportReason, setUserReportReason] = useState<{[key:string]: string}>({});
+  const [isReportingUser, setIsReportingUser] = useState<{[key:string]: boolean}>({});
 
   const fetchComments = async () => {
     try {
@@ -359,6 +380,117 @@ export default function PostPage({ params }: { params: { id: string } }) {
     commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
+  const handleDeletePost = async () => {
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để xoá bài viết");
+      return;
+    }
+    toast(
+      "Bạn có chắc chắn muốn xoá bài viết này?",
+      {
+        action: {
+          label: "Xoá bài viết",
+          onClick: async () => {
+            try {
+              const res = await fetch(`http://localhost:8081/indentity/api/blog/delete/${params.id}`, {
+                method: "DELETE",
+                headers: {
+                  "Authorization": `Bearer ${token}`
+                }
+              });
+              const data = await res.json();
+              if (res.ok && data.code === 200) {
+                toast.success("Đã xoá bài viết thành công!");
+                router.push("/forum");
+              } else {
+                toast.error(data.message || "Không thể xoá bài viết");
+              }
+            } catch (err) {
+              toast.error("Có lỗi xảy ra khi xoá bài viết");
+            }
+          },
+        },
+        cancel: {
+          label: "Huỷ",
+        },
+        duration: 10000,
+      }
+    );
+  };
+
+  // Hàm gửi báo cáo
+  const handleSendReport = async (type: 'POST_REPORT'|'USER_REPORT'|'COMMENT_REPORT'|'REPLY_REPORT', targetId: number, reason: string, onDone: () => void) => {
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để báo cáo");
+      return;
+    }
+    if (!reason.trim()) {
+      toast.error("Vui lòng nhập nội dung báo cáo");
+      return;
+    }
+    const body: Record<string, unknown> = { reportType: type, reason };
+    if (type === 'POST_REPORT') body.reportedPostId = targetId;
+    else if (type === 'USER_REPORT') body.reportedUserId = targetId;
+
+    try {
+      if (type === 'POST_REPORT') setIsReportingPost(true);
+      const res = await fetch("http://localhost:8081/indentity/api/reports/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok && data.code === 200) {
+        toast.success("Gửi báo cáo thành công!");
+        onDone();
+      } else {
+        toast.error(data.message || "Không thể gửi báo cáo");
+      }
+    } catch {
+      toast.error("Có lỗi xảy ra khi gửi báo cáo");
+    } finally {
+      if (type === 'POST_REPORT') setIsReportingPost(false);
+    }
+  };
+
+  // Hàm gửi báo cáo user
+  const handleSendUserReport = async (authorId: number, reportKey: string, reason: string, onDone: () => void) => {
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để báo cáo");
+      return;
+    }
+    if (!reason.trim()) {
+      toast.error("Vui lòng nhập nội dung báo cáo");
+      return;
+    }
+    const body: Record<string, unknown> = { reportType: 'USER_REPORT', reason, reportedUserId: authorId };
+    try {
+      setIsReportingUser((prev) => ({...prev, [reportKey]: true}));
+      const res = await fetch("http://localhost:8081/indentity/api/reports/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok && data.code === 200) {
+        toast.success("Gửi báo cáo thành công!");
+        onDone();
+      } else {
+        toast.error(data.message || "Không thể gửi báo cáo");
+      }
+    } catch {
+      toast.error("Có lỗi xảy ra khi gửi báo cáo");
+    } finally {
+      setIsReportingUser((prev) => ({...prev, [reportKey]: false}));
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -385,11 +517,13 @@ export default function PostPage({ params }: { params: { id: string } }) {
         <span>Quay lại trang chủ</span>
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-8">
+        <div>
           <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
             <CardHeader className="border-b">
-              <CardTitle className="text-3xl text-gray-800">{post.title}</CardTitle>
+              <CardTitle className="text-3xl text-gray-800">
+                {post.title}
+              </CardTitle>
               <CardDescription className="flex items-center gap-2 text-base text-[#00B4DB]">
                 <MapPin className="h-4 w-4" /> Đà Nẵng
               </CardDescription>
@@ -406,6 +540,13 @@ export default function PostPage({ params }: { params: { id: string } }) {
                   <Eye className="h-4 w-4 text-[#00B4DB]" />
                   <span>{post.views || 0} Lượt xem</span>
                 </div>
+                {/* Nút chỉnh sửa chỉ hiện với tác giả */}
+                {user?.id === post.authorId && (
+                  <>
+                    <Button onClick={() => setShowEditModal(true)} className="ml-auto bg-[#00B4DB] text-white">Chỉnh sửa</Button>
+                    <Button onClick={handleDeletePost} className="ml-2 bg-red-500 text-white hover:bg-red-600">Xoá bài viết</Button>
+                  </>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -437,14 +578,15 @@ export default function PostPage({ params }: { params: { id: string } }) {
                   </Button>
                 </div>
                 <div className="flex gap-2">
-                  {/* <Button variant="ghost" size="sm" className="flex items-center gap-1 text-gray-500 hover:text-[#00B4DB]">
-                    <Share2 className="h-4 w-4" />
-                    <span>Chia sẻ</span>
-                  </Button> */}
-                  {/* <Button variant="ghost" size="sm" className="flex items-center gap-1 text-gray-500 hover:text-[#00B4DB]">
-                    <Bookmark className="h-4 w-4" />
-                    <span>Lưu</span>
-                  </Button> */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1 text-red-500 border-red-300 hover:bg-red-50"
+                    onClick={() => setShowPostReportBox((v) => !v)}
+                  >
+                    <Flag className="h-4 w-4" />
+                    <span>Báo cáo</span>
+                  </Button>
                 </div>
               </div>
 
@@ -452,26 +594,41 @@ export default function PostPage({ params }: { params: { id: string } }) {
 
               <div className="space-y-4">
                 {post.images && post.images.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {post.images.map((imageUrl, index) => (
-                      <div 
-                        key={index} 
-                        className="relative aspect-video cursor-pointer group"
-                        onClick={() => setSelectedImage(imageUrl)}
-                      >
-                        <img
-                          src={imageUrl}
-                          alt={`Ảnh ${index + 1} của bài viết`}
-                          className="rounded-lg object-cover w-full h-full shadow-md transition-transform duration-200 group-hover:scale-[1.02]"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
-                          <Eye className="w-6 h-6 text-white" />
+                  <div className="mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {post.images.slice(0, 2).map((imageUrl, index) => (
+                        <div
+                          key={index}
+                          className="relative aspect-video cursor-pointer group"
+                          onClick={() => {
+                            setImageViewerImages(post.images!);
+                            setCurrentImageIndex(index);
+                            setShowImageViewer(true);
+                          }}
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={`Ảnh ${index + 1} của bài viết`}
+                            className="rounded-lg object-cover w-full h-full shadow-md transition-transform duration-200 group-hover:scale-[1.02]"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                            <Eye className="w-6 h-6 text-white" />
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                    {post.images.length > 2 && (
+                      <div className="mt-2 text-center">
+                        <Button variant="outline" className="text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10" onClick={() => { setImageViewerImages(post.images!); setCurrentImageIndex(0); setShowImageViewer(true); }}>
+                          Xem thêm {post.images.length - 2} ảnh
+                        </Button>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
-                <p className="text-gray-700 leading-relaxed">{post.content}</p>
+                <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  {post.content}
+                </div>
               </div>
 
               {/* Author Section */}
@@ -546,12 +703,12 @@ export default function PostPage({ params }: { params: { id: string } }) {
                       <div className="flex gap-4">
                         <Avatar className="ring-2 ring-[#00B4DB]/20">
                           <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
-                            {comment.authorName[0]}
+                            {comment.authorName.toString()[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <Link href={`/forum/user/${comment.id}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
+                            <Link href={`/forum/user/${comment.authorId}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
                               {comment.authorName}
                             </Link>
                             <span className="text-sm text-gray-500">
@@ -565,14 +722,57 @@ export default function PostPage({ params }: { params: { id: string } }) {
                             </span>
                           </div>
                           <p className="mt-1 text-gray-700">{comment.content}</p>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="mt-2 text-gray-500 hover:text-[#00B4DB]"
-                            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                          >
-                            Trả lời
-                          </Button>
+                          <div className="flex gap-2 mt-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-gray-500 hover:text-[#00B4DB]"
+                              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                            >
+                              Trả lời
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-600"
+                              onClick={() => setShowUserReportBox(prev => ({...prev, [`comment-${comment.id}`]: !prev[`comment-${comment.id}`]}))}
+                            >
+                              <Flag className="h-4 w-4" /> Báo cáo
+                            </Button> 
+                          </div>
+                          {showUserReportBox[`comment-${comment.id}`] && (
+                            <div className="my-2 p-3 border border-red-200 bg-red-50 rounded-lg">
+                              <label className="block font-medium mb-1">Nội dung báo cáo người dùng:</label>
+                              <Textarea
+                                value={userReportReason[`comment-${comment.id}`] || ""}
+                                onChange={e => setUserReportReason(prev => ({...prev, [`comment-${comment.id}`]: e.target.value}))}
+                                placeholder="Nhập nội dung báo cáo..."
+                                disabled={isReportingUser[`comment-${comment.id}`]}
+                              />
+                              <div className="flex gap-2 mt-2 justify-end">
+                                <Button variant="outline" onClick={() => setShowUserReportBox(prev => ({...prev, [`comment-${comment.id}`]: false}))} disabled={isReportingUser[`comment-${comment.id}`]}>Hủy</Button>
+                                <Button 
+                                  className="bg-red-500 text-white hover:bg-red-600"
+                                  disabled={isReportingUser[`comment-${comment.id}`]} 
+                                  onClick={() => {
+                                    console.log("Comment data:", comment);
+                                    console.log("Báo cáo user từ comment với authorId:", comment.authorId);
+                                    handleSendUserReport(
+                                      comment.authorId, 
+                                      `comment-${comment.id}`, 
+                                      userReportReason[`comment-${comment.id}`] || "", 
+                                      () => { 
+                                        setShowUserReportBox(prev => ({...prev, [`comment-${comment.id}`]: false})); 
+                                        setUserReportReason(prev => ({...prev, [`comment-${comment.id}`]: ""})); 
+                                      }
+                                    );
+                                  }}
+                                >
+                                  {isReportingUser[`comment-${comment.id}`] ? 'Đang gửi...' : 'Xác minh'}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -617,12 +817,12 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                 <div className="flex gap-4">
                                   <Avatar className="ring-2 ring-[#00B4DB]/20">
                                     <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
-                                      {reply.authorName[0]}
+                                      {reply.authorName.toString()[0]}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                      <Link href={`/forum/user/${reply.id}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
+                                      <Link href={`/forum/user/${reply.authorId}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
                                         {reply.authorName}
                                       </Link>
                                       <span className="text-sm text-gray-500">
@@ -636,16 +836,59 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                       </span>
                                     </div>
                                     <p className="mt-1 text-gray-700">{reply.content}</p>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="mt-2 text-gray-500 hover:text-[#00B4DB]"
-                                      onClick={() => setReplyingToReply(
-                                        replyingToReply?.replyId === reply.id ? null : { commentId: comment.id, replyId: reply.id }
-                                      )}
-                                    >
-                                      Trả lời
-                                    </Button>
+                                    <div className="flex gap-2 mt-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="text-gray-500 hover:text-[#00B4DB]"
+                                        onClick={() => setReplyingToReply(
+                                          replyingToReply?.replyId === reply.id ? null : { commentId: comment.id, replyId: reply.id }
+                                        )}
+                                      >
+                                        Trả lời
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-500 hover:text-red-600"
+                                        onClick={() => setShowUserReportBox(prev => ({...prev, [`reply-${reply.id}`]: !prev[`reply-${reply.id}`]}))}
+                                      >
+                                        <Flag className="h-4 w-4" /> Báo cáo
+                                      </Button>
+                                    </div>
+                                    {showUserReportBox[`reply-${reply.id}`] && (
+                                      <div className="my-2 p-3 border border-red-200 bg-red-50 rounded-lg">
+                                        <label className="block font-medium mb-1">Nội dung báo cáo người dùng:</label>
+                                        <Textarea
+                                          value={userReportReason[`reply-${reply.id}`] || ""}
+                                          onChange={e => setUserReportReason(prev => ({...prev, [`reply-${reply.id}`]: e.target.value}))}
+                                          placeholder="Nhập nội dung báo cáo..."
+                                          disabled={isReportingUser[`reply-${reply.id}`]}
+                                        />
+                                        <div className="flex gap-2 mt-2 justify-end">
+                                          <Button variant="outline" onClick={() => setShowUserReportBox(prev => ({...prev, [`reply-${reply.id}`]: false}))} disabled={isReportingUser[`reply-${reply.id}`]}>Hủy</Button>
+                                          <Button 
+                                            className="bg-red-500 text-white hover:bg-red-600"
+                                            disabled={isReportingUser[`reply-${reply.id}`]}
+                                            onClick={() => {
+                                              console.log("Reply data:", reply);
+                                              console.log("Báo cáo user từ reply với authorId:", reply.authorId);
+                                              handleSendUserReport(
+                                                reply.authorId,
+                                                `reply-${reply.id}`, 
+                                                userReportReason[`reply-${reply.id}`] || "", 
+                                                () => { 
+                                                  setShowUserReportBox(prev => ({...prev, [`reply-${reply.id}`]: false})); 
+                                                  setUserReportReason(prev => ({...prev, [`reply-${reply.id}`]: ""})); 
+                                                }
+                                              );
+                                            }}
+                                          >
+                                            {isReportingUser[`reply-${reply.id}`] ? 'Đang gửi...' : 'Xác minh'}
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -688,12 +931,12 @@ export default function PostPage({ params }: { params: { id: string } }) {
                                       <div key={nestedReply.id} className="flex gap-4">
                                         <Avatar className="ring-2 ring-[#00B4DB]/20">
                                           <AvatarFallback className="bg-gradient-to-br from-[#00B4DB] to-[#0083B0] text-white">
-                                            {nestedReply.authorName[0]}
+                                            {nestedReply.authorName.toString()[0]}
                                           </AvatarFallback>
                                         </Avatar>
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2">
-                                            <Link href={`/forum/user/${nestedReply.id}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
+                                            <Link href={`/forum/user/${nestedReply.authorId}`} className="font-medium text-gray-800 hover:text-[#00B4DB] transition-colors">
                                               {nestedReply.authorName}
                                             </Link>
                                             <span className="text-sm text-gray-500">
@@ -724,25 +967,79 @@ export default function PostPage({ params }: { params: { id: string } }) {
             </CardContent>
           </Card>
         </div>
-
-        <div>
-          <Card className="sticky top-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-            <CardHeader className="border-b">
-              <CardTitle className="text-gray-800">Bài viết liên quan</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div className="text-center text-gray-500">
-                Chưa có bài viết liên quan
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full text-[#00B4DB] border-[#00B4DB] hover:bg-[#00B4DB]/10">
-                Xem thêm bài viết
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
       </div>
+
+      {/* Modal chỉnh sửa bài viết */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="relative w-full max-w-xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+              <EditPostForm
+                post={post}
+                onClose={() => setShowEditModal(false)}
+                onUpdated={(updatedPost) => {
+                  setPost(updatedPost);
+                  setShowEditModal(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xem ảnh chi tiết */}
+      {showImageViewer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <button className="absolute top-4 right-4 text-white text-2xl z-10" onClick={() => setShowImageViewer(false)}>×</button>
+          <div className="flex items-center gap-4 w-full max-w-2xl px-4">
+            <button
+              className="text-white text-3xl px-2 py-1 bg-black/30 rounded-full disabled:opacity-30"
+              onClick={() => setCurrentImageIndex(i => Math.max(0, i - 1))}
+              disabled={currentImageIndex === 0}
+              aria-label="Trước"
+            >&#8592;</button>
+            <img
+              src={imageViewerImages[currentImageIndex]}
+              alt={`Ảnh ${currentImageIndex + 1}`}
+              className="rounded-lg object-contain max-h-[80vh] max-w-full mx-auto"
+              style={{ background: '#eee' }}
+            />
+            <button
+              className="text-white text-3xl px-2 py-1 bg-black/30 rounded-full disabled:opacity-30"
+              onClick={() => setCurrentImageIndex(i => Math.min(imageViewerImages.length - 1, i + 1))}
+              disabled={currentImageIndex === imageViewerImages.length - 1}
+              aria-label="Sau"
+            >&#8594;</button>
+          </div>
+          <div className="absolute bottom-6 left-0 right-0 text-center text-white">
+            {currentImageIndex + 1} / {imageViewerImages.length}
+          </div>
+        </div>
+      )}
+
+      {/* Modal báo cáo bài viết */}
+      {showPostReportBox && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="relative w-full max-w-xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h2 className="text-2xl font-semibold mb-4">Báo cáo bài viết</h2>
+                <label className="block font-medium mb-1">Nội dung báo cáo bài viết:</label>
+                <Textarea
+                  value={postReportReason}
+                  onChange={e => setPostReportReason(e.target.value)}
+                  placeholder="Nhập nội dung báo cáo..."
+                  disabled={isReportingPost}
+                />
+                <div className="flex gap-2 mt-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowPostReportBox(false)} disabled={isReportingPost}>Hủy</Button>
+                  <Button onClick={() => handleSendReport('POST_REPORT', post!.id, postReportReason, () => { setShowPostReportBox(false); setPostReportReason(""); })} disabled={isReportingPost} className="bg-red-500 text-white hover:bg-red-600">{isReportingPost ? 'Đang gửi...' : 'Xác minh'}</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

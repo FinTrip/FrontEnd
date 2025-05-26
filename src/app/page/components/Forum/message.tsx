@@ -275,9 +275,9 @@ export function BoxChat({ user, group, messages = [], onClose }: BoxChatProps) {
                 <div
                   className={cn(
                     "max-w-[70%] rounded-2xl px-3 py-2 text-sm",
-                    isCurrentUser 
-                      ? "bg-primary text-primary-foreground rounded-br-none" 
-                      : "bg-muted rounded-bl-none"
+                    isCurrentUser
+                      ? "bg-[#61a5c2] text-white rounded-br-none"
+                      : "bg-[#e0f2fe] text-[#2a6f97] rounded-bl-none"
                   )}
                 >
                   {!isCurrentUser && (

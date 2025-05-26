@@ -1,5 +1,4 @@
 
-// G:\Cap2FinTrip\FrontEnd\src\app\page\auth\login\page.tsx
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
@@ -16,47 +15,64 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await fetch(
-        "http://localhost:8081/indentity/api/auth/login",
-        {
+      // Gọi API đăng nhập của Java
+      const authResponse = await fetch("http://localhost:8081/indentity/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const authData = await authResponse.json();
+      console.log("Auth API Response:", authData);
+
+      if (authResponse.ok && authData.code === 200) {
+        const userData = {
+          id: authData.result.id,
+          fullName: authData.result.fullName,
+          email: authData.result.email,
+        };
+        const token = authData.result.token;
+
+        // Sử dụng hàm login từ useAuth hook
+        login(token, userData);
+
+        // Gửi token tới API Python để xác thực
+        const recommendResponse = await fetch("http://127.0.0.1:8000/recommend/verify-token/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email,
-            password,
+            token,
           }),
+        });
+
+        const recommendData = await recommendResponse.json();
+        console.log("Recommend API Response:", recommendData, "Status:", recommendResponse.status);
+
+        if (recommendResponse.ok) {
+          // Xác thực thành công, chuyển hướng
+          router.push("/homepage");
+        } else {
+          setError("Xác thực token thất bại với backend Python.");
+          console.error("Recommend API Error:", recommendData.error);
         }
-      );
-
-      const data = await response.json();
-      console.log("API Response:", data);
-
-      if (response.ok && data.code === 200) {
-        // Lưu token và thông tin user
-        const userData = {
-          id: data.result.id,
-          fullName: data.result.fullName,
-          email: data.result.email,
-        };
-        
-        // Sử dụng hàm login từ useAuth hook
-        login(data.result.token, userData);
-        router.push("/homepage");
       } else {
-        setError(
-          data.message || "Login failed. Please check your credentials."
-        );
+        setError(authData.message || "Đăng nhập thất bại. Vui lòng kiểm tra thông tin đăng nhập.");
       }
     } catch (err) {
-      setError("An error occurred. Please try again later.");
+      setError("Đã xảy ra lỗi. Vui lòng thử lại sau.");
       console.error("Login error:", err);
     } finally {
       setIsLoading(false);
@@ -87,7 +103,7 @@ export default function LoginPage() {
         <div className="login-form">
           <h1>Login</h1>
           {error && <div className="error-message">{error}</div>}
-          <form onSubmit={handleSubmit} suppressHydrationWarning>
+          <div suppressHydrationWarning>
             <div className="form-group">
               <label>Email:</label>
               <input
@@ -113,7 +129,7 @@ export default function LoginPage() {
                 <span className="password-icon"></span>
               </div>
             </div>
-            <button type="submit" className="login-button" disabled={isLoading}>
+            <button type="button" onClick={handleSubmit} className="login-button" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Continue"}
             </button>
             <button
@@ -130,10 +146,10 @@ export default function LoginPage() {
               Continue with Google
             </button>
             <div className="register-link">
-              Don&apos;t have an account?{" "}
+              Don't have an account?{" "}
               <Link href="/page/auth/register">Register</Link>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
