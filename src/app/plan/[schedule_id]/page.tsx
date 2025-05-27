@@ -176,7 +176,7 @@ export default function PlanDetails() {
         <header className="mb-10">
           <div className="flex justify-between items-center">
             <Link
-              href="/"
+              href="http://localhost:3000/forum/profile"
               className="flex items-center gap-2 text-gray-700 hover:text-[#d62828] transition-colors"
             >
               <IoArrowBackOutline size={24} />
