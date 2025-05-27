@@ -1,9 +1,16 @@
-"use client"
-import type React from "react"
-import { useState, type DragEvent, useEffect, useTransition, useDeferredValue, type ElementType } from "react"
-import Link from "next/link"
-import { useRouter, usePathname } from "next/navigation"
-import "./home_page.css"
+"use client";
+import type React from "react";
+import {
+  useState,
+  type DragEvent,
+  useEffect,
+  useTransition,
+  useDeferredValue,
+  type ElementType,
+} from "react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import "./home_page.css";
 import {
   FaPlus,
   FaMapMarkerAlt,
@@ -16,9 +23,9 @@ import {
   FaArrowRight,
   FaRegClock,
   FaQuestionCircle,
-} from "react-icons/fa"
-import { animated, useSpring } from "@react-spring/web"
-import { motion, AnimatePresence } from "framer-motion"
+} from "react-icons/fa";
+import { animated, useSpring } from "@react-spring/web";
+import { motion, AnimatePresence } from "framer-motion";
 
 const destinations = [
   {
@@ -57,47 +64,47 @@ const destinations = [
     description:
       "Phố đi bộ Đà Nẵng là nơi tụ hội nhiều hoạt động giải trí về đêm, với các quán cà phê, cửa hàng lưu niệm và nghệ sĩ đường phố. Đây là điểm dừng chân lý tưởng để tận hưởng không khí sôi động của thành phố biển.",
   },
-]
+];
 
 export interface DestinationCard {
-  img: string
-  title: string
-  rating: number
-  address: string
-  description: string
+  img: string;
+  title: string;
+  rating: number;
+  address: string;
+  description: string;
 }
 
 interface HomePageProps {
-  isInPlan?: boolean
-  onAddToPlan?: (destination: DestinationCard) => void
-  showAddButton?: boolean
+  isInPlan?: boolean;
+  onAddToPlan?: (destination: DestinationCard) => void;
+  showAddButton?: boolean;
 }
 
 export interface HotelCard {
-  id: number
-  name: string
-  link: string
-  description: string
-  price: string
-  name_nearby_place: string
-  hotel_class: string
-  img_origin: string
-  location_rating: number
-  amenities: string[]
+  id: number;
+  name: string;
+  link: string;
+  description: string;
+  price: string;
+  name_nearby_place: string;
+  hotel_class: string;
+  img_origin: string;
+  location_rating: number;
+  amenities: string[];
 }
 
 interface Item {
-  title: string
-  rating: number
-  description: string
-  address: string
-  img?: string
+  title: string;
+  rating: number;
+  description: string;
+  address: string;
+  img?: string;
 }
 
 interface SearchResult {
-  province: string
-  food: Item[]
-  places: Item[]
+  province: string;
+  food: Item[];
+  places: Item[];
 }
 
 // Animated text component
@@ -108,9 +115,9 @@ const AnimatedText = ({ text }: { text: string }) => {
     config: { tension: 300, friction: 10 },
     reset: true,
     loop: true,
-  })
+  });
 
-  const AnimatedDiv = animated.div as ElementType
+  const AnimatedDiv = animated.div as ElementType;
 
   return (
     <div className="search-btn-text">
@@ -127,17 +134,17 @@ const AnimatedText = ({ text }: { text: string }) => {
         ))}
       </AnimatedDiv>
     </div>
-  )
-}
+  );
+};
 
 // Search card component
 interface SquishySearchCardProps {
-  showSearchCard: boolean
-  onClose: () => void
-  selectedLocation: string
-  onLocationChange: (value: string) => void
-  onConfirm: () => void
-  vietnamProvinces: string[]
+  showSearchCard: boolean;
+  onClose: () => void;
+  selectedLocation: string;
+  onLocationChange: (value: string) => void;
+  onConfirm: () => void;
+  vietnamProvinces: string[];
 }
 
 const SquishySearchCard = ({
@@ -181,7 +188,10 @@ const SquishySearchCard = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <select value={selectedLocation} onChange={(e) => onLocationChange(e.target.value)}>
+          <select
+            value={selectedLocation}
+            onChange={(e) => onLocationChange(e.target.value)}
+          >
             <option value="">Chọn tỉnh thành</option>
             {vietnamProvinces.map((province: string, index: number) => (
               <option key={index} value={province}>
@@ -218,8 +228,8 @@ const SquishySearchCard = ({
         </motion.div>
       </div>
     </motion.div>
-  )
-}
+  );
+};
 
 const Background = () => {
   return (
@@ -235,10 +245,16 @@ const Background = () => {
       transition={{ duration: 0.5 }}
     >
       <motion.circle cx="160.5" cy="114.5" r="101.5" fill="#262626" />
-      <motion.ellipse cx="160.5" cy="265.5" rx="101.5" ry="43.5" fill="#262626" />
+      <motion.ellipse
+        cx="160.5"
+        cy="265.5"
+        rx="101.5"
+        ry="43.5"
+        fill="#262626"
+      />
     </motion.svg>
-  )
-}
+  );
+};
 
 // Add these interfaces near the top of the file, after existing interfaces
 interface Destination {
@@ -250,46 +266,53 @@ interface Destination {
   description: string;
 }
 
-const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: HomePageProps) => {
-  const router = useRouter()
-  const pathname = usePathname()
-  const isHomePage = pathname === "/"
+const HomePage = ({
+  isInPlan = false,
+  onAddToPlan,
+  showAddButton = false,
+}: HomePageProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
 
-  const [selectedDestination, setSelectedDestination] = useState<any>(null)
-  const [showDetail, setShowDetail] = useState(false)
-  const [selectedHotel, setSelectedHotel] = useState<HotelCard | null>(null)
-  const [showHotelDetail, setShowHotelDetail] = useState(false)
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState("Tất cả địa điểm")
-  const [filteredDestinations, setFilteredDestinations] = useState(destinations)
-  const [departureInput, setDepartureInput] = useState("")
-  const [destinationInput, setDestinationInput] = useState("")
-  const [showDepartureDropdown, setShowDepartureDropdown] = useState(false)
-  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false)
-  const [showSearchCard, setShowSearchCard] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState("")
-  const [topDestinations, setTopDestinations] = useState<Destination[]>([])
-  const [favoriteDestinations, setFavoriteDestinations] = useState<Destination[]>([])
-  const [mustVisitCities, setMustVisitCities] = useState<Destination[]>([])
-  const [activeSlide, setActiveSlide] = useState(0)
-  const [isPending, startTransition] = useTransition()
-  const [isLoading, setIsLoading] = useState(true)
+  const [selectedDestination, setSelectedDestination] = useState<any>(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [selectedHotel, setSelectedHotel] = useState<HotelCard | null>(null);
+  const [showHotelDetail, setShowHotelDetail] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("Tất cả địa điểm");
+  const [filteredDestinations, setFilteredDestinations] =
+    useState(destinations);
+  const [departureInput, setDepartureInput] = useState("");
+  const [destinationInput, setDestinationInput] = useState("");
+  const [showDepartureDropdown, setShowDepartureDropdown] = useState(false);
+  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
+  const [showSearchCard, setShowSearchCard] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [topDestinations, setTopDestinations] = useState<Destination[]>([]);
+  const [favoriteDestinations, setFavoriteDestinations] = useState<
+    Destination[]
+  >([]);
+  const [mustVisitCities, setMustVisitCities] = useState<Destination[]>([]);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isPending, startTransition] = useTransition();
+  const [isLoading, setIsLoading] = useState(true);
 
   // Animation variants
   const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.8 } },
-  }
+  };
 
   const slideUp = {
     hidden: { opacity: 0, y: 50 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
-  }
+  };
 
   const slideRight = {
     hidden: { opacity: 0, x: -50 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.6 } },
-  }
+  };
 
   const staggerContainer = {
     hidden: { opacity: 0 },
@@ -299,11 +322,17 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
         staggerChildren: 0.1,
       },
     },
-  }
+  };
 
-  const deferredLocation = useDeferredValue(selectedLocation)
+  const deferredLocation = useDeferredValue(selectedLocation);
 
-  const categories = ["Tất cả địa điểm", "Đà Nẵng", "Huế", "Nha Trang", "Hà Nội"]
+  const categories = [
+    "Tất cả địa điểm",
+    "Đà Nẵng",
+    "Huế",
+    "Nha Trang",
+    "Hà Nội",
+  ];
 
   const vietnamProvinces = [
     "An Giang",
@@ -369,59 +398,65 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
     "Vĩnh Long",
     "Vĩnh Phúc",
     "Yên Bái",
-  ]
+  ];
 
   const heroSlides = [
     {
       id: 1,
       title: "Khám phá Việt Nam",
       // subtitle: "Di sản thiên nhiên thế giới",
-      image: "https://i.pinimg.com/736x/a8/00/14/a80014131a8b5726a9e65df7cda9aee7.jpg",
+      image:
+        "https://i.pinimg.com/736x/a8/00/14/a80014131a8b5726a9e65df7cda9aee7.jpg",
       code: "01",
     },
     {
       id: 2,
       title: "Khám phá Việt Nam",
       // subtitle: "Thành phố đèn lồng cổ kính",
-      image: "https://i.pinimg.com/736x/11/90/c2/1190c224084a8c630a4f9d05d1281c60.jpg",
+      image:
+        "https://i.pinimg.com/736x/11/90/c2/1190c224084a8c630a4f9d05d1281c60.jpg",
       code: "02",
     },
     {
       id: 3,
       title: "Khám phá Việt Nam",
       // subtitle: "Thiên đường trong sương",
-      image: "https://i.pinimg.com/736x/4d/01/59/4d01591cb3b8b83fa0a50c00fc151e76.jpg",
+      image:
+        "https://i.pinimg.com/736x/4d/01/59/4d01591cb3b8b83fa0a50c00fc151e76.jpg",
       code: "03",
     },
-  ]
+  ];
 
   const toggleCategoryDropdown = () => {
-    setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
-  }
+    setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
+  };
 
   const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category)
-    setIsCategoryDropdownOpen(false)
+    setSelectedCategory(category);
+    setIsCategoryDropdownOpen(false);
 
     if (category === "Tất cả địa điểm") {
-      setFilteredDestinations(destinations)
+      setFilteredDestinations(destinations);
     } else {
-      const filtered = destinations.filter((dest) => dest.address === category)
-      setFilteredDestinations(filtered)
+      const filtered = destinations.filter((dest) => dest.address === category);
+      setFilteredDestinations(filtered);
     }
-  }
+  };
 
   const handleCardClick = (dest: any) => {
-    setSelectedDestination(dest)
-    setShowDetail(true)
-  }
+    setSelectedDestination(dest);
+    setShowDetail(true);
+  };
 
   const handleCloseDetail = () => {
-    setShowDetail(false)
-    setSelectedDestination(null)
-  }
+    setShowDetail(false);
+    setSelectedDestination(null);
+  };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, destination: DestinationCard) => {
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    destination: DestinationCard
+  ) => {
     e.dataTransfer.setData(
       "application/json",
       JSON.stringify({
@@ -435,88 +470,91 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           rating: destination.rating,
         },
       })
-    )
-    e.currentTarget.classList.add("dragging")
-  }
+    );
+    e.currentTarget.classList.add("dragging");
+  };
 
   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
-    e.currentTarget.classList.remove("dragging")
-  }
+    e.currentTarget.classList.remove("dragging");
+  };
 
   const handleAddToPlan = (dest: DestinationCard, e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     if (onAddToPlan) {
-      onAddToPlan(dest)
+      onAddToPlan(dest);
     }
-  }
+  };
 
   const handleHotelClick = (hotel: HotelCard) => {
-    setSelectedHotel(hotel)
-    setShowHotelDetail(true)
-  }
+    setSelectedHotel(hotel);
+    setShowHotelDetail(true);
+  };
 
   const handleCloseHotelDetail = () => {
-    setShowHotelDetail(false)
-    setSelectedHotel(null)
-  }
+    setShowHotelDetail(false);
+    setSelectedHotel(null);
+  };
 
   const handleDepartureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDepartureInput(e.target.value)
-    setShowDepartureDropdown(true)
-  }
+    setDepartureInput(e.target.value);
+    setShowDepartureDropdown(true);
+  };
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDestinationInput(e.target.value)
-    setShowDestinationDropdown(true)
-  }
+    setDestinationInput(e.target.value);
+    setShowDestinationDropdown(true);
+  };
 
-  const handleProvinceSelect = (province: string, type: "departure" | "destination") => {
+  const handleProvinceSelect = (
+    province: string,
+    type: "departure" | "destination"
+  ) => {
     if (type === "departure") {
-      setDepartureInput(province)
-      setShowDepartureDropdown(false)
+      setDepartureInput(province);
+      setShowDepartureDropdown(false);
     } else {
-      setDestinationInput(province)
-      setShowDestinationDropdown(false)
+      setDestinationInput(province);
+      setShowDestinationDropdown(false);
     }
-  }
+  };
 
   const handleSearchButtonClick = () => {
-    setShowSearchCard(true)
-  }
+    setShowSearchCard(true);
+  };
 
   const handleCloseSearchCard = () => {
-    setShowSearchCard(false)
-    setSelectedLocation("")
-  }
+    setShowSearchCard(false);
+    setSelectedLocation("");
+  };
 
   const handleConfirmLocation = () => {
     if (selectedLocation) {
       startTransition(() => {
-        handleCategorySelect(selectedLocation)
-        setShowSearchCard(false)
-      })
+        handleCategorySelect(selectedLocation);
+        setShowSearchCard(false);
+      });
     }
-  }
+  };
 
   const nextSlide = () => {
-    setActiveSlide((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1))
-  }
+    setActiveSlide((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1));
+  };
 
   const prevSlide = () => {
-    setActiveSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1))
-  }
+    setActiveSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1));
+  };
 
   const goToSlide = (index: number) => {
-    setActiveSlide(index)
-  }
+    setActiveSlide(index);
+  };
 
   // Simulate loading
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
+      setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // // Auto slide change
   // useEffect(() => {
@@ -528,52 +566,58 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
 
   useEffect(() => {
     if (deferredLocation) {
-      const filtered = destinations.filter((dest) => dest.address === deferredLocation)
-      setFilteredDestinations(filtered)
+      const filtered = destinations.filter(
+        (dest) => dest.address === deferredLocation
+      );
+      setFilteredDestinations(filtered);
     }
-  }, [deferredLocation])
+  }, [deferredLocation]);
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search)
-    const locationParam = searchParams.get("location")
+    const searchParams = new URLSearchParams(window.location.search);
+    const locationParam = searchParams.get("location");
 
     if (locationParam) {
-      handleCategorySelect(locationParam)
+      handleCategorySelect(locationParam);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/recommend/homepage-place/")
-        const data = await response.json()
-        setTopDestinations(data.places.slice(0, 8))
-        setFavoriteDestinations(data.places.slice(10, 14))
-        setMustVisitCities(data.places.slice(0, 4))
+        const response = await fetch(
+          "http://127.0.0.1:8000/recommend/homepage-place/"
+        );
+        const data = await response.json();
+        setTopDestinations(data.places.slice(0, 8));
+        setFavoriteDestinations(data.places.slice(10, 14));
+        setMustVisitCities(data.places.slice(0, 4));
       } catch (error) {
-        console.error("Error fetching destinations:", error)
+        console.error("Error fetching destinations:", error);
         // Use sample data if API fails
-        setTopDestinations(destinations)
-        setFavoriteDestinations(destinations)
-        setMustVisitCities(destinations)
+        setTopDestinations(destinations);
+        setFavoriteDestinations(destinations);
+        setMustVisitCities(destinations);
       }
-    }
+    };
 
-    fetchDestinations()
-  }, [])
+    fetchDestinations();
+  }, []);
 
   const buttonSpring = useSpring({
     from: { scale: 1 },
     to: [{ scale: 1.1 }, { scale: 1 }],
     config: { tension: 300, friction: 10 },
     loop: true,
-  })
+  });
 
-  const AnimatedDiv = animated.div as ElementType
+  const AnimatedDiv = animated.div as ElementType;
 
-  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  const handleImageError = (
+    event: React.SyntheticEvent<HTMLImageElement, Event>
+  ) => {
     const target = event.target as HTMLImageElement;
-    if (!target.src.includes('placeholder.svg')) {
+    if (!target.src.includes("placeholder.svg")) {
       target.src = "/placeholder.svg";
       target.onerror = null; // Prevent infinite loop if placeholder also fails
     }
@@ -587,7 +631,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           <div className="loader-text">Khám Phá Việt Nam</div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -610,8 +654,8 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                 className="hero-slide-bg"
                 style={{
                   backgroundImage: `url(${heroSlides[activeSlide].image})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
               ></div>
 
@@ -662,7 +706,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
               {heroSlides.map((_, index) => (
                 <button
                   key={index}
-                  className={`hero-dot ${activeSlide === index ? "active" : ""}`}
+                  className={`hero-dot ${
+                    activeSlide === index ? "active" : ""
+                  }`}
                   onClick={() => goToSlide(index)}
                 ></button>
               ))}
@@ -695,9 +741,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           </div>
           <input
             type="text"
-            placeholder="Tìm kiếm điểm đến, khách sạn, hoạt động..."
+            placeholder="Search province..."
             onChange={(e) => {
-              console.log(e.target.value)
+              console.log(e.target.value);
             }}
           />
           <button className="search-button">
@@ -754,7 +800,6 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
         </motion.div>
       </motion.section> */}
 
-
       {/* Add after explore-section and before destinations-section */}
       <motion.section
         className="plan-assistance-section"
@@ -773,14 +818,14 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <motion.div
-            className="plan-assistance-content"
-            variants={slideUp}
-          >
-            <h2 className="plan-assistance-title">Sẵn sàng cho chuyến đi của bạn?</h2>
+          <motion.div className="plan-assistance-content" variants={slideUp}>
+            <h2 className="plan-assistance-title">
+              Sẵn sàng cho chuyến đi của bạn?
+            </h2>
             <p className="plan-assistance-text">
               Hãy để chúng tôi giúp bạn lập kế hoạch cho một chuyến đi hoàn hảo.
-              Từ việc chọn điểm đến, đặt chỗ ở đến lịch trình chi tiết - tất cả đều được cá nhân hóa theo sở thích của bạn.
+              Từ việc chọn điểm đến, đặt chỗ ở đến lịch trình chi tiết - tất cả
+              đều được cá nhân hóa theo sở thích của bạn.
             </p>
             <Link href="/Q&A">
               <motion.div
@@ -794,10 +839,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
             </Link>
           </motion.div>
 
-          <motion.div
-            className="plan-assistance-image"
-            variants={slideRight}
-          >
+          <motion.div className="plan-assistance-image" variants={slideRight}>
             <img
               src="https://i.pinimg.com/736x/33/df/4c/33df4cda6c650782b67d2e53d717cc05.jpg"
               alt="Plan your trip"
@@ -826,13 +868,15 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <motion.div
-            className="search-banner-content"
-            variants={slideUp}
-          >
-            <h2 className="search-banner-title">Chưa biết đi đâu cho kỳ nghỉ sắp tới?</h2>
+          <motion.div className="search-banner-content" variants={slideUp}>
+            <h2 className="search-banner-title">
+              Chưa biết đi đâu cho kỳ nghỉ sắp tới?
+            </h2>
             <p className="search-banner-text">
-              Khám phá vẻ đẹp Việt Nam với những điểm đến đầy mê hoặc. Từ những bãi biển xanh ngắt đến ruộng bậc thang mùa lúa chín, hay những phố cổ đậm chất lịch sử - chúng tôi sẽ giúp bạn tìm ra điểm đến hoàn hảo.
+              Khám phá vẻ đẹp Việt Nam với những điểm đến đầy mê hoặc. Từ những
+              bãi biển xanh ngắt đến ruộng bậc thang mùa lúa chín, hay những phố
+              cổ đậm chất lịch sử - chúng tôi sẽ giúp bạn tìm ra điểm đến hoàn
+              hảo.
             </p>
             <motion.div
               className="search-banner-button"
@@ -845,10 +889,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
             </motion.div>
           </motion.div>
 
-          <motion.div
-            className="search-banner-image"
-            variants={slideRight}
-          >
+          <motion.div className="search-banner-image" variants={slideRight}>
             <div className="lantern lantern-1"></div>
             <div className="lantern lantern-2"></div>
             <img
@@ -860,7 +901,10 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
         </motion.div>
       </motion.section>
 
-      <div className={`overlay ${showSearchCard ? "active" : ""}`} onClick={handleCloseSearchCard} />
+      <div
+        className={`overlay ${showSearchCard ? "active" : ""}`}
+        onClick={handleCloseSearchCard}
+      />
 
       <motion.div
         className={`search-card ${showSearchCard ? "active" : ""}`}
@@ -894,7 +938,10 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)}>
+            <select
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+            >
               <option value="">Chọn tỉnh thành</option>
               {vietnamProvinces.map((province: string, index: number) => (
                 <option key={index} value={province}>
@@ -942,7 +989,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
       >
         <div className="section-header">
           <motion.h2 variants={slideUp}>Điểm Đến Được Yêu Thích Nhất</motion.h2>
-          <motion.p variants={slideUp}>Những địa điểm du lịch hàng đầu tại Việt Nam</motion.p>
+          <motion.p variants={slideUp}>
+            Những địa điểm du lịch hàng đầu tại Việt Nam
+          </motion.p>
         </div>
 
         <motion.div
@@ -961,8 +1010,12 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
               <div
                 className="destination-card"
                 draggable
-                onDragStart={(e: React.DragEvent<HTMLDivElement>) => handleDragStart(e, dest)}
-                onDragEnd={(e: React.DragEvent<HTMLDivElement>) => handleDragEnd(e)}
+                onDragStart={(e: React.DragEvent<HTMLDivElement>) =>
+                  handleDragStart(e, dest)
+                }
+                onDragEnd={(e: React.DragEvent<HTMLDivElement>) =>
+                  handleDragEnd(e)
+                }
               >
                 <div className="card-image-container">
                   <img
@@ -975,11 +1028,18 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                   <div className="card-rating">
                     <span className="star">★</span> {dest.rating}
                   </div>
-                  <button className="add-to-plan-btn" onClick={(e) => handleAddToPlan(dest, e)} aria-label="Add to plan">
+                  <button
+                    className="add-to-plan-btn"
+                    onClick={(e) => handleAddToPlan(dest, e)}
+                    aria-label="Add to plan"
+                  >
                     <FaPlus />
                   </button>
                 </div>
-                <div className="card-content" onClick={() => handleCardClick(dest)}>
+                <div
+                  className="card-content"
+                  onClick={() => handleCardClick(dest)}
+                >
                   <h3>{dest.title}</h3>
                   <div className="card-details">
                     <div className="card-location">
@@ -987,7 +1047,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                       <span>{dest.address}</span>
                     </div>
                     <p className="card-description">
-                      {dest.description.length > 100 ? dest.description.substring(0, 100) + "..." : dest.description}
+                      {dest.description.length > 100
+                        ? dest.description.substring(0, 100) + "..."
+                        : dest.description}
                     </p>
                     <div className="card-footer">
                       <span className="explore-link">
@@ -1012,7 +1074,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
       >
         <div className="section-header">
           <motion.h2 variants={slideUp}>Top Địa Điểm Du Lịch Hấp Dẫn</motion.h2>
-          <motion.p variants={slideUp}>Những điểm đến không thể bỏ lỡ trong hành trình khám phá Việt Nam</motion.p>
+          <motion.p variants={slideUp}>
+            Những điểm đến không thể bỏ lỡ trong hành trình khám phá Việt Nam
+          </motion.p>
         </div>
 
         <motion.div
@@ -1023,7 +1087,11 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           viewport={{ once: true }}
         >
           {topDestinations.map((dest: any, index) => (
-            <motion.div key={dest.id || index} className="destination-card" variants={slideUp}>
+            <motion.div
+              key={dest.id || index}
+              className="destination-card"
+              variants={slideUp}
+            >
               <div className="card-image-container">
                 <img
                   src={dest.img || "/placeholder.svg"}
@@ -1035,11 +1103,18 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                 <div className="card-rating">
                   <span className="star">★</span> {dest.rating}
                 </div>
-                <button className="add-to-plan-btn" onClick={(e) => handleAddToPlan(dest, e)} aria-label="Add to plan">
+                <button
+                  className="add-to-plan-btn"
+                  onClick={(e) => handleAddToPlan(dest, e)}
+                  aria-label="Add to plan"
+                >
                   <FaPlus />
                 </button>
               </div>
-              <div className="card-content" onClick={() => handleCardClick(dest)}>
+              <div
+                className="card-content"
+                onClick={() => handleCardClick(dest)}
+              >
                 <h3>{dest.title}</h3>
                 <div className="card-details">
                   <div className="card-location">
@@ -1047,7 +1122,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                     <span>{dest.address}</span>
                   </div>
                   <p className="card-description">
-                    {dest.description.length > 100 ? dest.description.substring(0, 100) + "..." : dest.description}
+                    {dest.description.length > 100
+                      ? dest.description.substring(0, 100) + "..."
+                      : dest.description}
                   </p>
                   <div className="card-footer">
                     <span className="explore-link">
@@ -1070,8 +1147,12 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
         variants={fadeIn}
       >
         <div className="section-header">
-          <motion.h2 variants={slideUp}>Những Thành Phố Không Thể Bỏ Lỡ!</motion.h2>
-          <motion.p variants={slideUp}>Khám phá vẻ đẹp độc đáo của các thành phố nổi tiếng</motion.p>
+          <motion.h2 variants={slideUp}>
+            Những Thành Phố Không Thể Bỏ Lỡ!
+          </motion.h2>
+          <motion.p variants={slideUp}>
+            Khám phá vẻ đẹp độc đáo của các thành phố nổi tiếng
+          </motion.p>
         </div>
 
         <motion.div
@@ -1082,7 +1163,11 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           viewport={{ once: true }}
         >
           {mustVisitCities.map((dest: any, index) => (
-            <motion.div key={dest.id || index} className="destination-card featured-card" variants={slideUp}>
+            <motion.div
+              key={dest.id || index}
+              className="destination-card featured-card"
+              variants={slideUp}
+            >
               <div className="card-image-container">
                 <img
                   src={dest.img || "/placeholder.svg"}
@@ -1094,14 +1179,21 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                 <div className="card-rating">
                   <span className="star">★</span> {dest.rating}
                 </div>
-                <button className="add-to-plan-btn" onClick={(e) => handleAddToPlan(dest, e)} aria-label="Add to plan">
+                <button
+                  className="add-to-plan-btn"
+                  onClick={(e) => handleAddToPlan(dest, e)}
+                  aria-label="Add to plan"
+                >
                   <FaPlus />
                 </button>
                 <div className="featured-badge">
                   <FaRegClock /> Xu hướng
                 </div>
               </div>
-              <div className="card-content" onClick={() => handleCardClick(dest)}>
+              <div
+                className="card-content"
+                onClick={() => handleCardClick(dest)}
+              >
                 <h3>{dest.title}</h3>
                 <div className="card-details">
                   <div className="card-location">
@@ -1109,7 +1201,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                     <span>{dest.address || dest.location}</span>
                   </div>
                   <p className="card-description">
-                    {dest.description.length > 100 ? dest.description.substring(0, 100) + "..." : dest.description}
+                    {dest.description.length > 100
+                      ? dest.description.substring(0, 100) + "..."
+                      : dest.description}
                   </p>
                   <div className="card-footer">
                     <span className="explore-link">
@@ -1158,9 +1252,13 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
               </div>
               <div className="detail-location">
                 <FaMapMarkerAlt />
-                <span>{selectedDestination.address || selectedDestination.location}</span>
+                <span>
+                  {selectedDestination.address || selectedDestination.location}
+                </span>
               </div>
-              <div className="detail-description">{selectedDestination.description}</div>
+              <div className="detail-description">
+                {selectedDestination.description}
+              </div>
               <div className="detail-actions">
                 <button className="detail-action-btn primary">
                   <FaPlus className="btn-icon" /> Thêm vào kế hoạch
@@ -1196,7 +1294,10 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                 alt={selectedHotel.name}
                 onError={handleImageError}
               />
-              <button className="detail-close-btn" onClick={handleCloseHotelDetail}>
+              <button
+                className="detail-close-btn"
+                onClick={handleCloseHotelDetail}
+              >
                 ×
               </button>
             </div>
@@ -1213,11 +1314,15 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
                 <div className="hotel-info-grid">
                   <div className="hotel-info-item">
                     <span className="hotel-info-label">Hạng khách sạn</span>
-                    <span className="hotel-info-value hotel-class-badge">{selectedHotel.hotel_class}</span>
+                    <span className="hotel-info-value hotel-class-badge">
+                      {selectedHotel.hotel_class}
+                    </span>
                   </div>
                   <div className="hotel-info-item">
                     <span className="hotel-info-label">Giá phòng</span>
-                    <span className="hotel-info-value hotel-price">{selectedHotel.price}/đêm</span>
+                    <span className="hotel-info-value hotel-price">
+                      {selectedHotel.price}/đêm
+                    </span>
                   </div>
                   <div className="hotel-info-item">
                     <span className="hotel-info-label">Địa điểm lân cận</span>
@@ -1236,7 +1341,9 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
 
               <div className="hotel-info-section">
                 <h3>Mô tả</h3>
-                <div className="detail-description">{selectedHotel.description}</div>
+                <div className="detail-description">
+                  {selectedHotel.description}
+                </div>
               </div>
 
               <div className="hotel-info-section">
@@ -1253,7 +1360,12 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
               <div className="hotel-info-section">
                 <h3>Đặt phòng</h3>
                 <div className="hotel-booking">
-                  <a href={selectedHotel.link} target="_blank" rel="noopener noreferrer" className="booking-link">
+                  <a
+                    href={selectedHotel.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="booking-link"
+                  >
                     Xem chi tiết và đặt phòng
                   </a>
                 </div>
@@ -1275,7 +1387,10 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
           <motion.div className="newsletter-content" variants={slideRight}>
             <h3>Đăng ký nhận thông tin</h3>
             <h2>Nhận thông báo về các ưu đãi đặc biệt</h2>
-            <p>Đăng ký để nhận thông tin về các điểm đến hấp dẫn và ưu đãi du lịch mới nhất</p>
+            <p>
+              Đăng ký để nhận thông tin về các điểm đến hấp dẫn và ưu đãi du
+              lịch mới nhất
+            </p>
 
             <div className="newsletter-form">
               <input type="email" placeholder="Địa chỉ email của bạn" />
@@ -1340,7 +1455,7 @@ const HomePage = ({ isInPlan = false, onAddToPlan, showAddButton = false }: Home
         )}
       </AnimatePresence>
     </div>
-  )
-}
+  );
+};
 
-export default HomePage
+export default HomePage;

@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { IoArrowBackOutline } from "react-icons/io5";
 import {
@@ -159,6 +160,8 @@ const HomePage: React.FC<{
 
 // Main Component
 export default function Plan() {
+  const { user } = useAuth();
+  const userId = user?.id || null;
   const [showHomePage, setShowHomePage] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
@@ -175,7 +178,6 @@ export default function Plan() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [userId, setUserId] = useState<number | null>(7);
   const [scheduleId, setScheduleId] = useState<number | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [activities, setActivities] = useState<DayPlan[]>([]);
@@ -193,7 +195,9 @@ export default function Plan() {
         setLoading(true);
         const scheduleData = localStorage.getItem("travelSchedule");
         if (!scheduleData) {
-          throw new Error("Không tìm thấy dữ liệu lịch trình trong localStorage.");
+          throw new Error(
+            "Không tìm thấy dữ liệu lịch trình trong localStorage."
+          );
         }
 
         const parsedData = JSON.parse(scheduleData, (key, value) =>
@@ -204,37 +208,49 @@ export default function Plan() {
         if (parsedData.hotel) {
           setHotel({
             ...parsedData.hotel,
-            img_origin: parsedData.hotel.img_origin.split(",").map((img) => img.trim()),
+            img_origin: parsedData.hotel.img_origin
+              .split(",")
+              .map((img) => img.trim()),
           });
         }
 
-        if (!parsedData || !parsedData.schedule || !Array.isArray(parsedData.schedule.schedule)) {
-          throw new Error("Dữ liệu không hợp lệ: 'schedule' không phải là mảng hoặc không tồn tại.");
+        if (
+          !parsedData ||
+          !parsedData.schedule ||
+          !Array.isArray(parsedData.schedule.schedule)
+        ) {
+          throw new Error(
+            "Dữ liệu không hợp lệ: 'schedule' không phải là mảng hoặc không tồn tại."
+          );
         }
 
-        const formattedActivities = parsedData.schedule.schedule.map((dayItem, index) => {
-          const dateMatch = dayItem.day.match(/\$\$(.*?)\$\$/) || dayItem.day.match(/\((.*?)\)/);
-          const date = dateMatch ? dateMatch[1] : dayItem.day;
+        const formattedActivities = parsedData.schedule.schedule.map(
+          (dayItem, index) => {
+            const dateMatch =
+              dayItem.day.match(/\$\$(.*?)\$\$/) ||
+              dayItem.day.match(/\((.*?)\)/);
+            const date = dateMatch ? dateMatch[1] : dayItem.day;
 
-          const dayActivities = dayItem.itinerary.map((slot) => {
-            const details = slot.details;
+            const dayActivities = dayItem.itinerary.map((slot) => {
+              const details = slot.details;
+              return {
+                type: slot.type,
+                title: details.title || "Không có tiêu đề",
+                description: details.description || "",
+                location: details.address || "Không có địa chỉ",
+                rating: details.rating || 0,
+                image: details.img || "",
+                time: slot.time || "Chưa có thời gian",
+              };
+            });
+
             return {
-              type: slot.type,
-              title: details.title || "Không có tiêu đề",
-              description: details.description || "",
-              location: details.address || "Không có địa chỉ",
-              rating: details.rating || 0,
-              image: details.img || "",
-              time: slot.time || "Chưa có thời gian",
+              day: index + 1,
+              date: date,
+              activities: dayActivities,
             };
-          });
-
-          return {
-            day: index + 1,
-            date: date,
-            activities: dayActivities,
-          };
-        });
+          }
+        );
 
         setActivities(formattedActivities);
         setWeatherForecast(parsedData.weather_forecast.forecast);
@@ -332,6 +348,22 @@ export default function Plan() {
             return item;
           }),
         })),
+        hotel: hotel
+          ? {
+              name: hotel.name || "",
+              description: hotel.description || "",
+              price: Number.isFinite(hotel.price) ? hotel.price : null,
+
+              location_rating: Number.isFinite(hotel.location_rating)
+                ? hotel.location_rating
+                : null,
+              hotel_class: hotel.hotel_class || "",
+              img_origin: hotel.img_origin || "",
+              link: hotel.link || "", // Ensure link is a string, not NaN
+              animates: hotel.animates || [],
+              name_nearby_place: hotel.name_nearby_place || "",
+            }
+          : null,
       };
 
       const saveResponse = await axios.post(
@@ -564,7 +596,9 @@ export default function Plan() {
         )}
       </AnimatePresence>
       <div
-        className={`fixed inset-0 bg-white z-40 transform transition-transform duration-300 ${showHomePage ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed inset-0 bg-white z-40 transform transition-transform duration-300 ${
+          showHomePage ? "translate-x-0" : "translate-x-full"
+        }`}
       >
         <div className="p-4 flex justify-between items-center border-b">
           <h2 className="text-xl font-bold">Thêm hoạt động</h2>
@@ -605,7 +639,9 @@ export default function Plan() {
                   <FaCalendarAlt className="text-[#d62828]" />
                   <span>
                     {activities.length > 0
-                      ? `${activities[0].date} - ${activities[activities.length - 1].date}`
+                      ? `${activities[0].date} - ${
+                          activities[activities.length - 1].date
+                        }`
                       : "Không có ngày"}
                   </span>
                 </div>
@@ -614,7 +650,7 @@ export default function Plan() {
                   <span>
                     {localStorage.getItem("travelSchedule")
                       ? JSON.parse(localStorage.getItem("travelSchedule")!)
-                        .schedule.province
+                          .schedule.province
                       : "Chưa có điểm đến"}
                   </span>
                 </div>
@@ -708,10 +744,11 @@ export default function Plan() {
                         (_, index) => (
                           <button
                             key={index}
-                            className={`w-2 h-2 rounded-full ${index === currentSlide
-                              ? "bg-[#1a936f]"
-                              : "bg-gray-300"
-                              }`}
+                            className={`w-2 h-2 rounded-full ${
+                              index === currentSlide
+                                ? "bg-[#1a936f]"
+                                : "bg-gray-300"
+                            }`}
                             onClick={() => setCurrentSlide(index)}
                             aria-label={`Go to activity ${index + 1}`}
                           />
@@ -794,47 +831,59 @@ export default function Plan() {
                     {hotel.link}
                   </a>
                 </p>
-                {hotel.img_origin && (hotel.img_origin as string[]).length > 0 && (
-                  <div className="mt-4 relative">
-                    <div className="w-full h-[445px] overflow-hidden rounded-lg">
-                      <Image
-                        src={(hotel.img_origin as string[])[currentHotelImageIndex] || "/placeholder.svg"}
-                        alt={`${hotel.name} - Image ${currentHotelImageIndex + 1}`}
-                        width={1380}
-                        height={445}
-                        className="object-cover w-full h-full"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                      />
-                    </div>
-                    {(hotel.img_origin as string[]).length > 1 && (
-                      <div className="absolute top-1/2 left-0 right-0 flex justify-between px-4 transform -translate-y-1/2">
-                        <button
-                          onClick={() =>
-                            setCurrentHotelImageIndex(
-                              (prev) =>
-                                (prev - 1 + (hotel.img_origin as string[]).length) % (hotel.img_origin as string[]).length
-                            )
+                {hotel.img_origin &&
+                  (hotel.img_origin as string[]).length > 0 && (
+                    <div className="mt-4 relative">
+                      <div className="w-full h-[445px] overflow-hidden rounded-lg">
+                        <Image
+                          src={
+                            (hotel.img_origin as string[])[
+                              currentHotelImageIndex
+                            ] || "/placeholder.svg"
                           }
-                          className="bg-white p-2 rounded-full shadow-md"
-                        >
-                          <FaArrowLeft className="text-gray-600" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            setCurrentHotelImageIndex(
-                              (prev) => (prev + 1) % (hotel.img_origin as string[]).length
-                            )
-                          }
-                          className="bg-white p-2 rounded-full shadow-md"
-                        >
-                          <FaArrowRight className="text-gray-600" />
-                        </button>
+                          alt={`${hotel.name} - Image ${
+                            currentHotelImageIndex + 1
+                          }`}
+                          width={1380}
+                          height={445}
+                          className="object-cover w-full h-full"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
+                        />
                       </div>
-                    )}
-                  </div>
-                )}
+                      {(hotel.img_origin as string[]).length > 1 && (
+                        <div className="absolute top-1/2 left-0 right-0 flex justify-between px-4 transform -translate-y-1/2">
+                          <button
+                            onClick={() =>
+                              setCurrentHotelImageIndex(
+                                (prev) =>
+                                  (prev -
+                                    1 +
+                                    (hotel.img_origin as string[]).length) %
+                                  (hotel.img_origin as string[]).length
+                              )
+                            }
+                            className="bg-white p-2 rounded-full shadow-md"
+                          >
+                            <FaArrowLeft className="text-gray-600" />
+                          </button>
+                          <button
+                            onClick={() =>
+                              setCurrentHotelImageIndex(
+                                (prev) =>
+                                  (prev + 1) %
+                                  (hotel.img_origin as string[]).length
+                              )
+                            }
+                            className="bg-white p-2 rounded-full shadow-md"
+                          >
+                            <FaArrowRight className="text-gray-600" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             </div>
           )}
@@ -858,7 +907,10 @@ export default function Plan() {
             className="mt-6 text-center"
           >
             <p className="text-[#1a936f] font-medium">
-              Link chia sẻ: <a href={shareLink} className="underline">{shareLink}</a>
+              Link chia sẻ:{" "}
+              <a href={shareLink} className="underline">
+                {shareLink}
+              </a>
             </p>
           </motion.div>
         )}
@@ -880,9 +932,12 @@ function DaySelector({
   weatherForecast: WeatherForecast[];
 }) {
   const getWeatherIcon = (description: string) => {
-    if (description.includes("nắng")) return <FaSun className="text-yellow-500" />;
-    if (description.includes("mây")) return <FaCloud className="text-gray-500" />;
-    if (description.includes("mưa")) return <FaCloudRain className="text-blue-500" />;
+    if (description.includes("nắng"))
+      return <FaSun className="text-yellow-500" />;
+    if (description.includes("mây"))
+      return <FaCloud className="text-gray-500" />;
+    if (description.includes("mưa"))
+      return <FaCloudRain className="text-blue-500" />;
     return <FaWind className="text-gray-400" />;
   };
 
@@ -897,10 +952,11 @@ function DaySelector({
           <button
             key={index}
             onClick={() => onSelectDay(index)}
-            className={`w-full text-left p-4 rounded-xl transition-all duration-300 ${selectedDayIndex === index
-              ? "bg-[#1a936f] text-gray-800 shadow-md"
-              : "bg-gray-50 hover:bg-gray-100 text-gray-800"
-              }`}
+            className={`w-full text-left p-4 rounded-xl transition-all duration-300 ${
+              selectedDayIndex === index
+                ? "bg-[#1a936f] text-gray-800 shadow-md"
+                : "bg-gray-50 hover:bg-gray-100 text-gray-800"
+            }`}
           >
             <div className="flex justify-between items-center">
               <div>
@@ -911,16 +967,24 @@ function DaySelector({
               {weatherForecast[index] && (
                 <div className="flex items-center gap-1">
                   {getWeatherIcon(weatherForecast[index]["Mô tả"])}
-                  <span className="text-sm">{weatherForecast[index]["Nhiệt độ tối đa"]}°C</span>
+                  <span className="text-sm">
+                    {weatherForecast[index]["Nhiệt độ tối đa"]}°C
+                  </span>
                 </div>
               )}
             </div>
 
-            <div className={`text-xs mt-2 ${selectedDayIndex === index ? "text-gray-800" : "text-gray-500"}`}>
+            <div
+              className={`text-xs mt-2 ${
+                selectedDayIndex === index ? "text-gray-800" : "text-gray-500"
+              }`}
+            >
               {day.activities.length} hoạt động
             </div>
 
-            {selectedDayIndex === index && <div className="h-1 bg-white rounded-full mt-2" />}
+            {selectedDayIndex === index && (
+              <div className="h-1 bg-white rounded-full mt-2" />
+            )}
           </button>
         ))}
       </div>
@@ -962,7 +1026,9 @@ function ActivityCardSimple({
   };
 
   const handleDeleteClick = () => {
-    const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa hoạt động "${activity.title}" không?`);
+    const confirmDelete = window.confirm(
+      `Bạn có chắc chắn muốn xóa hoạt động "${activity.title}" không?`
+    );
     if (confirmDelete) {
       onDeleteActivity();
     }
@@ -986,8 +1052,9 @@ function ActivityCardSimple({
         <div className="p-4">
           <div className="flex items-center gap-2 mb-2">
             <div
-              className={`p-1.5 rounded-full ${activity.type === "food" ? "bg-yellow-100" : "bg-green-100"
-                }`}
+              className={`p-1.5 rounded-full ${
+                activity.type === "food" ? "bg-yellow-100" : "bg-green-100"
+              }`}
             >
               {getActivityIcon(activity.type)}
             </div>
@@ -1078,10 +1145,11 @@ function MoveActivityModal({
               key={index}
               onClick={() => onMove(index)}
               disabled={index === currentDayIndex}
-              className={`w-full flex items-center justify-between p-4 rounded-xl transition-all ${index === currentDayIndex
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gray-50 hover:bg-[#1a936f] hover:text-white"
-                }`}
+              className={`w-full flex items-center justify-between p-4 rounded-xl transition-all ${
+                index === currentDayIndex
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-50 hover:bg-[#1a936f] hover:text-white"
+              }`}
               whileHover={index !== currentDayIndex ? { scale: 1.02 } : {}}
               whileTap={index !== currentDayIndex ? { scale: 0.98 } : {}}
             >
@@ -1090,7 +1158,9 @@ function MoveActivityModal({
                 <div className="text-sm opacity-80">{day.date}</div>
               </div>
 
-              {index !== currentDayIndex && <FaArrowRight className="opacity-70" />}
+              {index !== currentDayIndex && (
+                <FaArrowRight className="opacity-70" />
+              )}
             </motion.button>
           ))}
         </div>
@@ -1175,8 +1245,9 @@ function ActivityDetailModal({
           <div className="absolute bottom-4 left-6 right-6 text-white">
             <div className="flex items-center gap-3 mb-2">
               <div
-                className={`p-2 rounded-full ${activity.type === "food" ? "bg-yellow-500" : "bg-green-500"
-                  }`}
+                className={`p-2 rounded-full ${
+                  activity.type === "food" ? "bg-yellow-500" : "bg-green-500"
+                }`}
               >
                 {getActivityIcon(activity.type)}
               </div>
@@ -1225,23 +1296,31 @@ function ActivityDetailModal({
 
           <div className="bg-gray-50 p-4 rounded-xl my-4">
             <h3 className="font-medium text-gray-800 mb-2">Mô tả</h3>
-            <p className="text-gray-700 leading-relaxed">{activity.description}</p>
+            <p className="text-gray-700 leading-relaxed">
+              {activity.description}
+            </p>
           </div>
 
           {activity.type === "place" && (
             <div className="bg-green-50 p-4 rounded-xl my-4">
-              <h3 className="font-medium text-green-800 mb-2">Thông tin địa điểm</h3>
+              <h3 className="font-medium text-green-800 mb-2">
+                Thông tin địa điểm
+              </h3>
               <p className="text-green-700">
-                Đây là một địa điểm tham quan nổi tiếng tại. Bạn nên dành khoảng 2 giờ để khám phá đầy đủ.
+                Đây là một địa điểm tham quan nổi tiếng tại. Bạn nên dành khoảng
+                2 giờ để khám phá đầy đủ.
               </p>
             </div>
           )}
 
           {activity.type === "food" && (
             <div className="bg-yellow-50 p-4 rounded-xl my-4">
-              <h3 className="font-medium text-yellow-800 mb-2">Thông tin ẩm thực</h3>
+              <h3 className="font-medium text-yellow-800 mb-2">
+                Thông tin ẩm thực
+              </h3>
               <p className="text-yellow-700">
-                Đây là một địa điểm ẩm thực nổi tiếng, bạn nên thử các món đặc sản tại đây.
+                Đây là một địa điểm ẩm thực nổi tiếng, bạn nên thử các món đặc
+                sản tại đây.
               </p>
             </div>
           )}
@@ -1332,7 +1411,10 @@ function TravelTips() {
       viewport={{ once: true }}
       variants={container}
     >
-      <motion.h3 className="text-2xl font-bold text-gray-800 mb-6" variants={item}>
+      <motion.h3
+        className="text-2xl font-bold text-gray-800 mb-6"
+        variants={item}
+      >
         Lời khuyên cho chuyến đi
       </motion.h3>
 
@@ -1346,9 +1428,12 @@ function TravelTips() {
             <FaSuitcase />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-800 mb-2">Chuẩn bị hành lý</h4>
+            <h4 className="font-semibold text-gray-800 mb-2">
+              Chuẩn bị hành lý
+            </h4>
             <p className="text-gray-600">
-              Đừng quên mang theo áo mưa và kem chống nắng cho chuyến đi của bạn!
+              Đừng quên mang theo áo mưa và kem chống nắng cho chuyến đi của
+              bạn!
             </p>
           </div>
         </motion.div>
@@ -1362,9 +1447,12 @@ function TravelTips() {
             <FaMapMarkerAlt />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-800 mb-2">Khám phá địa phương</h4>
+            <h4 className="font-semibold text-gray-800 mb-2">
+              Khám phá địa phương
+            </h4>
             <p className="text-gray-600">
-              Hãy thử các món ăn địa phương và tham gia các hoạt động văn hóa để trải nghiệm trọn vẹn.
+              Hãy thử các món ăn địa phương và tham gia các hoạt động văn hóa để
+              trải nghiệm trọn vẹn.
             </p>
           </div>
         </motion.div>
@@ -1378,9 +1466,12 @@ function TravelTips() {
             <FaCamera />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-800 mb-2">Lưu giữ kỷ niệm</h4>
+            <h4 className="font-semibold text-gray-800 mb-2">
+              Lưu giữ kỷ niệm
+            </h4>
             <p className="text-gray-600">
-              Đừng quên chụp ảnh và ghi lại những khoảnh khắc đáng nhớ trong chuyến đi!
+              Đừng quên chụp ảnh và ghi lại những khoảnh khắc đáng nhớ trong
+              chuyến đi!
             </p>
           </div>
         </motion.div>
